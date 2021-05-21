@@ -1,0 +1,14 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.DS_Store
+*.pdf
+*.docx
+*.html
+*.rda
+*.rds
+*.aux
+*.log
+*data-cache*
+figs/*
