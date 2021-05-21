@@ -668,6 +668,7 @@ geom_line(data = ratio_cda, aes(x = ordered, y = cumsum((halibut))), colour = "r
 geom_line(data = ratio_noncda, aes(x = ordered, y = cumsum((yelloweye))), lty = 2, inherit.aes = FALSE) +
 geom_line(data = ratio_cda, aes(x = ordered, y = cumsum((yelloweye))), lty = 2, colour = "red", inherit.aes = FALSE) +
 coord_cartesian(expand = F, xlim = c(0,2500), ylim = c(0,9000)) +
-ylab("Fish caught") 
+ylab("Fish caught") +
+xlab("Number of cells fished (in order of decreasing Halibut abundance)") 
 ```
 
