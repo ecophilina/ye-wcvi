@@ -568,6 +568,7 @@ gy
 # ggsave("figs/yelloweye-2020-predictions.png", width = 6, height = 6)
 ```
 
+
 ```{r message = F, echo= F}
 # combine predictions for inside and out CDA
 pyd <- bind_rows(p_ye_cda$data, p_ye_noncda$data) %>% rename(ye_est = est) 
@@ -609,6 +610,64 @@ gratio
 # ggsave("figs/ye-per-halibut-w-hal-catch.png", width = 6, height = 6)
 ```
 
+# Other exploratory plots
+```{r message=F, echo=F}
+py_cda <- p_ye_cda$data %>% rename(ye_est = est) 
+py_noncda <-  p_ye_noncda$data %>% rename(ye_est = est) 
+ph_cda <- p_hal_cda$data %>% rename(hal_est = est) %>% select(hal_est, X, Y, year)
+ph_noncda <- p_hal_noncda$data %>% rename(hal_est = est) %>% select(hal_est, X, Y, year)
 
 
+ratio_cda <- left_join(py_cda, ph_cda) %>% mutate(halibut = exp(hal_est), yelloweye = exp(ye_est), 
+  ye_per_hal = yelloweye/halibut, hal_per_ye = halibut/yelloweye)
+ratio_noncda <- left_join(py_noncda, ph_noncda) %>% mutate(halibut = exp(hal_est), yelloweye = exp(ye_est), 
+  ye_per_hal = yelloweye/halibut, hal_per_ye = halibut/yelloweye)
+
+ratio_cda <- ratio_cda[order(ratio_cda$halibut, decreasing = T),] %>% mutate(ordered = row_number())
+ratio_noncda <- ratio_noncda[order(ratio_noncda$halibut, decreasing = T),] %>% mutate(ordered = row_number())
+
+# ggplot(ratio_noncda) +
+#   geom_point(aes(yelloweye, halibut), alpha = 0.5) +
+#   geom_point(data = ratio_cda, aes(yelloweye, halibut), 
+#     inherit.aes = F, colour = "red", alpha = 0.5) +
+#   coord_cartesian(expand = F) +
+#   ylab("Halibut per per 100 hooks") +
+#   xlab("Yelloweye per per 100 hooks")
+
+ggplot(ratio_noncda) +
+  geom_point(aes(halibut, yelloweye), alpha = 0.5) +
+  geom_point(data = ratio_cda, aes(halibut, yelloweye), 
+    inherit.aes = F, colour = "red", alpha = 0.5) +
+  coord_cartesian(expand = F) +
+  xlab("Halibut per per 100 hooks") +
+  ylab("Yelloweye per per 100 hooks")
+
+# ggplot(filter(ratio_noncda, halibut > 5)) +
+#   geom_histogram(aes(ye_per_hal)) +
+#   geom_histogram(data = filter(ratio_cda, halibut > 5),aes(ye_per_hal), inherit.aes = F, fill = "red") +
+#   ylab("Grid cell with estimate of > 5 halibut per 100 hooks") +
+#   xlab("Predicted numder of yelloweye per halibut caught")
+
+ggplot(filter(ratio_noncda, halibut > 5 #& yelloweye > 0.1 
+  )) +
+  geom_histogram(aes(hal_per_ye)) +
+  geom_histogram(data = filter(ratio_cda, halibut > 5 #& yelloweye > 0.1
+    ), aes(hal_per_ye), inherit.aes = F, fill = "red") +
+  ylab("Cells with > 5 halibut per 100 hooks") +
+  xlab("Estimated numder of halibut per yelloweye caught")
+```
+
+### Experiment with accumulation curve
+Solid lines are cumulative halibut catch potential for each addition cell fished in decreasing order of predicted halibut abundance.
+Dashed lines are the cumulative yelloweye catch that might be anticipated for those same cells.
+```{r message = F, echo= F}
+ggplot(data = ratio_cda, 
+   aes(x=ordered)) +
+geom_line(data = ratio_noncda, aes(x = ordered, y = cumsum((halibut))),  inherit.aes = FALSE) +
+geom_line(data = ratio_cda, aes(x = ordered, y = cumsum((halibut))), colour = "red", inherit.aes = FALSE) +
+geom_line(data = ratio_noncda, aes(x = ordered, y = cumsum((yelloweye))), lty = 2, inherit.aes = FALSE) +
+geom_line(data = ratio_cda, aes(x = ordered, y = cumsum((yelloweye))), lty = 2, colour = "red", inherit.aes = FALSE) +
+coord_cartesian(expand = F, xlim = c(0,2500), ylim = c(0,9000)) +
+ylab("Fish caught") 
+```
 
