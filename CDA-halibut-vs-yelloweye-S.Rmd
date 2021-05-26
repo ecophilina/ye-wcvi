@@ -323,16 +323,20 @@ ggplot(i_hal_noncda, aes(year, est / nrow(noncda_grid))) +
 
 # Yelloweye Rockfish catch predictions
 
-```{r eval = F}
-p_ye_cda <- predict(m_ye, newdata = cda_grid, return_tmb_object = TRUE)
-saveRDS(p_ye_cda, "data-generated/yelloweye-spatial-predictions-cda.rds")
-i_ye_cda <- get_index(p_ye_cda)
-saveRDS(i_ye_cda, "data-generated/yelloweye-spatial-index-cda.rds")
+```{r eval = TRUE}
+if (!file.exists("data-generated/yelloweye-spatial-predictions-cda.rds")) {
+  p_ye_cda <- predict(m_ye, newdata = cda_grid, return_tmb_object = TRUE)
+  saveRDS(p_ye_cda, "data-generated/yelloweye-spatial-predictions-cda.rds")
+  i_ye_cda <- get_index(p_ye_cda)
+  saveRDS(i_ye_cda, "data-generated/yelloweye-spatial-index-cda.rds")
+}
 
-p_ye_noncda <- predict(m_ye, newdata = noncda_grid, return_tmb_object = TRUE)
-saveRDS(p_ye_noncda, "data-generated/yelloweye-spatial-predictions-S-outside-cda.rds")
-i_ye_noncda <- get_index(p_ye_noncda)
-saveRDS(i_ye_noncda, "data-generated/yelloweye-spatial-index-S-outside-cda.rds")
+if (!file.exists("data-generated/yelloweye-spatial-predictions-S-outside-cda.rds")) {
+  p_ye_noncda <- predict(m_ye, newdata = noncda_grid, return_tmb_object = TRUE)
+  saveRDS(p_ye_noncda, "data-generated/yelloweye-spatial-predictions-S-outside-cda.rds")
+  i_ye_noncda <- get_index(p_ye_noncda)
+  saveRDS(i_ye_noncda, "data-generated/yelloweye-spatial-index-S-outside-cda.rds")
+}
 ```
 
 # Calculate overall proportion of predicted catch inside vs outside CDA
