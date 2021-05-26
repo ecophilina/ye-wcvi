@@ -329,24 +329,25 @@ plot(mesh400kn)
 ```
 
 # Pacific Halibut model 
-```{r eval = F}
+```{r eval = TRUE}
 d_hal <- readRDS("data-generated/halibut-surv-36-model-data.rds")
-
-m_halibut <- sdmTMB(
-      formula = catch_count ~ 0 + as.factor(year) + 
-          depth_scaled + I(depth_scaled^2) +
-          offset,
-      data = d_hal,
-      spde = mesh400kn,
-      ar1_fields = T,
-      time = "year",
-      silent = FALSE,
-      anisotropy = TRUE,
-      #cores = cores,
-      reml = TRUE,
-      family = nbinom2(link = "log")
-    )
-saveRDS(m_halibut, file = "models/halibut-hook-count-offset-400kn-AR1.rds")
+f <- "models/halibut-hook-count-offset-400kn-AR1.rds"
+if (!file.exists(f)) {
+  m_halibut <- sdmTMB(
+    formula = catch_count ~ 0 + as.factor(year) + 
+      depth_scaled + I(depth_scaled^2) +
+      offset,
+    data = d_hal,
+    spde = mesh400kn,
+    ar1_fields = T,
+    time = "year",
+    silent = FALSE,
+    anisotropy = TRUE,
+    reml = TRUE,
+    family = nbinom2(link = "log")
+  )
+  saveRDS(m_halibut, file = f)
+}
 ```
 
 
@@ -362,23 +363,25 @@ get_diag(m_halibut)
 
 
 # Yelloweye Rockfish model 
-```{r eval = F}
+```{r eval = TRUE}
 d_ye <- readRDS("data-generated/yelloweye-surv-36-model-data.rds")
 
-m_ye <- sdmTMB(
-      formula = catch_count ~ 0 + as.factor(year) + 
-          depth_scaled + I(depth_scaled^2) +
-          offset,
-      data = d_ye,
-      spde = mesh400kn,
-      time = NULL,
-      silent = FALSE,
-      anisotropy = TRUE,
-      #cores = cores,
-      reml = TRUE,
-      family = nbinom2(link = "log")
-    )
-saveRDS(m_ye, file = "models/yelloweye-hook-count-offset-400kn-spatial-only.rds")
+f <- "models/yelloweye-hook-count-offset-400kn-spatial-only.rds"
+if (!file.exists(f)) {
+  m_ye <- sdmTMB(
+    formula = catch_count ~ 0 + as.factor(year) + 
+      depth_scaled + I(depth_scaled^2) +
+      offset,
+    data = d_ye,
+    spde = mesh400kn,
+    time = NULL,
+    silent = FALSE,
+    anisotropy = TRUE,
+    reml = TRUE,
+    family = nbinom2(link = "log")
+  )
+  saveRDS(m_ye, file = f)
+}
 ```
 
 
@@ -396,7 +399,7 @@ get_diag(m_ye)
 
 For CDA only
 ```{r eval = F}
-p_hal_cda <- predict(m_halibut, newdata = cda_grid, se_fit = F, re_form = NULL, return_tmb_object = T)
+p_hal_cda <- predict(m_halibut, newdata = cda_grid, return_tmb_object = TRUE)
 saveRDS(p_hal_cda, "data-generated/halibut-predictions-cda.rds")
 
 i_hal_cda <- get_index(p_hal_cda)
@@ -405,7 +408,7 @@ saveRDS(i_hal_cda, "data-generated/halibut-index-cda.rds")
 
 For outside CDA
 ```{r eval = F}
-p_hal_noncda <- predict(m_halibut, newdata = noncda_grid, se_fit = F, re_form = NULL, return_tmb_object = T)
+p_hal_noncda <- predict(m_halibut, newdata = noncda_grid, return_tmb_object = TRUE)
 saveRDS(p_hal_noncda, "data-generated/halibut-predictions-S-outside-cda.rds")
 
 i_hal_noncda <- get_index(p_hal_noncda)
@@ -438,12 +441,12 @@ ggplot(i_hal_noncda, aes(year, est/nrow(noncda_grid))) + geom_line() +
 
 # Yelloweye Rockfish catch predictions
 ```{r eval = F}
-p_ye_cda <- predict(m_ye, newdata = cda_grid, se_fit = F, re_form = NULL, return_tmb_object = T)
+p_ye_cda <- predict(m_ye, newdata = cda_grid, return_tmb_object = TRUE)
 saveRDS(p_ye_cda, "data-generated/yelloweye-spatial-predictions-cda.rds")
 i_ye_cda <- get_index(p_ye_cda)
 saveRDS(i_ye_cda, "data-generated/yelloweye-spatial-index-cda.rds")
 
-p_ye_noncda <- predict(m_ye, newdata = noncda_grid, se_fit = F, re_form = NULL, return_tmb_object = T)
+p_ye_noncda <- predict(m_ye, newdata = noncda_grid, return_tmb_object = TRUE)
 saveRDS(p_ye_noncda, "data-generated/yelloweye-spatial-predictions-S-outside-cda.rds")
 i_ye_noncda <- get_index(p_ye_noncda)
 saveRDS(i_ye_noncda, "data-generated/yelloweye-spatial-index-S-outside-cda.rds")
