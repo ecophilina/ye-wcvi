@@ -489,17 +489,12 @@ bound3Dnorth <- fortify(majorbound) %>%
 ```
 
 ```{r message = F, echo= F}
-p_hal_cda <- readRDS("data-generated/halibut-predictions-cda.rds")
-p_hal_noncda <- readRDS("data-generated/halibut-predictions-3CD-outside-cda.rds")
+p_hal <- readRDS("data-generated/halibut-predictions-all-S.rds")
 
 gh <- ggplot(data = focal_area) +
   geom_tile(
-    data = filter(p_hal_cda$data, year == 2020),
+    data = filter(p_hal$data, year == 2020),
     aes(longitude, latitude, fill = exp(est)), width = 0.06, height = 0.025
-  ) +
-  geom_tile(
-    data = filter(p_hal_noncda$data, year == 2020),
-    aes(longitude, latitude, fill = exp(est)), width = 0.05, height = 0.025
   ) +
   scale_fill_viridis_c(
     trans = ggsidekick::fourth_root_power_trans(),
@@ -553,17 +548,12 @@ gh
 
 
 ```{r message = F, echo= F}
-p_ye_cda <- readRDS("data-generated/yelloweye-spatial-predictions-cda.rds")
-p_ye_noncda <- readRDS("data-generated/yelloweye-spatial-predictions-3CD-outside-cda.rds")
+p_ye <- readRDS("data-generated/yelloweye-spatial-predictions-all-S.rds")
 
 gy <- ggplot(data = focal_area) +
   geom_tile(
-    data = p_ye_cda$data,
+    data = p_ye$data,
     aes(longitude, latitude, fill = exp(est)), width = 0.06, height = 0.025
-  ) +
-  geom_tile(
-    data = p_ye_noncda$data,
-    aes(longitude, latitude, fill = exp(est)), width = 0.05, height = 0.025
   ) +
   scale_fill_viridis_c(
     trans = ggsidekick::fourth_root_power_trans(),
