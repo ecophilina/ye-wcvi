@@ -283,6 +283,7 @@ if (!file.exists(f)) {
 ```
 
 For 3CD outside CDA
+
 ```{r eval = T}
 f <- "data-generated/halibut-index-3CD-outside-cda.rds"
 if (!file.exists(f)) {
@@ -295,6 +296,7 @@ saveRDS(i_hal_noncda, "data-generated/halibut-index-3CD-outside-cda.rds")
 ```
 
 For area 5A 
+
 ```{r eval = T}
 f <- "data-generated/halibut-index-5A.rds"
 if (!file.exists(f)) {
@@ -307,6 +309,7 @@ saveRDS(i_hal_5A, "data-generated/halibut-index-5A.rds")
 ```
 
 For entire southern outside yelloweye stock including CDA
+
 ```{r eval = T}
 f <- "data-generated/halibut-index-all-S.rds"
 if (!file.exists(f)) {
