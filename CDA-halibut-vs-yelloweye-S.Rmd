@@ -182,8 +182,8 @@ focal_area <- sf::st_transform(focal_area, crs = 4326)
 
 intersected <- sf::st_intersects(s_3CD_grid_sf, focal_area)
 
-cda_grid_sf <- s_grid_sf[which(lengths(intersected) > 0), ]
-noncda_grid_sf <- s_grid_sf[which(lengths(intersected) == 0), ]
+cda_grid_sf <- s_3CD_grid_sf[which(lengths(intersected) > 0), ]
+noncda_grid_sf <- s_3CD_grid_sf[which(lengths(intersected) == 0), ]
 
 cda_grid <- sfc_as_cols(cda_grid_sf, c("longitude", "latitude"))
 noncda_grid <- sfc_as_cols(noncda_grid_sf, c("longitude", "latitude"))
@@ -271,46 +271,58 @@ get_diag(m_ye)
 # Halibut catch predictions and index
 
 For CDA only
-```{r eval = F}
-p_hal_cda <- predict(m_halibut, newdata = cda_grid, return_tmb_object = TRUE)
-saveRDS(p_hal_cda, "data-generated/halibut-predictions-cda.rds")
 
-i_hal_cda <- get_index(p_hal_cda)
-saveRDS(i_hal_cda, "data-generated/halibut-index-cda.rds")
+```{r eval = TRUE}
+f <- "data-generated/halibut-predictions-cda.rds"
+if (!file.exists(f)) {
+  p_hal_cda <- predict(m_halibut, newdata = cda_grid, return_tmb_object = TRUE)
+  saveRDS(p_hal_cda, f)
+  i_hal_cda <- get_index(p_hal_cda)
+  saveRDS(i_hal_cda, "data-generated/halibut-index-cda.rds")
+}
 ```
 
 For 3CD outside CDA
-```{r eval = F}
+```{r eval = T}
+f <- "data-generated/halibut-index-3CD-outside-cda.rds"
+if (!file.exists(f)) {
 p_hal_noncda <- predict(m_halibut, newdata = noncda_grid, return_tmb_object = TRUE)
 saveRDS(p_hal_noncda, "data-generated/halibut-predictions-3CD-outside-cda.rds")
 
 i_hal_noncda <- get_index(p_hal_noncda)
 saveRDS(i_hal_noncda, "data-generated/halibut-index-3CD-outside-cda.rds")
+}
 ```
 
 For area 5A 
-```{r eval = F}
+```{r eval = T}
+f <- "data-generated/halibut-index-5A.rds"
+if (!file.exists(f)) {
 p_hal_5A <- predict(m_halibut, newdata = s_5A_grid, return_tmb_object = TRUE)
 saveRDS(p_hal_noncda, "data-generated/halibut-predictions-5A.rds")
 
 i_hal_5A <- get_index(p_hal_5A)
 saveRDS(i_hal_5A, "data-generated/halibut-index-5A.rds")
+}
 ```
 
 For entire southern outside yelloweye stock including CDA
-```{r eval = F}
+```{r eval = T}
+f <- "data-generated/halibut-index-all-S.rds"
+if (!file.exists(f)) {
 p_hal_S <- predict(m_halibut, newdata = full_s_grid, return_tmb_object = TRUE)
 saveRDS(p_hal_S, "data-generated/halibut-predictions-all-S.rds")
 
 i_hal_S <- get_index(p_hal_S)
 saveRDS(i_hal_S, "data-generated/halibut-index-all-S.rds")
+}
 ```
-
 
 
 ## Plot index of total halibut catch through time
 
 Total catch index for entire court defined area is in red, remainder of southern stock area is in black.
+
 ```{r message = F, echo= F}
 i_hal_cda <- readRDS("data-generated/halibut-index-cda.rds")
 i_hal_noncda <- readRDS("data-generated/halibut-index-3CD-outside-cda.rds")
@@ -327,6 +339,7 @@ ggplot(i_hal_noncda, aes(year, est)) +
 ## Plot estimated halibut catch per 100 hooks through time
 
 Average predicted catch within the entire court defined area is in red, remainder of southern stock area is in black.
+
 ```{r message = F, echo= F}
 ggplot(i_hal_noncda, aes(year, est / nrow(noncda_grid))) +
   geom_line() +
@@ -339,16 +352,20 @@ ggplot(i_hal_noncda, aes(year, est / nrow(noncda_grid))) +
 
 # Yelloweye Rockfish catch predictions
 
-```{r eval = F}
-p_ye_cda <- predict(m_ye, newdata = cda_grid, return_tmb_object = TRUE)
-saveRDS(p_ye_cda, "data-generated/yelloweye-spatial-predictions-cda.rds")
-i_ye_cda <- get_index(p_ye_cda)
-saveRDS(i_ye_cda, "data-generated/yelloweye-spatial-index-cda.rds")
+```{r eval = TRUE}
+if (!file.exists("data-generated/yelloweye-spatial-predictions-cda.rds")) {
+  p_ye_cda <- predict(m_ye, newdata = cda_grid, return_tmb_object = TRUE)
+  saveRDS(p_ye_cda, "data-generated/yelloweye-spatial-predictions-cda.rds")
+  i_ye_cda <- get_index(p_ye_cda)
+  saveRDS(i_ye_cda, "data-generated/yelloweye-spatial-index-cda.rds")
+}
 
+if (!file.exists("data-generated/yelloweye-spatial-predictions-S-outside-cda.rds")) {
 p_ye_noncda <- predict(m_ye, newdata = noncda_grid, return_tmb_object = TRUE)
 saveRDS(p_ye_noncda, "data-generated/yelloweye-spatial-predictions-3CD-outside-cda.rds")
 i_ye_noncda <- get_index(p_ye_noncda)
 saveRDS(i_ye_noncda, "data-generated/yelloweye-spatial-index-3CD-outside-cda.rds")
+}
 ```
 
 # Calculate overall proportion of predicted catch inside vs outside CDA
