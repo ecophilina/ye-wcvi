@@ -178,8 +178,8 @@ focal_area <- sf::st_transform(focal_area, crs = 4326)
 
 intersected <- sf::st_intersects(s_3CD_grid_sf, focal_area)
 
-cda_grid_sf <- s_grid_sf[which(lengths(intersected) > 0), ]
-noncda_grid_sf <- s_grid_sf[which(lengths(intersected) == 0), ]
+cda_grid_sf <- s_3CD_grid_sf[which(lengths(intersected) > 0), ]
+noncda_grid_sf <- s_3CD_grid_sf[which(lengths(intersected) == 0), ]
 
 cda_grid <- sfc_as_cols(cda_grid_sf, c("longitude", "latitude"))
 noncda_grid <- sfc_as_cols(noncda_grid_sf, c("longitude", "latitude"))
