@@ -355,21 +355,54 @@ ggplot(i_hal_noncda, aes(year, est / nrow(noncda_grid))) +
 
 # Yelloweye Rockfish catch predictions
 
+For CDA only
+
 ```{r eval = TRUE}
 if (!file.exists("data-generated/yelloweye-spatial-predictions-cda.rds")) {
   p_ye_cda <- predict(m_ye, newdata = cda_grid, return_tmb_object = TRUE)
   saveRDS(p_ye_cda, "data-generated/yelloweye-spatial-predictions-cda.rds")
+  
   i_ye_cda <- get_index(p_ye_cda)
   saveRDS(i_ye_cda, "data-generated/yelloweye-spatial-index-cda.rds")
 }
+```
 
-if (!file.exists("data-generated/yelloweye-spatial-predictions-S-outside-cda.rds")) {
-p_ye_noncda <- predict(m_ye, newdata = noncda_grid, return_tmb_object = TRUE)
-saveRDS(p_ye_noncda, "data-generated/yelloweye-spatial-predictions-3CD-outside-cda.rds")
-i_ye_noncda <- get_index(p_ye_noncda)
-saveRDS(i_ye_noncda, "data-generated/yelloweye-spatial-index-3CD-outside-cda.rds")
+For 3CD outside CDA
+
+```{r eval = T}
+if (!file.exists("data-generated/yelloweye-spatial-index-3CD-outside-cda.rds")) {
+  p_ye_noncda <- predict(m_ye, newdata = noncda_grid, return_tmb_object = TRUE)
+  saveRDS(p_ye_noncda, "data-generated/yelloweye-spatial-predictions-3CD-outside-cda.rds")
+
+  i_ye_noncda <- get_index(p_ye_noncda)
+  saveRDS(i_ye_noncda, "data-generated/yelloweye-spatial-index-3CD-outside-cda.rds")
 }
 ```
+
+For area 5A 
+
+```{r eval = T}
+if (!file.exists("data-generated/yelloweye-spatial-index-5A.rds")) {
+  p_ye_5A <- predict(m_ye, newdata = s_5A_grid, return_tmb_object = TRUE)
+  saveRDS(p_ye_noncda, "data-generated/yelloweye-spatial-predictions-5A.rds")
+
+  i_ye_5A <- get_index(p_ye_5A)
+  saveRDS(i_ye_5A, "data-generated/yelloweye-spatial-index-5A.rds")
+}
+```
+
+For entire southern outside yelloweye stock including CDA
+
+```{r eval = T}
+if (!file.exists("data-generated/yelloweye-spatial-index-all-S.rds")) {
+  p_ye_S <- predict(m_ye, newdata = full_s_grid, return_tmb_object = TRUE)
+  saveRDS(p_ye_S, "data-generated/yelloweye-spatial-predictions-all-S.rds")
+
+  i_ye_S <- get_index(p_ye_S)
+  saveRDS(i_ye_S, "data-generated/yelloweye-spatial-index-all-S.rds")
+}
+```
+
 
 # Calculate overall proportion of predicted catch inside vs outside CDA
 
