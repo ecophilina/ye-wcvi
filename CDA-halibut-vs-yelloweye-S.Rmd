@@ -19,6 +19,7 @@ dir.create("models", showWarnings = FALSE)
 ```
 
 # Retrieve HBLL data (on network)
+
 ```{r eval=F}
 halsetdata <- gfdata::get_survey_sets("Pacific Halibut", ssid = c(36))
 saveRDS(halsetdata, "data/halibut-surv-sets.rds")
@@ -44,145 +45,7 @@ Load custom functions including one that takes the set data and hook data retrie
 
 ```{r echo=F}
 # load misc custom functions
-convert2utm <- function(df, coords = c("X", "Y"), out_crs = 3156) {
-  x <- sf::st_as_sf(df,
-    coords = coords, crs = 4326
-  ) %>%
-    sf::st_transform(crs = out_crs) %>%
-    sf::st_coordinates() %>%
-    as.data.frame()
-  x$X <- x$X / 100000
-  x$Y <- x$Y / 100000
-  dplyr::bind_cols(x,
-    df[, which(!names(df) %in% coords), drop = FALSE])
-}
-
-# to add sf geometry back onto dataframe
-sfc_as_cols <- function(x, names = c("x","y")) {
-  stopifnot(inherits(x,"sf") && inherits(sf::st_geometry(x),"sfc_POINT"))
-  ret <- sf::st_coordinates(x)
-  ret <- tibble::as_tibble(ret)
-  stopifnot(length(names) == ncol(ret))
-  x <- x[ , !names(x) %in% names]
-  ret <- setNames(ret,names)
-  dplyr::bind_cols(x,ret)
-}
-
-expand_prediction_grid <- function(grid, years) {
-  nd <- do.call("rbind",
-    replicate(length(years), grid, simplify = FALSE))
-  nd[["year"]] <- rep(years, each = nrow(grid))
-  nd
-}
-
-# leaves coast lines defined in lat lon unlike gfplot function
-load_coastll <- function(xlim_ll, ylim_ll, utm_zone, buffer = 0) {
-  data("nepacLLhigh", package = "PBSmapping", envir = environment())
-  np <- PBSmapping::clipPolys(nepacLLhigh,
-    xlim = xlim_ll + c(-buffer, buffer),
-    ylim = ylim_ll + c(-buffer, buffer)
-  )
-}
-
-load_boundaries <- function(utm_zone) {
-  data("major", package = "PBSdata", envir = environment())
-  gfplot:::ll2utm(major, utm_zone = utm_zone)
-}
-
-# TODO: we probably want to purge many of these...
-get_diag <- function(m, response = "catch_count", variable = "depth_scaled", colour_var = "depth_m", start_year = 2007) {
-  predictions <- predict(m)
-  predictions$residuals <- residuals(m)
-  
-  predictions <- predictions %>% filter (year >= start_year)
-  predictions$est_exp <- exp(predictions$est)
-
-  print("R^2:")
-  r2 <- cor(predictions$est, predictions[[response]])^2
-  print(r2)
-
-  print("")
-  print("AIC:")
-  print(AIC(m))
-
-  print("")
-  print("MSE:")
-  print(mean(predictions$residuals^2))
-  
-  plot_map <- function(dat, column = "est") {
-    ggplot(dat, aes_string("X", "Y", colour = column)) +
-      geom_point(alpha = 0.5) +
-      coord_fixed()+
-      gfplot::theme_pbs() 
-  }
-
-  g <- plot_map(predictions, "est") +
-    scale_colour_viridis_c() +
-    ggtitle("Prediction (fixed effects + all random effects)")
-  print(g)
-
-  # g <- plot_map(predictions, "est_non_rf") +
-  #   ggtitle("Prediction (fixed effects only)") +
-  #   scale_colour_viridis_c()
-  # print(g)
-# 
-#   g <- plot_map(predictions, "est_rf") +
-#     ggtitle("All random effects only") +
-#     scale_colour_gradient2()
-#   print(g)
-
-  g <- plot_map(predictions, "omega_s") +
-    ggtitle("Spatial random effects only") +
-    scale_colour_gradient2()
-  print(g)
-
-  g <- plot_map(predictions, "epsilon_st") +
-    ggtitle("Spatiotemporal random effects only") +
-    facet_wrap(~year) +
-    scale_colour_gradient2()
-  print(g)
-
-  g <- plot_map(predictions, "residuals") +
-    ggtitle("Residuals") +
-    facet_wrap(~year) +
-    scale_colour_gradient2()
-  print(g)
-  
-  g <- ggplot(predictions, aes_string("est_exp", response)) +
-    geom_point(alpha = 0.2) +
-    facet_wrap(~year) +
-    coord_fixed() +
-    geom_abline()+
-    gfplot::theme_pbs() 
-  print(g)
-
-  g <- ggplot(predictions, aes(est, residuals)) +
-    geom_point(alpha = 0.2) +
-    geom_smooth()+
-    gfplot::theme_pbs() 
-  print(g)
-  
-  g <- ggplot(predictions, aes_string(variable, "residuals", colour = colour_var)) +
-    geom_point(alpha = 0.4, size = 1.2) +
-    geom_smooth(colour="grey", size = 1.2) +
-    scale_colour_viridis_c(option = "B", direction = -1, begin = 0, end = 0.7, 
-      limits= c(min(predictions[colour_var]), max(predictions[colour_var]))) + #, trans= sqrt
-    # facet_wrap(~year, scales = "free_x")+
-    gfplot::theme_pbs() + theme(
-      axis.text.y = element_text(size = 14),
-      axis.text.x = element_blank(), axis.ticks.x = element_blank())
-  print(g)
-  
-  g <- ggplot(predictions, aes_string(variable, "residuals", colour = colour_var)) +
-    geom_point(alpha = 0.4, size = 0.7) +
-    geom_smooth(colour="grey", size = 0.7) +
-    scale_colour_viridis_c(option = "B", direction = -1, begin = 0, end = 0.7, 
-      limits= c(min(predictions[colour_var]), max(predictions[colour_var]))) + #, trans= sqrt
-    facet_wrap(~year, scales = "free_x")+
-    gfplot::theme_pbs() + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
-  print(g)
-
-}
+source("functions.R")
 ```
 
 ```{r message = F}
@@ -261,6 +124,7 @@ saveRDS(d_ye, "data-generated/yelloweye-surv-36-model-data.rds")
 ```
 
 # Make prediction grid
+
 ```{r message= F}
 # shouldn't matter which species this is based on since the offsets are currently the same for both
 d_utm <- readRDS("data-generated/yelloweye-surv-36-model-data.rds")
@@ -323,6 +187,7 @@ st_geometry(noncda_grid) <- NULL
 ```
 
 # Make relatively finescale mesh
+
 ```{r }
 # again the same grid should work for both species because the sets are identical in both
 mesh400kn <- make_mesh(d_utm, c("X", "Y"), n_knots = 400)
@@ -330,24 +195,26 @@ plot(mesh400kn)
 ```
 
 # Pacific Halibut model 
-```{r eval = F}
-d_hal <- readRDS("data-generated/halibut-surv-36-model-data.rds")
 
-m_halibut <- sdmTMB(
-      formula = catch_count ~ 0 + as.factor(year) + 
-          depth_scaled + I(depth_scaled^2) +
-          offset,
-      data = d_hal,
-      spde = mesh400kn,
-      ar1_fields = T,
-      time = "year",
-      silent = FALSE,
-      anisotropy = TRUE,
-      #cores = cores,
-      reml = TRUE,
-      family = nbinom2(link = "log")
-    )
-saveRDS(m_halibut, file = "models/halibut-hook-count-offset-400kn-AR1.rds")
+```{r eval = TRUE}
+d_hal <- readRDS("data-generated/halibut-surv-36-model-data.rds")
+f <- "models/halibut-hook-count-offset-400kn-AR1.rds"
+if (!file.exists(f)) {
+  m_halibut <- sdmTMB(
+    formula = catch_count ~ 0 + as.factor(year) + 
+      depth_scaled + I(depth_scaled^2) +
+      offset,
+    data = d_hal,
+    spde = mesh400kn,
+    ar1_fields = T,
+    time = "year",
+    silent = FALSE,
+    anisotropy = TRUE,
+    reml = TRUE,
+    family = nbinom2(link = "log")
+  )
+  saveRDS(m_halibut, file = f)
+}
 ```
 
 
@@ -362,24 +229,27 @@ get_diag(m_halibut)
 ```
 
 
-# Yelloweye Rockfish model 
-```{r eval = F}
+# Yelloweye Rockfish model
+
+```{r eval = TRUE}
 d_ye <- readRDS("data-generated/yelloweye-surv-36-model-data.rds")
 
-m_ye <- sdmTMB(
-      formula = catch_count ~ 0 + as.factor(year) + 
-          depth_scaled + I(depth_scaled^2) +
-          offset,
-      data = d_ye,
-      spde = mesh400kn,
-      time = NULL,
-      silent = FALSE,
-      anisotropy = TRUE,
-      #cores = cores,
-      reml = TRUE,
-      family = nbinom2(link = "log")
-    )
-saveRDS(m_ye, file = "models/yelloweye-hook-count-offset-400kn-spatial-only.rds")
+f <- "models/yelloweye-hook-count-offset-400kn-spatial-only.rds"
+if (!file.exists(f)) {
+  m_ye <- sdmTMB(
+    formula = catch_count ~ 0 + as.factor(year) + 
+      depth_scaled + I(depth_scaled^2) +
+      offset,
+    data = d_ye,
+    spde = mesh400kn,
+    time = NULL,
+    silent = FALSE,
+    anisotropy = TRUE,
+    reml = TRUE,
+    family = nbinom2(link = "log")
+  )
+  saveRDS(m_ye, file = f)
+}
 ```
 
 
@@ -397,7 +267,7 @@ get_diag(m_ye)
 
 For CDA only
 ```{r eval = F}
-p_hal_cda <- predict(m_halibut, newdata = cda_grid, se_fit = F, re_form = NULL, return_tmb_object = T)
+p_hal_cda <- predict(m_halibut, newdata = cda_grid, return_tmb_object = TRUE)
 saveRDS(p_hal_cda, "data-generated/halibut-predictions-cda.rds")
 
 i_hal_cda <- get_index(p_hal_cda)
@@ -406,7 +276,7 @@ saveRDS(i_hal_cda, "data-generated/halibut-index-cda.rds")
 
 For outside CDA
 ```{r eval = F}
-p_hal_noncda <- predict(m_halibut, newdata = noncda_grid, se_fit = F, re_form = NULL, return_tmb_object = T)
+p_hal_noncda <- predict(m_halibut, newdata = noncda_grid, return_tmb_object = TRUE)
 saveRDS(p_hal_noncda, "data-generated/halibut-predictions-S-outside-cda.rds")
 
 i_hal_noncda <- get_index(p_hal_noncda)
@@ -414,6 +284,7 @@ saveRDS(i_hal_noncda, "data-generated/halibut-index-S-outside-cda.rds")
 ```
 
 ## Plot index of total halibut catch through time
+
 Total catch index for entire court defined area is in red, remainder of southern stock area is in black.
 ```{r message = F, echo= F}
 i_hal_cda <- readRDS("data-generated/halibut-index-cda.rds")
@@ -438,19 +309,21 @@ ggplot(i_hal_noncda, aes(year, est/nrow(noncda_grid))) + geom_line() +
 ```
 
 # Yelloweye Rockfish catch predictions
+
 ```{r eval = F}
-p_ye_cda <- predict(m_ye, newdata = cda_grid, se_fit = F, re_form = NULL, return_tmb_object = T)
+p_ye_cda <- predict(m_ye, newdata = cda_grid, return_tmb_object = TRUE)
 saveRDS(p_ye_cda, "data-generated/yelloweye-spatial-predictions-cda.rds")
 i_ye_cda <- get_index(p_ye_cda)
 saveRDS(i_ye_cda, "data-generated/yelloweye-spatial-index-cda.rds")
 
-p_ye_noncda <- predict(m_ye, newdata = noncda_grid, se_fit = F, re_form = NULL, return_tmb_object = T)
+p_ye_noncda <- predict(m_ye, newdata = noncda_grid, return_tmb_object = TRUE)
 saveRDS(p_ye_noncda, "data-generated/yelloweye-spatial-predictions-S-outside-cda.rds")
 i_ye_noncda <- get_index(p_ye_noncda)
 saveRDS(i_ye_noncda, "data-generated/yelloweye-spatial-index-S-outside-cda.rds")
 ```
 
 # Calculate overall proportion of predicted catch inside vs outside CDA
+
 ```{r echo= F}
 # halibut index was loaded for plots above, so just load yelloweye index
 i_ye_cda <- readRDS("data-generated/yelloweye-spatial-index-cda.rds")
@@ -461,6 +334,7 @@ round(nrow(cda_grid)/(nrow(cda_grid)+ nrow(noncda_grid)),2)
 ```
 
 Pacific Halibut
+
 ```{r echo=F}
 # print(" PACIFIC HALIBUT")
 i_hal_cda2020 <- filter(i_hal_cda, year == 2020)
@@ -477,6 +351,7 @@ print("Average estimated catch per 100 hooks outside CDA:")
 ```
 
 Yelloweye Rockfish
+
 ```{r echo=F}
 # print("YELLOWEYE ROCKFISH")
 print("What proportion of estimated total catch is inside CDA?")
