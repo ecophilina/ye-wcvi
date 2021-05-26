@@ -24,12 +24,12 @@ dir.create("models", showWarnings = FALSE)
 halsetdata <- gfdata::get_survey_sets("Pacific Halibut", ssid = c(36))
 saveRDS(halsetdata, "data/halibut-surv-sets.rds")
 halhookdata <- gfdata::get_ll_hook_data("Pacific Halibut", ssid = c(36))
-saveRDS(halhookdata,"data/halibut-hook-dat36.rds")
+saveRDS(halhookdata, "data/halibut-hook-dat36.rds")
 
 yesetdata <- gfdata::get_survey_sets("Yelloweye Rockfish", ssid = c(36))
 saveRDS(yesetdata, "data/yelloweye-surv-sets.rds")
 yehookdata <- gfdata::get_ll_hook_data("Yelloweye Rockfish", ssid = c(36))
-saveRDS(yehookdata,"data/yelloweye-hook-dat36.rds")
+saveRDS(yehookdata, "data/yelloweye-hook-dat36.rds")
 
 blocks <- gfdata::get_survey_blocks(ssid = 36)
 saveRDS(blocks, "data/survey-blocks-36.rds")
@@ -49,74 +49,75 @@ source("functions.R")
 ```
 
 ```{r message = F}
-model_data_prep <- function(setdata, hookdata){
-# add in survey blocks 
-block_ids <- readRDS("data/survey-blocks-36.rds") 
-d <- dplyr::left_join(setdata, block_ids)
-d$block_designation <- as.numeric(d$block_designation)
+model_data_prep <- function(setdata, hookdata) {
+  # add in survey blocks
+  block_ids <- readRDS("data/survey-blocks-36.rds")
+  d <- dplyr::left_join(setdata, block_ids)
+  d$block_designation <- as.numeric(d$block_designation)
 
-# add variables that adjust for hook competiton (not using most of this currently) 
-# this code should deal with the issue of 0 baited hooks being observed.
-adjust <- hookdata %>%
-  group_by(year, fishing_event_id) %>%
-  mutate(total_hooks = count_target_species + count_non_target_species +
-    count_bait_only + count_empty_hooks - count_bent_broken) %>%
-  mutate(count_bait_only = replace(count_bait_only, which(count_bait_only == 0), 1)) %>%
-  mutate(prop_bait_hooks = count_bait_only / total_hooks) %>%
-  mutate(hook_adjust_factor = -log(prop_bait_hooks) / (1 - prop_bait_hooks)) %>%
-  mutate(expected_catch = round(count_target_species * hook_adjust_factor))
+  # add variables that adjust for hook competiton (not using most of this currently)
+  # this code should deal with the issue of 0 baited hooks being observed.
+  adjust <- hookdata %>%
+    group_by(year, fishing_event_id) %>%
+    mutate(total_hooks = count_target_species + count_non_target_species +
+      count_bait_only + count_empty_hooks - count_bent_broken) %>%
+    mutate(count_bait_only = replace(count_bait_only, which(count_bait_only == 0), 1)) %>%
+    mutate(prop_bait_hooks = count_bait_only / total_hooks) %>%
+    mutate(hook_adjust_factor = -log(prop_bait_hooks) / (1 - prop_bait_hooks)) %>%
+    mutate(expected_catch = round(count_target_species * hook_adjust_factor))
 
-# find out which events are in hook data but not set data:
-setdiff(hookdata$fishing_event_id, setdata$fishing_event_id)
+  # find out which events are in hook data but not set data:
+  setdiff(hookdata$fishing_event_id, setdata$fishing_event_id)
 
-hook_adjusted_data <- left_join(setdata, adjust, by = c("fishing_event_id", "year"))
+  hook_adjusted_data <- left_join(setdata, adjust, by = c("fishing_event_id", "year"))
 
-hook <- hook_adjusted_data %>%
-select(
-    survey_series_id, year, fishing_event_id, total_hooks, prop_bait_hooks,
-    hook_adjust_factor, expected_catch
-  )
+  hook <- hook_adjusted_data %>%
+    select(
+      survey_series_id, year, fishing_event_id, total_hooks, prop_bait_hooks,
+      hook_adjust_factor, expected_catch
+    )
 
-d <- left_join(d, hook, by = c("survey_series_id", "year", "fishing_event_id"))
+  d <- left_join(d, hook, by = c("survey_series_id", "year", "fishing_event_id"))
 
-d <- d %>%
-  select(
-    survey_abbrev, year, longitude, latitude, catch_count, hook_count,
-    grouping_code, depth_m, block_designation, hook_adjust_factor, prop_bait_hooks
-  ) %>% mutate(lon = longitude, lat = latitude) %>%
-  rename(survey = survey_abbrev, block = block_designation)
+  d <- d %>%
+    select(
+      survey_abbrev, year, longitude, latitude, catch_count, hook_count,
+      grouping_code, depth_m, block_designation, hook_adjust_factor, prop_bait_hooks
+    ) %>%
+    mutate(lon = longitude, lat = latitude) %>%
+    rename(survey = survey_abbrev, block = block_designation)
 
-# convert to utms for sdmTMB model
-d_utm <- convert2utm(d, coords = c("lon", "lat"))
+  # convert to utms for sdmTMB model
+  d_utm <- convert2utm(d, coords = c("lon", "lat"))
 
-# TODO: Sean, is this next line still appropriate for outside HBLL?
-d_utm <- filter(d_utm, grouping_code > 270 & grouping_code < 330) 
-d_utm$depth_log <- log(d_utm$depth_m)
-d_utm$depth_centred <- d_utm$depth_log - mean(d_utm$depth_log)
-d_utm$depth_mean <- mean(d_utm$depth_log)
-d_utm$depth_sd <- sd(d_utm$depth_centred)
-d_utm$depth_scaled <- d_utm$depth_centred / sd(d_utm$depth_centred)
-d_utm$Y_cent <- d_utm$Y - mean(d_utm$Y)
-d_utm$X_cent <- d_utm$X - mean(d_utm$X)
+  # TODO: Sean, is this next line still appropriate for outside HBLL?
+  d_utm <- filter(d_utm, grouping_code > 270 & grouping_code < 330)
+  d_utm$depth_log <- log(d_utm$depth_m)
+  d_utm$depth_centred <- d_utm$depth_log - mean(d_utm$depth_log)
+  d_utm$depth_mean <- mean(d_utm$depth_log)
+  d_utm$depth_sd <- sd(d_utm$depth_centred)
+  d_utm$depth_scaled <- d_utm$depth_centred / sd(d_utm$depth_centred)
+  d_utm$Y_cent <- d_utm$Y - mean(d_utm$Y)
+  d_utm$X_cent <- d_utm$X - mean(d_utm$X)
 
-# add possible offsets
-d_utm$offset <- log(d_utm$hook_count)
-d_utm$area_swept <- d_utm$hook_count * 0.0024384 * 0.009144 * 1000
-d_utm$offset_area_swept <- log(d_utm$area_swept)
-d_utm$offset_area_hook <- log(d_utm$area_swept / d_utm$hook_adjust_factor)
+  # add possible offsets
+  d_utm$offset <- log(d_utm$hook_count)
+  d_utm$area_swept <- d_utm$hook_count * 0.0024384 * 0.009144 * 1000
+  d_utm$offset_area_swept <- log(d_utm$area_swept)
+  d_utm$offset_area_hook <- log(d_utm$area_swept / d_utm$hook_adjust_factor)
 
-d_utm
+  d_utm
 }
 
 # prep halibut
 halsetdata <- readRDS("data/halibut-surv-sets.rds") %>% filter(survey_abbrev == "HBLL OUT S")
 halhookdata <- readRDS("data/halibut-hook-dat36.rds")
-  
+
 d_hal <- model_data_prep(halsetdata, halhookdata)
 saveRDS(d_hal, "data-generated/halibut-surv-36-model-data.rds")
 
 # prep yelloweye
-yesetdata <- readRDS("data/yelloweye-rockfish-surv-sets.rds") %>% filter(survey_abbrev=="HBLL OUT S")
+yesetdata <- readRDS("data/yelloweye-rockfish-surv-sets.rds") %>% filter(survey_abbrev == "HBLL OUT S")
 yehookdata <- readRDS("data/yelloweye-rockfish-hook-dat36.rds")
 
 d_ye <- model_data_prep(yesetdata, yehookdata)
@@ -133,13 +134,13 @@ load("data/hbll_s_grid.rda")
 
 s_grid_utm <- convert2utm(hbll_s_grid$grid, coords = c("X", "Y"))
 
-s_grid_utm$longitude <- hbll_s_grid$grid$X 
-s_grid_utm$latitude <- hbll_s_grid$grid$Y 
+s_grid_utm$longitude <- hbll_s_grid$grid$X
+s_grid_utm$latitude <- hbll_s_grid$grid$Y
 
 s_grid_utm$offset_area_hook <- mean(d_utm$offset_area_hook)
 s_grid_utm$offset_area_swept <- mean(d_utm$offset_area_swept)
 s_grid_utm$hook_adjust_factor <- mean(d_utm$hook_adjust_factor)
-s_grid_utm$hook_count <- 100 #mean(d_utm$hook_count)
+s_grid_utm$hook_count <- 100 # mean(d_utm$hook_count)
 s_grid_utm$offset <- log(100)
 
 years <- sort(unique(d_utm$year))
@@ -153,26 +154,26 @@ s_grid_utm <- mutate(s_grid_utm, X_cent = X - mean(d_utm$X))
 
 Trim prediction grid to cover full southern stock area
 ```{r}
-full_s_grid_utm  <- filter(s_grid_utm, latitude < 51.24999) 
+full_s_grid_utm <- filter(s_grid_utm, latitude < 51.24999)
 full_s_grid_sf <- st_as_sf(full_s_grid_utm, coords = c("longitude", "latitude"))
 st_crs(full_s_grid_sf) <- 4326 # set the coordinate reference system
 ```
 
 Trim prediction grid to cover full southern stock area
 ```{r}
-s_5A_grid_utm  <- filter(s_grid_utm, latitude < 51.24999 & latitude > 50.5) 
+s_5A_grid_utm <- filter(s_grid_utm, latitude < 51.24999 & latitude > 50.5)
 s_5A_grid_sf <- st_as_sf(s_5A_grid_utm, coords = c("longitude", "latitude"))
 st_crs(s_5A_grid_sf) <- 4326 # set the coordinate reference system
 ```
 
 Split area 3CD into areas inside and outside court defined area (CDA)
 ```{r message= F}
-s_3CD_grid_utm  <- filter(s_grid_utm, latitude < 50.5)
+s_3CD_grid_utm <- filter(s_grid_utm, latitude < 50.5)
 s_3CD_grid_sf <- st_as_sf(s_3CD_grid_utm, coords = c("longitude", "latitude"))
 st_crs(s_3CD_grid_sf) <- 4326 # set the coordinate reference system
 # s_grid_sf
 
-focal_area <-sf::st_read(dsn="shape-files/taaqwiihak_areaVer2.shp",layer="taaqwiihak_areaVer2")
+focal_area <- sf::st_read(dsn = "shape-files/taaqwiihak_areaVer2.shp", layer = "taaqwiihak_areaVer2")
 focal_area <- sf::st_transform(focal_area, crs = 4326)
 
 intersected <- sf::st_intersects(s_3CD_grid_sf, focal_area)
@@ -180,8 +181,8 @@ intersected <- sf::st_intersects(s_3CD_grid_sf, focal_area)
 cda_grid_sf <- s_grid_sf[which(lengths(intersected) > 0), ]
 noncda_grid_sf <- s_grid_sf[which(lengths(intersected) == 0), ]
 
-cda_grid <- sfc_as_cols(cda_grid_sf, c("longitude", "latitude")) 
-noncda_grid <- sfc_as_cols(noncda_grid_sf, c("longitude", "latitude")) 
+cda_grid <- sfc_as_cols(cda_grid_sf, c("longitude", "latitude"))
+noncda_grid <- sfc_as_cols(noncda_grid_sf, c("longitude", "latitude"))
 st_geometry(cda_grid) <- NULL
 st_geometry(noncda_grid) <- NULL
 ```
@@ -201,7 +202,7 @@ d_hal <- readRDS("data-generated/halibut-surv-36-model-data.rds")
 f <- "models/halibut-hook-count-offset-400kn-AR1.rds"
 if (!file.exists(f)) {
   m_halibut <- sdmTMB(
-    formula = catch_count ~ 0 + as.factor(year) + 
+    formula = catch_count ~ 0 + as.factor(year) +
       depth_scaled + I(depth_scaled^2) +
       offset,
     data = d_hal,
@@ -219,7 +220,7 @@ if (!file.exists(f)) {
 
 
 ```{r}
-m_halibut  <-  readRDS(file = "models/halibut-hook-count-offset-400kn-AR1.rds")
+m_halibut <- readRDS(file = "models/halibut-hook-count-offset-400kn-AR1.rds")
 m_halibut
 # tidy(m_halibut, "ran_pars", conf.int = TRUE)
 ```
@@ -237,7 +238,7 @@ d_ye <- readRDS("data-generated/yelloweye-surv-36-model-data.rds")
 f <- "models/yelloweye-hook-count-offset-400kn-spatial-only.rds"
 if (!file.exists(f)) {
   m_ye <- sdmTMB(
-    formula = catch_count ~ 0 + as.factor(year) + 
+    formula = catch_count ~ 0 + as.factor(year) +
       depth_scaled + I(depth_scaled^2) +
       offset,
     data = d_ye,
@@ -254,7 +255,7 @@ if (!file.exists(f)) {
 
 
 ```{r}
-m_ye  <-  readRDS(file = "models/yelloweye-hook-count-offset-400kn-spatial-only.rds")
+m_ye <- readRDS(file = "models/yelloweye-hook-count-offset-400kn-spatial-only.rds")
 m_ye
 # tidy(m_ye, "ran_pars", conf.int = TRUE)
 ```
@@ -290,22 +291,26 @@ Total catch index for entire court defined area is in red, remainder of southern
 i_hal_cda <- readRDS("data-generated/halibut-index-cda.rds")
 i_hal_noncda <- readRDS("data-generated/halibut-index-S-outside-cda.rds")
 
-ggplot(i_hal_noncda, aes(year, est)) + geom_line() +
+ggplot(i_hal_noncda, aes(year, est)) +
+  geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
   geom_line(data = i_hal_cda, aes(year, est), colour = "red") +
   geom_ribbon(data = i_hal_cda, aes(year, ymin = lwr, ymax = upr), alpha = 0.4, fill = "red") +
-  xlab('Year') + ylab('Estimated total catch \nif 100 hooks set in all grid cells')
+  xlab("Year") +
+  ylab("Estimated total catch \nif 100 hooks set in all grid cells")
 ```
 
 ## Plot estimated halibut catch per 100 hooks through time
 
 Average predicted catch within the entire court defined area is in red, remainder of southern stock area is in black.
 ```{r message = F, echo= F}
-ggplot(i_hal_noncda, aes(year, est/nrow(noncda_grid))) + geom_line() +
-  geom_ribbon(aes(ymin = lwr/nrow(noncda_grid), ymax = upr/nrow(noncda_grid)), alpha = 0.4) +
-  geom_line(data = i_hal_cda, aes(year, est/nrow(cda_grid)), colour = "red") +
-  geom_ribbon(data = i_hal_cda, aes(year, ymin = lwr/nrow(cda_grid), ymax = upr/nrow(cda_grid)), alpha = 0.4, fill = "red") +
-  xlab('Year') + ylab('Average estimated catch per 100 hooks')
+ggplot(i_hal_noncda, aes(year, est / nrow(noncda_grid))) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr / nrow(noncda_grid), ymax = upr / nrow(noncda_grid)), alpha = 0.4) +
+  geom_line(data = i_hal_cda, aes(year, est / nrow(cda_grid)), colour = "red") +
+  geom_ribbon(data = i_hal_cda, aes(year, ymin = lwr / nrow(cda_grid), ymax = upr / nrow(cda_grid)), alpha = 0.4, fill = "red") +
+  xlab("Year") +
+  ylab("Average estimated catch per 100 hooks")
 ```
 
 # Yelloweye Rockfish catch predictions
@@ -330,7 +335,7 @@ i_ye_cda <- readRDS("data-generated/yelloweye-spatial-index-cda.rds")
 i_ye_noncda <- readRDS("data-generated/yelloweye-spatial-index-S-outside-cda.rds")
 
 print("What proportion of grid is inside CDA?")
-round(nrow(cda_grid)/(nrow(cda_grid)+ nrow(noncda_grid)),2)
+round(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)), 2)
 ```
 
 Pacific Halibut
@@ -341,13 +346,13 @@ i_hal_cda2020 <- filter(i_hal_cda, year == 2020)
 i_hal_noncda2020 <- filter(i_hal_noncda, year == 2020)
 
 print("What proportion of estimated total catch is inside CDA in 2020?")
-round(i_hal_cda2020$est / (i_hal_cda2020$est + i_hal_noncda2020$est),2)
+round(i_hal_cda2020$est / (i_hal_cda2020$est + i_hal_noncda2020$est), 2)
 
 print("Average estimated catch per 100 hooks inside CDA:")
-(i_hal_cda2020$est/nrow(cda_grid)) 
+(i_hal_cda2020$est / nrow(cda_grid))
 
 print("Average estimated catch per 100 hooks outside CDA:")
-(i_hal_noncda2020$est/nrow(noncda_grid)) 
+(i_hal_noncda2020$est / nrow(noncda_grid))
 ```
 
 Yelloweye Rockfish
@@ -355,13 +360,13 @@ Yelloweye Rockfish
 ```{r echo=F}
 # print("YELLOWEYE ROCKFISH")
 print("What proportion of estimated total catch is inside CDA?")
-round(i_ye_cda$est / (i_ye_cda$est + i_ye_noncda$est),2)
+round(i_ye_cda$est / (i_ye_cda$est + i_ye_noncda$est), 2)
 
 print("Average estimated catch per 100 hooks inside CDA:")
-(i_ye_cda$est/nrow(cda_grid)) 
+(i_ye_cda$est / nrow(cda_grid))
 
 print("Average estimated catch per 100 hooks outside CDA:")
-(i_ye_noncda$est/nrow(noncda_grid)) 
+(i_ye_noncda$est / nrow(noncda_grid))
 ```
 
 # Maps
@@ -371,29 +376,39 @@ Predictions depicted for HBLL survey grid area that falls within region 3CD. "Co
 ```{r echo = F, message = F, results = F}
 # Load map feature using custom function loaded at start
 coast <- load_coastll(
-    range(d_utm$longitude) ,
-    range(d_utm$latitude) ,
-    utm_zone = 9
-  )
+  range(d_utm$longitude),
+  range(d_utm$latitude),
+  utm_zone = 9
+)
 
-focal_area <-sf::st_read(dsn="shape-files/taaqwiihak_areaVer2.shp",layer="taaqwiihak_areaVer2")
+focal_area <- sf::st_read(dsn = "shape-files/taaqwiihak_areaVer2.shp", layer = "taaqwiihak_areaVer2")
 focal_area <- sf::st_transform(focal_area, crs = 4326)
 
 library(PBSmapping) # needs this for some reason
-majorbound  <- load_boundaries(9)
+majorbound <- load_boundaries(9)
 attributes(majorbound)$PolyData
-# 5AB 
-bound5Bnorth <- fortify(majorbound) %>% 
-  filter(PID %in% c(6)) %>%  filter( #POS != 46 & # strange jog over HG
-    X > 200 & X < 560 & Y> 5700 )%>% gfplot:::utm2ll(utm_zone = 9)
-bound5Anorth <- fortify(majorbound) %>% 
-  filter(PID %in% c(5)) %>%  filter(
-    X > 200 & X < 560 & Y> 5650 )%>% gfplot:::utm2ll(utm_zone = 9)
-# 3CD 
-bound3Cnorth <- fortify(majorbound) %>% 
-  filter(PID %in% c(3)) %>%  filter(X > 200 & X < 725 & Y > 5400)%>% gfplot:::utm2ll(utm_zone = 9)
-bound3Dnorth <- fortify(majorbound) %>% 
-  filter(PID %in% c(4)) %>%  filter(X > 200 & X < 600 & Y > 5550)%>% gfplot:::utm2ll(utm_zone = 9)
+# 5AB
+bound5Bnorth <- fortify(majorbound) %>%
+  filter(PID %in% c(6)) %>%
+  filter( # POS != 46 & # strange jog over HG
+    X > 200 & X < 560 & Y > 5700
+  ) %>%
+  gfplot:::utm2ll(utm_zone = 9)
+bound5Anorth <- fortify(majorbound) %>%
+  filter(PID %in% c(5)) %>%
+  filter(
+    X > 200 & X < 560 & Y > 5650
+  ) %>%
+  gfplot:::utm2ll(utm_zone = 9)
+# 3CD
+bound3Cnorth <- fortify(majorbound) %>%
+  filter(PID %in% c(3)) %>%
+  filter(X > 200 & X < 725 & Y > 5400) %>%
+  gfplot:::utm2ll(utm_zone = 9)
+bound3Dnorth <- fortify(majorbound) %>%
+  filter(PID %in% c(4)) %>%
+  filter(X > 200 & X < 600 & Y > 5550) %>%
+  gfplot:::utm2ll(utm_zone = 9)
 ```
 
 ```{r message = F, echo= F}
@@ -401,52 +416,59 @@ p_hal_cda <- readRDS("data-generated/halibut-predictions-cda.rds")
 p_hal_noncda <- readRDS("data-generated/halibut-predictions-S-outside-cda.rds")
 
 gh <- ggplot(data = focal_area) +
-   geom_tile(data = filter(p_hal_cda$data, year == 2020),
-    aes(longitude, latitude, fill = exp(est)), width = 0.06, height = 0.025) +
-   geom_tile(data = filter(p_hal_noncda$data, year == 2020),
-    aes(longitude, latitude, fill = exp(est)), width = 0.05, height = 0.025) +
+  geom_tile(
+    data = filter(p_hal_cda$data, year == 2020),
+    aes(longitude, latitude, fill = exp(est)), width = 0.06, height = 0.025
+  ) +
+  geom_tile(
+    data = filter(p_hal_noncda$data, year == 2020),
+    aes(longitude, latitude, fill = exp(est)), width = 0.05, height = 0.025
+  ) +
   scale_fill_viridis_c(
     trans = ggsidekick::fourth_root_power_trans(),
     # limits=c(0, 6), na.value = "yellow",
-    option = "D") +
+    option = "D"
+  ) +
   labs(
     fill = "Predicted\ncatch \nin 2020",
     size = "Actual \ncatch \nin 2020"
   ) +
   geom_point(
-    data = filter(d_hal, year ==2020), 
-    # data = d_hal, # we could also plot catches from all years 
+    data = filter(d_hal, year == 2020),
+    # data = d_hal, # we could also plot catches from all years
     mapping = aes(
       longitude, latitude,
-      size = (catch_count / hook_count)*100
-    ), pch = 21, 
+      size = (catch_count / hook_count) * 100
+    ), pch = 21,
     inherit.aes = FALSE, colour = "grey10", alpha = 0.7
-  ) +  scale_size_area(max_size = 4) + 
+  ) +
+  scale_size_area(max_size = 4) +
   geom_sf(colour = "red", fill = NA) + # add focal area
   geom_polygon( # add coast outline
-      data = coast, aes(x = X, y = Y, group = PID),
-      fill = "grey87", col = "grey70", lwd = 0.2
-    ) +
-  geom_line(# add major management region boundaries
+    data = coast, aes(x = X, y = Y, group = PID),
+    fill = "grey87", col = "grey70", lwd = 0.2
+  ) +
+  geom_line( # add major management region boundaries
     data = bound3Cnorth,
-    aes(X, Y), colour = "black", lty = 2, 
+    aes(X, Y), colour = "black", lty = 2,
     inherit.aes = F
   ) +
-  geom_line(# add major management region boundaries
+  geom_line( # add major management region boundaries
     data = bound3Dnorth,
-    aes(X, Y), colour = "black", lty = 2, 
+    aes(X, Y), colour = "black", lty = 2,
     inherit.aes = F
   ) +
-  geom_line(# add major management region boundaries
+  geom_line( # add major management region boundaries
     data = bound5Anorth,
-    aes(X, Y), colour = "black", lty = 2, 
+    aes(X, Y), colour = "black", lty = 2,
     inherit.aes = F
   ) +
   annotate("text", x = -128.8, y = 51.1, label = "5A") +
   annotate("text", x = -128.8, y = 50.3, label = "3D") +
   annotate("text", x = -128.8, y = 48.8, label = "3C") +
-  xlab("")+ ylab("")+ # remove axis labels
-  coord_sf(expand = F, ylim=c(48.4, 51.3), xlim=c(-130, -125.15)) +# trim points beyond grid boundaries
+  xlab("") +
+  ylab("") + # remove axis labels
+  coord_sf(expand = F, ylim = c(48.4, 51.3), xlim = c(-130, -125.15)) + # trim points beyond grid boundaries
   ggtitle("HBLL observed and predicted Pacific Halibut catch per 100 hooks")
 gh
 # ggsave("figs/halibut-2020-predictions-S.png", width = 6, height = 6)
@@ -458,51 +480,59 @@ p_ye_cda <- readRDS("data-generated/yelloweye-spatial-predictions-cda.rds")
 p_ye_noncda <- readRDS("data-generated/yelloweye-spatial-predictions-S-outside-cda.rds")
 
 gy <- ggplot(data = focal_area) +
-   geom_tile(data = p_ye_cda$data,
-    aes(longitude, latitude, fill = exp(est)), width = 0.06, height = 0.025) +
-   geom_tile(data = p_ye_noncda$data,
-    aes(longitude, latitude, fill = exp(est)), width = 0.05, height = 0.025) +
+  geom_tile(
+    data = p_ye_cda$data,
+    aes(longitude, latitude, fill = exp(est)), width = 0.06, height = 0.025
+  ) +
+  geom_tile(
+    data = p_ye_noncda$data,
+    aes(longitude, latitude, fill = exp(est)), width = 0.05, height = 0.025
+  ) +
   scale_fill_viridis_c(
     trans = ggsidekick::fourth_root_power_trans(),
-    limits=c(0, 30), na.value = "yellow",
-    option = "D") +
+    limits = c(0, 30), na.value = "yellow",
+    option = "D"
+  ) +
   labs(
     fill = "Predicted \ncatch \nin 2020",
     size = "Actual \ncatch \nin 2020"
   ) +
   geom_point(
-    data = filter(d_ye, year ==2020),
-    # data = d_ye, # we could also plot catches from all years 
+    data = filter(d_ye, year == 2020),
+    # data = d_ye, # we could also plot catches from all years
     mapping = aes(
       longitude, latitude,
-      size = (catch_count / hook_count)*100
-    ), pch = 21, 
+      size = (catch_count / hook_count) * 100
+    ), pch = 21,
     inherit.aes = FALSE, colour = "grey10", alpha = 0.7
-  ) +  scale_size_area(max_size = 4) + 
+  ) +
+  scale_size_area(max_size = 4) +
   geom_sf(colour = "red", fill = NA) + # add focal area
   geom_polygon( # add coast outline
-      data = coast, aes(x = X, y = Y, group = PID),
-      fill = "grey87", col = "grey70", lwd = 0.2
-    ) +  geom_line(# add major management region boundaries
+    data = coast, aes(x = X, y = Y, group = PID),
+    fill = "grey87", col = "grey70", lwd = 0.2
+  ) +
+  geom_line( # add major management region boundaries
     data = bound3Cnorth,
-    aes(X, Y), colour = "black", lty = 2, 
+    aes(X, Y), colour = "black", lty = 2,
     inherit.aes = F
   ) +
-  geom_line(# add major management region boundaries
+  geom_line( # add major management region boundaries
     data = bound3Dnorth,
-    aes(X, Y), colour = "black", lty = 2, 
+    aes(X, Y), colour = "black", lty = 2,
     inherit.aes = F
   ) +
-  geom_line(# add major management region boundaries
+  geom_line( # add major management region boundaries
     data = bound5Anorth,
-    aes(X, Y), colour = "black", lty = 2, 
+    aes(X, Y), colour = "black", lty = 2,
     inherit.aes = F
   ) +
   annotate("text", x = -128.8, y = 51.1, label = "5A") +
   annotate("text", x = -128.8, y = 50.3, label = "3D") +
   annotate("text", x = -128.8, y = 48.8, label = "3C") +
-  xlab("")+ ylab("")+ # remove axis labels
-  coord_sf(expand = F, ylim=c(48.4, 51.3), xlim=c(-130, -125.15)) +# trim points beyond grid boundaries
+  xlab("") +
+  ylab("") + # remove axis labels
+  coord_sf(expand = F, ylim = c(48.4, 51.3), xlim = c(-130, -125.15)) + # trim points beyond grid boundaries
   ggtitle("HBLL observed and predicted Yelloweye Rockfish catch per 100 hooks")
 gy
 # ggsave("figs/yelloweye-2020-predictions-S.png", width = 6, height = 6)
@@ -511,57 +541,65 @@ gy
 
 ```{r message = F, echo= F}
 # combine predictions for inside and out CDA
-pyd <- bind_rows(p_ye_cda$data, p_ye_noncda$data) %>% rename(ye_est = est) 
-phd <- bind_rows(p_hal_cda$data, p_hal_noncda$data) %>% rename(hal_est = est) %>% select(hal_est, X, Y, year)
+pyd <- bind_rows(p_ye_cda$data, p_ye_noncda$data) %>% rename(ye_est = est)
+phd <- bind_rows(p_hal_cda$data, p_hal_noncda$data) %>%
+  rename(hal_est = est) %>%
+  select(hal_est, X, Y, year)
 
 # calculate ratio of yelloweye to halibut
-ratio_df <- left_join(pyd, phd) %>% mutate(halibut = exp(hal_est), yelloweye = exp(ye_est), ye_per_hal = yelloweye/halibut)
+ratio_df <- left_join(pyd, phd) %>% mutate(halibut = exp(hal_est), yelloweye = exp(ye_est), ye_per_hal = yelloweye / halibut)
 
 gratio <- ggplot(data = focal_area) +
   # plot predictions from best model with mean swept area and hook adjustment factor
-  geom_tile(data = filter(ratio_df, year == 2020), 
-    aes(longitude, latitude, fill = ye_per_hal), width = 0.06, height = 0.025) +
-  scale_fill_viridis_c(trans = ggsidekick::fourth_root_power_trans(), 
-    # limits=c(0, 40), na.value = "yellow", 
+  geom_tile(
+    data = filter(ratio_df, year == 2020),
+    aes(longitude, latitude, fill = ye_per_hal), width = 0.06, height = 0.025
+  ) +
+  scale_fill_viridis_c(
+    trans = ggsidekick::fourth_root_power_trans(),
+    # limits=c(0, 40), na.value = "yellow",
     option = "D"
-    ) +
+  ) +
   labs(
     fill = "Estimated \nYelloweye \nper Halibut",
     size = "Observed\nhalibut\ncatches\n(all years)"
   ) +
   geom_point(
-    data = filter(d_hal, year ==2020),
+    data = filter(d_hal, year == 2020),
     # data = d_hal, # plot catch for all years together?
     mapping = aes(
       longitude, latitude,
-      size = (catch_count / hook_count)*100
-    ), pch = 21, 
+      size = (catch_count / hook_count) * 100
+    ), pch = 21,
     inherit.aes = FALSE, colour = "grey10", alpha = 0.4
-  ) +  scale_size_area(max_size = 4) + 
+  ) +
+  scale_size_area(max_size = 4) +
   geom_sf(colour = "red", fill = NA) + # add focal area
   geom_polygon( # add coast outline
-      data = coast, aes(x = X, y = Y, group = PID),
-      fill = "grey87", col = "grey70", lwd = 0.2
-    ) +  geom_line(# add major management region boundaries
+    data = coast, aes(x = X, y = Y, group = PID),
+    fill = "grey87", col = "grey70", lwd = 0.2
+  ) +
+  geom_line( # add major management region boundaries
     data = bound3Cnorth,
-    aes(X, Y), colour = "black", lty = 2, 
+    aes(X, Y), colour = "black", lty = 2,
     inherit.aes = F
   ) +
-  geom_line(# add major management region boundaries
+  geom_line( # add major management region boundaries
     data = bound3Dnorth,
-    aes(X, Y), colour = "black", lty = 2, 
+    aes(X, Y), colour = "black", lty = 2,
     inherit.aes = F
   ) +
-  geom_line(# add major management region boundaries
+  geom_line( # add major management region boundaries
     data = bound5Anorth,
-    aes(X, Y), colour = "black", lty = 2, 
+    aes(X, Y), colour = "black", lty = 2,
     inherit.aes = F
   ) +
   annotate("text", x = -128.8, y = 51.1, label = "5A") +
   annotate("text", x = -128.8, y = 50.3, label = "3D") +
   annotate("text", x = -128.8, y = 48.8, label = "3C") +
-  xlab("")+ ylab("")+ # remove axis labels
-  coord_sf(expand = F, ylim=c(48.4, 51.3), xlim=c(-130, -125.15)) +# trim points beyond grid boundaries
+  xlab("") +
+  ylab("") + # remove axis labels
+  coord_sf(expand = F, ylim = c(48.4, 51.3), xlim = c(-130, -125.15)) + # trim points beyond grid boundaries
   ggtitle("Estimate number of Yelloweye Rockfish caught per Pacific Halibut in 2020")
 gratio
 # ggsave("figs/ye-per-halibut-w-hal-catch-S.png", width = 6, height = 6)
@@ -569,23 +607,31 @@ gratio
 
 # Other exploratory plots
 ```{r message=F, echo=F}
-py_cda <- p_ye_cda$data %>% rename(ye_est = est) 
-py_noncda <-  p_ye_noncda$data %>% rename(ye_est = est) 
-ph_cda <- p_hal_cda$data %>% rename(hal_est = est) %>% select(hal_est, X, Y, year)
-ph_noncda <- p_hal_noncda$data %>% rename(hal_est = est) %>% select(hal_est, X, Y, year)
+py_cda <- p_ye_cda$data %>% rename(ye_est = est)
+py_noncda <- p_ye_noncda$data %>% rename(ye_est = est)
+ph_cda <- p_hal_cda$data %>%
+  rename(hal_est = est) %>%
+  select(hal_est, X, Y, year)
+ph_noncda <- p_hal_noncda$data %>%
+  rename(hal_est = est) %>%
+  select(hal_est, X, Y, year)
 
 
-ratio_cda <- left_join(py_cda, ph_cda) %>% mutate(halibut = exp(hal_est), yelloweye = exp(ye_est), 
-  ye_per_hal = yelloweye/halibut, hal_per_ye = halibut/yelloweye)
-ratio_noncda <- left_join(py_noncda, ph_noncda) %>% mutate(halibut = exp(hal_est), yelloweye = exp(ye_est), 
-  ye_per_hal = yelloweye/halibut, hal_per_ye = halibut/yelloweye)
+ratio_cda <- left_join(py_cda, ph_cda) %>% mutate(
+  halibut = exp(hal_est), yelloweye = exp(ye_est),
+  ye_per_hal = yelloweye / halibut, hal_per_ye = halibut / yelloweye
+)
+ratio_noncda <- left_join(py_noncda, ph_noncda) %>% mutate(
+  halibut = exp(hal_est), yelloweye = exp(ye_est),
+  ye_per_hal = yelloweye / halibut, hal_per_ye = halibut / yelloweye
+)
 
-ratio_cda <- ratio_cda[order(ratio_cda$halibut, decreasing = T),] %>% mutate(ordered = row_number())
-ratio_noncda <- ratio_noncda[order(ratio_noncda$halibut, decreasing = T),] %>% mutate(ordered = row_number())
+ratio_cda <- ratio_cda[order(ratio_cda$halibut, decreasing = T), ] %>% mutate(ordered = row_number())
+ratio_noncda <- ratio_noncda[order(ratio_noncda$halibut, decreasing = T), ] %>% mutate(ordered = row_number())
 
 # ggplot(ratio_noncda) +
 #   geom_point(aes(yelloweye, halibut), alpha = 0.5) +
-#   geom_point(data = ratio_cda, aes(yelloweye, halibut), 
+#   geom_point(data = ratio_cda, aes(yelloweye, halibut),
 #     inherit.aes = F, colour = "red", alpha = 0.5) +
 #   coord_cartesian(expand = F) +
 #   ylab("Halibut per per 100 hooks") +
@@ -593,8 +639,10 @@ ratio_noncda <- ratio_noncda[order(ratio_noncda$halibut, decreasing = T),] %>% m
 
 ggplot(ratio_noncda) +
   geom_point(aes(halibut, yelloweye), alpha = 0.5) +
-  geom_point(data = ratio_cda, aes(halibut, yelloweye), 
-    inherit.aes = F, colour = "red", alpha = 0.5) +
+  geom_point(
+    data = ratio_cda, aes(halibut, yelloweye),
+    inherit.aes = F, colour = "red", alpha = 0.5
+  ) +
   coord_cartesian(expand = F) +
   xlab("Halibut per per 100 hooks") +
   ylab("Yelloweye per per 100 hooks")
@@ -605,11 +653,13 @@ ggplot(ratio_noncda) +
 #   ylab("Grid cell with estimate of > 5 halibut per 100 hooks") +
 #   xlab("Predicted numder of yelloweye per halibut caught")
 
-ggplot(filter(ratio_noncda, halibut > 5 #& yelloweye > 0.1 
-  )) +
+ggplot(filter(
+  ratio_noncda, halibut > 5 # & yelloweye > 0.1
+)) +
   geom_histogram(aes(hal_per_ye)) +
-  geom_histogram(data = filter(ratio_cda, halibut > 5 #& yelloweye > 0.1
-    ), aes(hal_per_ye), inherit.aes = F, fill = "red") +
+  geom_histogram(data = filter(
+    ratio_cda, halibut > 5 # & yelloweye > 0.1
+  ), aes(hal_per_ye), inherit.aes = F, fill = "red") +
   ylab("Cells with > 5 halibut per 100 hooks") +
   xlab("Estimated numder of halibut per yelloweye caught")
 ```
@@ -618,14 +668,15 @@ ggplot(filter(ratio_noncda, halibut > 5 #& yelloweye > 0.1
 Solid lines are cumulative halibut catch potential for each addition cell fished in decreasing order of predicted halibut abundance.
 Dashed lines are the cumulative yelloweye catch that might be anticipated for those same cells.
 ```{r message = F, echo= F}
-ggplot(data = ratio_cda, 
-   aes(x=ordered)) +
-geom_line(data = ratio_noncda, aes(x = ordered, y = cumsum((halibut))),  inherit.aes = FALSE) +
-geom_line(data = ratio_cda, aes(x = ordered, y = cumsum((halibut))), colour = "red", inherit.aes = FALSE) +
-geom_line(data = ratio_noncda, aes(x = ordered, y = cumsum((yelloweye))), lty = 2, inherit.aes = FALSE) +
-geom_line(data = ratio_cda, aes(x = ordered, y = cumsum((yelloweye))), lty = 2, colour = "red", inherit.aes = FALSE) +
-coord_cartesian(expand = F, xlim = c(0,2500), ylim = c(0,9000)) +
-ylab("Fish caught") +
-xlab("Number of cells fished (in order of decreasing Halibut abundance)") 
+ggplot(
+  data = ratio_cda,
+  aes(x = ordered)
+) +
+  geom_line(data = ratio_noncda, aes(x = ordered, y = cumsum((halibut))), inherit.aes = FALSE) +
+  geom_line(data = ratio_cda, aes(x = ordered, y = cumsum((halibut))), colour = "red", inherit.aes = FALSE) +
+  geom_line(data = ratio_noncda, aes(x = ordered, y = cumsum((yelloweye))), lty = 2, inherit.aes = FALSE) +
+  geom_line(data = ratio_cda, aes(x = ordered, y = cumsum((yelloweye))), lty = 2, colour = "red", inherit.aes = FALSE) +
+  coord_cartesian(expand = F, xlim = c(0, 2500), ylim = c(0, 9000)) +
+  ylab("Fish caught") +
+  xlab("Number of cells fished (in order of decreasing Halibut abundance)")
 ```
-
