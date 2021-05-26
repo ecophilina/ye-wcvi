@@ -4,6 +4,7 @@
 .Ruserdata
 .DS_Store
 *.pdf
+*.png
 *.docx
 *.html
 *.rda
