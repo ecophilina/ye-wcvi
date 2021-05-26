@@ -13,6 +13,8 @@ library(sdmTMB)
 # devtools::install_github("seananderson/ggsidekick")
 library(ggsidekick) # for fourth_root_power_trans and theme_sleek
 theme_set(ggsidekick::theme_sleek())
+dir.create("data", showWarnings = FALSE)
+dir.create("data-generated", showWarnings = FALSE)
 ```
 
 # Retrieve HBLL data (on network)
