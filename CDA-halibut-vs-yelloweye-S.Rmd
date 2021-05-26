@@ -287,30 +287,31 @@ s_grid_utm <- mutate(s_grid_utm, X_cent = X - mean(d_utm$X))
 ```
 
 
-Trim prediction grid to southern stock area
+Trim prediction grid to cover full southern stock area
 ```{r}
-s_grid_utm  <- filter(s_grid_utm, latitude<51.24999) 
-s_grid_sf <- st_as_sf(s_grid_utm, coords = c("longitude", "latitude"))
-st_crs(s_grid_sf) <- 4326 # set the coordinate reference system
-# s_grid_sf
+full_s_grid_utm  <- filter(s_grid_utm, latitude < 51.24999) 
+full_s_grid_sf <- st_as_sf(full_s_grid_utm, coords = c("longitude", "latitude"))
+st_crs(full_s_grid_sf) <- 4326 # set the coordinate reference system
 ```
 
-
-Or trim prediction grid to just area 3CD
+Trim prediction grid to cover full southern stock area
 ```{r}
-# s_grid_utm  <- filter(s_grid_utm, latitude<50.5) 
-# s_grid_sf <- st_as_sf(s_grid_utm, coords = c("longitude", "latitude"))
-# st_crs(s_grid_sf) <- 4326 # set the coordinate reference system
-# # s_grid_sf
+s_5A_grid_utm  <- filter(s_grid_utm, latitude < 51.24999 & latitude > 50.5) 
+s_5A_grid_sf <- st_as_sf(s_5A_grid_utm, coords = c("longitude", "latitude"))
+st_crs(s_5A_grid_sf) <- 4326 # set the coordinate reference system
 ```
 
-
-Split into areas inside and outside court defined area (CDA)
+Split area 3CD into areas inside and outside court defined area (CDA)
 ```{r message= F}
+s_3CD_grid_utm  <- filter(s_grid_utm, latitude < 50.5)
+s_3CD_grid_sf <- st_as_sf(s_3CD_grid_utm, coords = c("longitude", "latitude"))
+st_crs(s_3CD_grid_sf) <- 4326 # set the coordinate reference system
+# s_grid_sf
+
 focal_area <-sf::st_read(dsn="shape-files/taaqwiihak_areaVer2.shp",layer="taaqwiihak_areaVer2")
 focal_area <- sf::st_transform(focal_area, crs = 4326)
 
-intersected <- sf::st_intersects(s_grid_sf, focal_area)
+intersected <- sf::st_intersects(s_3CD_grid_sf, focal_area)
 
 cda_grid_sf <- s_grid_sf[which(lengths(intersected) > 0), ]
 noncda_grid_sf <- s_grid_sf[which(lengths(intersected) == 0), ]
