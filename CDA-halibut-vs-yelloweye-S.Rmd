@@ -19,6 +19,7 @@ dir.create("models", showWarnings = FALSE)
 ```
 
 # Retrieve HBLL data (on network)
+
 ```{r eval=F}
 halsetdata <- gfdata::get_survey_sets("Pacific Halibut", ssid = c(36))
 saveRDS(halsetdata, "data/halibut-surv-sets.rds")
@@ -123,6 +124,7 @@ saveRDS(d_ye, "data-generated/yelloweye-surv-36-model-data.rds")
 ```
 
 # Make prediction grid
+
 ```{r message= F}
 # shouldn't matter which species this is based on since the offsets are currently the same for both
 d_utm <- readRDS("data-generated/yelloweye-surv-36-model-data.rds")
@@ -184,6 +186,7 @@ st_geometry(noncda_grid) <- NULL
 ```
 
 # Make relatively finescale mesh
+
 ```{r }
 # again the same grid should work for both species because the sets are identical in both
 mesh400kn <- make_mesh(d_utm, c("X", "Y"), n_knots = 400)
@@ -191,6 +194,7 @@ plot(mesh400kn)
 ```
 
 # Pacific Halibut model 
+
 ```{r eval = TRUE}
 d_hal <- readRDS("data-generated/halibut-surv-36-model-data.rds")
 f <- "models/halibut-hook-count-offset-400kn-AR1.rds"
@@ -224,7 +228,8 @@ get_diag(m_halibut)
 ```
 
 
-# Yelloweye Rockfish model 
+# Yelloweye Rockfish model
+
 ```{r eval = TRUE}
 d_ye <- readRDS("data-generated/yelloweye-surv-36-model-data.rds")
 
@@ -278,6 +283,7 @@ saveRDS(i_hal_noncda, "data-generated/halibut-index-S-outside-cda.rds")
 ```
 
 ## Plot index of total halibut catch through time
+
 Total catch index for entire court defined area is in red, remainder of southern stock area is in black.
 ```{r message = F, echo= F}
 i_hal_cda <- readRDS("data-generated/halibut-index-cda.rds")
@@ -302,6 +308,7 @@ ggplot(i_hal_noncda, aes(year, est/nrow(noncda_grid))) + geom_line() +
 ```
 
 # Yelloweye Rockfish catch predictions
+
 ```{r eval = F}
 p_ye_cda <- predict(m_ye, newdata = cda_grid, return_tmb_object = TRUE)
 saveRDS(p_ye_cda, "data-generated/yelloweye-spatial-predictions-cda.rds")
@@ -315,6 +322,7 @@ saveRDS(i_ye_noncda, "data-generated/yelloweye-spatial-index-S-outside-cda.rds")
 ```
 
 # Calculate overall proportion of predicted catch inside vs outside CDA
+
 ```{r echo= F}
 # halibut index was loaded for plots above, so just load yelloweye index
 i_ye_cda <- readRDS("data-generated/yelloweye-spatial-index-cda.rds")
@@ -325,6 +333,7 @@ round(nrow(cda_grid)/(nrow(cda_grid)+ nrow(noncda_grid)),2)
 ```
 
 Pacific Halibut
+
 ```{r echo=F}
 # print(" PACIFIC HALIBUT")
 i_hal_cda2020 <- filter(i_hal_cda, year == 2020)
@@ -341,6 +350,7 @@ print("Average estimated catch per 100 hooks outside CDA:")
 ```
 
 Yelloweye Rockfish
+
 ```{r echo=F}
 # print("YELLOWEYE ROCKFISH")
 print("What proportion of estimated total catch is inside CDA?")
