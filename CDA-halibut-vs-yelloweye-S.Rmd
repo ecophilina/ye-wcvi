@@ -152,9 +152,9 @@ s_grid_utm <- mutate(s_grid_utm, X_cent = X - mean(d_utm$X))
 ```
 
 
-Trim prediction grid to cover full southern stock area
+Trim prediction grid to cover full outside S HBLL
+
 ```{r}
-full_s_grid_utm <- filter(s_grid_utm, latitude < 51.24999)
 full_s_grid_sf <- st_as_sf(full_s_grid_utm, coords = c("longitude", "latitude"))
 st_crs(full_s_grid_sf) <- 4326 # set the coordinate reference system
 full_s_grid <- sfc_as_cols(full_s_grid_sf, c("longitude", "latitude"))
@@ -162,6 +162,7 @@ st_geometry(full_s_grid) <- NULL
 ```
 
 Trim prediction grid for just area 5A
+
 ```{r}
 s_5A_grid_utm <- filter(s_grid_utm, latitude < 51.24999 & latitude > 50.5)
 s_5A_grid_sf <- st_as_sf(s_5A_grid_utm, coords = c("longitude", "latitude"))
@@ -171,6 +172,7 @@ st_geometry(s_5A_grid) <- NULL
 ```
 
 Split area 3CD into areas inside and outside court defined area (CDA)
+
 ```{r message= F}
 s_3CD_grid_utm <- filter(s_grid_utm, latitude < 50.5)
 s_3CD_grid_sf <- st_as_sf(s_3CD_grid_utm, coords = c("longitude", "latitude"))
@@ -308,7 +310,7 @@ saveRDS(i_hal_5A, "data-generated/halibut-index-5A.rds")
 }
 ```
 
-For entire southern outside yelloweye stock including CDA
+For entire southern outside HBLL
 
 ```{r eval = T}
 f <- "data-generated/halibut-index-all-S.rds"
@@ -327,12 +329,18 @@ saveRDS(i_hal_S, "data-generated/halibut-index-all-S.rds")
 Total catch index for entire court defined area is in red, remainder of southern stock area is in black.
 
 ```{r message = F, echo= F}
+i_hal <- readRDS("data-generated/halibut-index-all-S.rds")
 i_hal_cda <- readRDS("data-generated/halibut-index-cda.rds")
 i_hal_noncda <- readRDS("data-generated/halibut-index-3CD-outside-cda.rds")
+i_hal_5A <- readRDS("data-generated/halibut-index-5A.rds")
 
-ggplot(i_hal_noncda, aes(year, est)) +
-  geom_line() +
+ggplot(i_hal, aes(year, est)) +
+  geom_line() + # index for halibut on full HBLL south
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
+  geom_line(data = i_hal_5A, aes(year, est), colour = "blue") +
+  geom_ribbon(data = i_hal_5A, aes(year, ymin = lwr, ymax = upr), alpha = 0.4, fill = "blue") +
+  geom_line(data = i_hal_noncda, aes(year, est),colour = "orange") + # index for 3CD outside CDA
+  geom_ribbon(data = i_hal_noncda,aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "orange" ) +
   geom_line(data = i_hal_cda, aes(year, est), colour = "red") +
   geom_ribbon(data = i_hal_cda, aes(year, ymin = lwr, ymax = upr), alpha = 0.4, fill = "red") +
   xlab("Year") +
@@ -344,11 +352,16 @@ ggplot(i_hal_noncda, aes(year, est)) +
 Average predicted catch within the entire court defined area is in red, remainder of southern stock area is in black.
 
 ```{r message = F, echo= F}
-ggplot(i_hal_noncda, aes(year, est / nrow(noncda_grid))) +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr / nrow(noncda_grid), ymax = upr / nrow(noncda_grid)), alpha = 0.4) +
+ggplot(i_hal, aes(year, est/nrow(full_s_grid))) +
+  # geom_line() + # index for halibut on full HBLL south
+  # geom_ribbon(aes(ymin = lwr / nrow(full_s_grid), ymax = upr / nrow(full_s_grid)), alpha = 0.4) +
   geom_line(data = i_hal_cda, aes(year, est / nrow(cda_grid)), colour = "red") +
   geom_ribbon(data = i_hal_cda, aes(year, ymin = lwr / nrow(cda_grid), ymax = upr / nrow(cda_grid)), alpha = 0.4, fill = "red") +
+  # geom_line(data = i_hal_5A, aes(year, est / nrow(s_5A_grid)), colour = "blue") +
+  # geom_ribbon(data = i_hal_5A, aes(year, ymin = lwr / nrow(s_5A_grid), ymax = upr / nrow(s_5A_grid)), alpha = 0.4, fill = "blue") +
+  geom_line(data = i_hal_noncda, aes(year, est / nrow(noncda_grid)),colour = "orange") +
+  geom_ribbon(data = i_hal_noncda, aes(ymin = lwr / nrow(noncda_grid), ymax = upr / nrow(noncda_grid)), alpha = 0.4, fill = "orange") +
+
   xlab("Year") +
   ylab("Average estimated catch per 100 hooks")
 ```
@@ -404,7 +417,7 @@ if (!file.exists("data-generated/yelloweye-spatial-index-all-S.rds")) {
 ```
 
 
-# Calculate overall proportion of predicted catch inside vs outside CDA
+# Calculate overall proportion of predicted catch in 3CD is inside vs outside CDA
 
 ```{r echo= F}
 # halibut index was loaded for plots above, so just load yelloweye index
