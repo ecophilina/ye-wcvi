@@ -267,26 +267,33 @@ get_diag(m_ye)
 # Halibut catch predictions and index
 
 For CDA only
-```{r eval = F}
-p_hal_cda <- predict(m_halibut, newdata = cda_grid, return_tmb_object = TRUE)
-saveRDS(p_hal_cda, "data-generated/halibut-predictions-cda.rds")
 
-i_hal_cda <- get_index(p_hal_cda)
-saveRDS(i_hal_cda, "data-generated/halibut-index-cda.rds")
+```{r eval = TRUE}
+f <- "data-generated/halibut-predictions-cda.rds"
+if (!file.exists(f)) {
+  p_hal_cda <- predict(m_halibut, newdata = cda_grid, return_tmb_object = TRUE)
+  saveRDS(p_hal_cda, f)
+  i_hal_cda <- get_index(p_hal_cda)
+  saveRDS(i_hal_cda, "data-generated/halibut-index-cda.rds")
+}
 ```
 
 For outside CDA
-```{r eval = F}
-p_hal_noncda <- predict(m_halibut, newdata = noncda_grid, return_tmb_object = TRUE)
-saveRDS(p_hal_noncda, "data-generated/halibut-predictions-S-outside-cda.rds")
 
-i_hal_noncda <- get_index(p_hal_noncda)
-saveRDS(i_hal_noncda, "data-generated/halibut-index-S-outside-cda.rds")
+```{r eval = TRUE}
+f <- "data-generated/halibut-predictions-S-outside-cda.rds"
+if (!file.exists(f)) {
+  p_hal_noncda <- predict(m_halibut, newdata = noncda_grid, return_tmb_object = TRUE)
+  saveRDS(p_hal_noncda, f)
+  i_hal_noncda <- get_index(p_hal_noncda)
+  saveRDS(i_hal_noncda, "data-generated/halibut-index-S-outside-cda.rds")
+}
 ```
 
 ## Plot index of total halibut catch through time
 
 Total catch index for entire court defined area is in red, remainder of southern stock area is in black.
+
 ```{r message = F, echo= F}
 i_hal_cda <- readRDS("data-generated/halibut-index-cda.rds")
 i_hal_noncda <- readRDS("data-generated/halibut-index-S-outside-cda.rds")
@@ -303,6 +310,7 @@ ggplot(i_hal_noncda, aes(year, est)) +
 ## Plot estimated halibut catch per 100 hooks through time
 
 Average predicted catch within the entire court defined area is in red, remainder of southern stock area is in black.
+
 ```{r message = F, echo= F}
 ggplot(i_hal_noncda, aes(year, est / nrow(noncda_grid))) +
   geom_line() +
