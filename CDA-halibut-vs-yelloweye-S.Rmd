@@ -157,13 +157,17 @@ Trim prediction grid to cover full southern stock area
 full_s_grid_utm <- filter(s_grid_utm, latitude < 51.24999)
 full_s_grid_sf <- st_as_sf(full_s_grid_utm, coords = c("longitude", "latitude"))
 st_crs(full_s_grid_sf) <- 4326 # set the coordinate reference system
+full_s_grid <- sfc_as_cols(full_s_grid_sf, c("longitude", "latitude"))
+st_geometry(full_s_grid) <- NULL
 ```
 
-Trim prediction grid to cover full southern stock area
+Trim prediction grid for just area 5A
 ```{r}
 s_5A_grid_utm <- filter(s_grid_utm, latitude < 51.24999 & latitude > 50.5)
 s_5A_grid_sf <- st_as_sf(s_5A_grid_utm, coords = c("longitude", "latitude"))
 st_crs(s_5A_grid_sf) <- 4326 # set the coordinate reference system
+s_5A_grid <- sfc_as_cols(s_5A_grid_sf, c("longitude", "latitude"))
+st_geometry(s_5A_grid) <- NULL
 ```
 
 Split area 3CD into areas inside and outside court defined area (CDA)
@@ -275,21 +279,41 @@ i_hal_cda <- get_index(p_hal_cda)
 saveRDS(i_hal_cda, "data-generated/halibut-index-cda.rds")
 ```
 
-For outside CDA
+For 3CD outside CDA
 ```{r eval = F}
 p_hal_noncda <- predict(m_halibut, newdata = noncda_grid, return_tmb_object = TRUE)
-saveRDS(p_hal_noncda, "data-generated/halibut-predictions-S-outside-cda.rds")
+saveRDS(p_hal_noncda, "data-generated/halibut-predictions-3CD-outside-cda.rds")
 
 i_hal_noncda <- get_index(p_hal_noncda)
-saveRDS(i_hal_noncda, "data-generated/halibut-index-S-outside-cda.rds")
+saveRDS(i_hal_noncda, "data-generated/halibut-index-3CD-outside-cda.rds")
 ```
+
+For area 5A 
+```{r eval = F}
+p_hal_5A <- predict(m_halibut, newdata = s_5A_grid, return_tmb_object = TRUE)
+saveRDS(p_hal_noncda, "data-generated/halibut-predictions-5A.rds")
+
+i_hal_5A <- get_index(p_hal_5A)
+saveRDS(i_hal_5A, "data-generated/halibut-index-5A.rds")
+```
+
+For entire southern outside yelloweye stock including CDA
+```{r eval = F}
+p_hal_S <- predict(m_halibut, newdata = full_s_grid, return_tmb_object = TRUE)
+saveRDS(p_hal_S, "data-generated/halibut-predictions-all-S.rds")
+
+i_hal_S <- get_index(p_hal_S)
+saveRDS(i_hal_S, "data-generated/halibut-index-all-S.rds")
+```
+
+
 
 ## Plot index of total halibut catch through time
 
 Total catch index for entire court defined area is in red, remainder of southern stock area is in black.
 ```{r message = F, echo= F}
 i_hal_cda <- readRDS("data-generated/halibut-index-cda.rds")
-i_hal_noncda <- readRDS("data-generated/halibut-index-S-outside-cda.rds")
+i_hal_noncda <- readRDS("data-generated/halibut-index-3CD-outside-cda.rds")
 
 ggplot(i_hal_noncda, aes(year, est)) +
   geom_line() +
@@ -322,9 +346,9 @@ i_ye_cda <- get_index(p_ye_cda)
 saveRDS(i_ye_cda, "data-generated/yelloweye-spatial-index-cda.rds")
 
 p_ye_noncda <- predict(m_ye, newdata = noncda_grid, return_tmb_object = TRUE)
-saveRDS(p_ye_noncda, "data-generated/yelloweye-spatial-predictions-S-outside-cda.rds")
+saveRDS(p_ye_noncda, "data-generated/yelloweye-spatial-predictions-3CD-outside-cda.rds")
 i_ye_noncda <- get_index(p_ye_noncda)
-saveRDS(i_ye_noncda, "data-generated/yelloweye-spatial-index-S-outside-cda.rds")
+saveRDS(i_ye_noncda, "data-generated/yelloweye-spatial-index-3CD-outside-cda.rds")
 ```
 
 # Calculate overall proportion of predicted catch inside vs outside CDA
@@ -332,7 +356,7 @@ saveRDS(i_ye_noncda, "data-generated/yelloweye-spatial-index-S-outside-cda.rds")
 ```{r echo= F}
 # halibut index was loaded for plots above, so just load yelloweye index
 i_ye_cda <- readRDS("data-generated/yelloweye-spatial-index-cda.rds")
-i_ye_noncda <- readRDS("data-generated/yelloweye-spatial-index-S-outside-cda.rds")
+i_ye_noncda <- readRDS("data-generated/yelloweye-spatial-index-3CD-outside-cda.rds")
 
 print("What proportion of grid is inside CDA?")
 round(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)), 2)
@@ -413,7 +437,7 @@ bound3Dnorth <- fortify(majorbound) %>%
 
 ```{r message = F, echo= F}
 p_hal_cda <- readRDS("data-generated/halibut-predictions-cda.rds")
-p_hal_noncda <- readRDS("data-generated/halibut-predictions-S-outside-cda.rds")
+p_hal_noncda <- readRDS("data-generated/halibut-predictions-3CD-outside-cda.rds")
 
 gh <- ggplot(data = focal_area) +
   geom_tile(
@@ -477,7 +501,7 @@ gh
 
 ```{r message = F, echo= F}
 p_ye_cda <- readRDS("data-generated/yelloweye-spatial-predictions-cda.rds")
-p_ye_noncda <- readRDS("data-generated/yelloweye-spatial-predictions-S-outside-cda.rds")
+p_ye_noncda <- readRDS("data-generated/yelloweye-spatial-predictions-3CD-outside-cda.rds")
 
 gy <- ggplot(data = focal_area) +
   geom_tile(
