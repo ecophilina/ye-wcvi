@@ -17,11 +17,11 @@ Yelloweye Rockfish (YE)
 
 * Remaining spatiotemporal correlation was minimal and so we used a spatial model for YE with an annual mean estimate. Spatiotemporal correlation was considerable for Halibut, and so we used a spatiotemporal model.
 
-* Negative binomial observation model with an 'offset' for number of hooks. This means we're modelling fish caught per hook but with a statistical approach that lets us use a count distribution.
+* We used a negative binomial observation model with a log link and an with an 'offset' for number of hooks. This means we're modelling fish caught per hook but with a statistical approach that lets us use a count distribution. The negative binomial distribution lets the observation variance scale quadratically with the mean.
 
 * We are not accounting for hook competition currently---the outside YE assessment chose to ignore it after some analysis.
 
-* We have lots of diagnostic and validation plots; they aren't included here.
+* We have many diagnostic and validation plots; they are not included here.
 
 * We have included a quadratic effect of depth, annual means for years, and latent "random fields" for spatial and, in the case of Halibut, spatiotemporal fields. These random fields soak up remaining spatial or spatiotemporal correlation from predictors not explicitely included in the model.
 
@@ -68,12 +68,16 @@ include_graphics(here("figs/halibut-index-by-area.png"))
 include_graphics(here("figs/halibut-average-index-by-area.png"))
 ```
 
-Proportion of HBLL grid inside CDA: `r r2(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)))`
+\clearpage
 
 ```{r filter-hal}
 i_hal_cda2020 <- filter(i_hal_cda, year == 2020)
 i_hal_noncda2020 <- filter(i_hal_noncda, year == 2020)
 ```
+
+## Some calculated statistics:
+
+Proportion of HBLL grid inside CDA: `r r2(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)))`
 
 Proportion of estimated total Halibut caught inside CDA in 2020: 
 `r r2(i_hal_cda2020$est / (i_hal_cda2020$est + i_hal_noncda2020$est))`
