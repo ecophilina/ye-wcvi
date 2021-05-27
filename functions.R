@@ -139,7 +139,7 @@ get_diag <- function(m, response = "catch_count", variable = "depth_scaled", col
 }
 
 map_predictions <- function(
-  pred_data,
+  pred_data = NULL,
   obs_data,
   fill_aes = exp(est),
   size_aes = (catch_count / hook_count) * 100,
@@ -186,12 +186,16 @@ map_predictions <- function(
     filter(PID %in% c(4)) %>%
     filter(X > 200 & X < 600 & Y > 5550)
 
-  g <- ggplot(focal_area_proj) +
-    geom_tile(
+  g <- ggplot(focal_area_proj)
+
+  if (!is.null(pred_data)) {
+    g <- g + geom_tile(
       data = pred_data,
       aes(X * 100000, Y * 100000, fill = {{fill_aes}}),
       width = 2000, height = 2000, colour = NA
-    ) +
+    )
+  }
+  g <- g +
     geom_line( # add major management region boundaries
       data = bound3Cnorth,
       aes(X * 1e3, Y * 1e3), colour = "grey30", lty = 1,
