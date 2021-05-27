@@ -9,7 +9,9 @@ here::dr_here()
 
 # Introduction {#sec:introduction}
 
-Yelloweye Rockfish (YE)
+* Yelloweye Rockfish (YE)
+* Hard Bottom Longline survey (HBLL)
+* Court Defined Area (CDA)
 
 # Methods {#sec:methods}
 
@@ -44,27 +46,27 @@ r2 <- function(x) {
 }
 ```
 
-```{r halibut-preds-all, fig.cap="Caption here", out.width="\\textwidth"}
+```{r halibut-preds-all, fig.cap="Halibut across all years.", out.width="\\textwidth"}
 include_graphics(here("figs/halibut-predictions-S.png"))
 ```
 
-```{r halibut-preds-2020, fig.cap="Caption here", out.width="5.5in"}
+```{r halibut-preds-2020, fig.cap="Halibut in 2020.", out.width="5.5in"}
 include_graphics(here("figs/halibut-2020-predictions-S.png"))
 ```
 
-```{r ye-preds-2020, fig.cap="Caption here", out.width="5.5in"}
+```{r ye-preds-2020, fig.cap="YE in 2020.", out.width="5.5in"}
 include_graphics(here("figs/yelloweye-2020-predictions-S.png"))
 ```
 
-```{r ye-per-hal-preds-2020, fig.cap="Caption here", out.width="5.5in"}
+```{r ye-per-hal-preds-2020, fig.cap="YE per Halibut in 2020.", out.width="5.5in"}
 include_graphics(here("figs/ye-per-halibut-2020-w-hal-catch-S.png"))
 ```
 
-```{r halibut-indexes, fig.cap="Caption here", out.width="6in"}
+```{r halibut-indexes, fig.cap="Halibut index of relative abundance in various regions.", out.width="6in"}
 include_graphics(here("figs/halibut-index-by-area.png"))
 ```
 
-```{r halibut-indexes-avg, fig.cap="Caption here", out.width="6in"}
+```{r halibut-indexes-avg, fig.cap="Average relative abundance index per HBLL grid cell in CDA vs. outside CDA.", out.width="6in"}
 include_graphics(here("figs/halibut-average-index-by-area.png"))
 ```
 
