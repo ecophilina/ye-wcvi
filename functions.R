@@ -206,7 +206,7 @@ map_predictions <- function(
       aes(X * 1e3, Y * 1e3), colour = "grey30", lty = 1,
       inherit.aes = F
     ) +
-    geom_sf(data = coast_gshhg, size = 0.1, fill = "grey75", col = "grey75") +
+    geom_sf(data = coast_gshhg_proj, size = 0.1, fill = "grey75", col = "grey75") +
     scale_fill_viridis_c(
       # trans = ggsidekick::fourth_root_power_trans(),
       trans = "sqrt",
