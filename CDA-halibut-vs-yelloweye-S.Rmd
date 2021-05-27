@@ -192,6 +192,8 @@ cda_grid <- sfc_as_cols(cda_grid_sf, c("longitude", "latitude"))
 noncda_grid <- sfc_as_cols(noncda_grid_sf, c("longitude", "latitude"))
 st_geometry(cda_grid) <- NULL
 st_geometry(noncda_grid) <- NULL
+saveRDS(cda_grid, file = "data-generated/cda_grid.rds")
+saveRDS(noncda_grid, file = "data-generated/noncda_grid.rds")
 ```
 
 # Make relatively finescale mesh
