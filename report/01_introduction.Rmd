@@ -52,8 +52,20 @@ include_graphics(here("figs/halibut-predictions-S.png"))
 include_graphics(here("figs/halibut-2020-predictions-S.png"))
 ```
 
+```{r ye-preds-2020, fig.cap="Caption here", out.width="5.5in"}
+include_graphics(here("figs/yelloweye-2020-predictions-S.png"))
+```
+
+```{r ye-per-hal-preds-2020, fig.cap="Caption here", out.width="5.5in"}
+include_graphics(here("figs/ye-per-halibut-2020-w-hal-catch-S.png"))
+```
+
 ```{r halibut-indexes, fig.cap="Caption here", out.width="6in"}
 include_graphics(here("figs/halibut-index-by-area.png"))
+```
+
+```{r halibut-indexes-avg, fig.cap="Caption here", out.width="6in"}
+include_graphics(here("figs/halibut-average-index-by-area.png"))
 ```
 
 Proportion of HBLL grid inside CDA: `r r2(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)))`
