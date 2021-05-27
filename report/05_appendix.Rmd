@@ -1,0 +1,9 @@
+`r if(knitr:::is_latex_output()) '% begin csasdown appendix'`
+`r if(!knitr:::is_latex_output()) '# (APPENDIX) Appendix {-}'`
+
+\clearpage
+
+# THE FIRST APPENDIX {#app:first-appendix}
+
+
+`r if(knitr:::is_latex_output()) '% end csasdown appendix'`
