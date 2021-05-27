@@ -146,7 +146,7 @@ map_predictions <- function(
   title = "",
   size_lab = "Observed fish\nper 100 hooks",
   fill_lab = "Predicted fish\nper 100 hooks",
-  legend_position = c(0.05,0.05)) {
+  legend_position = c(1, 1)) {
   utm_zone9 <- 3156
   # download from:
   # https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/
