@@ -155,6 +155,7 @@ s_grid_utm <- mutate(s_grid_utm, X_cent = X - mean(d_utm$X))
 Trim prediction grid to cover full outside S HBLL
 
 ```{r}
+full_s_grid_utm <- s_grid_utm
 full_s_grid_sf <- st_as_sf(full_s_grid_utm, coords = c("longitude", "latitude"))
 st_crs(full_s_grid_sf) <- 4326 # set the coordinate reference system
 full_s_grid <- sfc_as_cols(full_s_grid_sf, c("longitude", "latitude"))
