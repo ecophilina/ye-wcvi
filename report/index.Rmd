@@ -100,9 +100,9 @@ if (french) {
 # add other packages here:
 library(dplyr)
 library(ggplot2)
-library(readr)
-library(rosettafish)
-library(tibble)
+# library(readr)
+# library(rosettafish)
+# library(tibble)
 library(csasdown)
 ```
 
