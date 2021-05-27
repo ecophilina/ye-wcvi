@@ -11,6 +11,14 @@ here::dr_here()
 
 # Methods {#sec:methods}
 
+* We fit geostatistical spatial/spatiotemporal models... using sdmTMB
+
+* Negative binomial observation model with an 'offset' for number of hooks. This mean we're ultimately modelling fish caught per hook but with a statistical approach that lets us use a count distribution.
+
+* Not accounting for hook competition currently (the outside YE assessment chose to ignore it after some analysis).
+
+* We have lots of diagnostic and validation plots; they aren't included here.
+
 # Results {#sec:results}
 
 ```{r}
@@ -42,7 +50,7 @@ include_graphics(here("figs/halibut-2020-predictions-S.png"))
 include_graphics(here("figs/halibut-index-by-area.png"))
 ```
 
-Proportion of grid inside CDA: `r r2(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)))`
+Proportion of HBLL grid inside CDA: `r r2(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)))`
 
 ```{r filter-hal}
 i_hal_cda2020 <- filter(i_hal_cda, year == 2020)
@@ -69,7 +77,8 @@ Average estimated YE caught per 100 hooks outside CDA:
 
 # Discussion
 
-* We can add static covariates like bottom type, that would create more local-scale resolution (but likely not change the overall calculations)
+* We can add static covariates like bottom type, that would create more local-scale resolution (but likely not change the overall calculations).
 
-* We haven't presented uncertainty on the inside vs. outside CDA ratios; this is possible but would require some more work
+* We haven't presented uncertainty on the inside vs. outside CDA ratios; this is possible but would require some more work.
 
+* Note that we're only including the HBLL grid within the various boundaries. We could try extrapolating to the full management areas, but at the very least we'd want a habitate type covariate.
