@@ -508,7 +508,7 @@ g <- map_predictions(
 )
 g
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/yelloweye-predictions-S.png", width = 5.5, height = 6)
+ggsave("figs/yelloweye-2020-predictions-S.png", width = 5.5, height = 6)
 ```
 
 
@@ -531,7 +531,7 @@ g <- map_predictions(
 g
 
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/ye-per-halibut-w-hal-catch-S.png", width = 5.5, height = 6)
+ggsave("figs/ye-per-halibut-2020-w-hal-catch-S.png", width = 5.5, height = 6)
 ```
 
 # Other exploratory plots
