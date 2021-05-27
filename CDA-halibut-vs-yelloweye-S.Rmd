@@ -363,20 +363,27 @@ ggsave("figs/halibut-index-by-area.png", width = 7, height = 4, dpi = 400)
 Average predicted catch within the entire court defined area is in red, remainder of southern stock area is in black.
 
 ```{r message = F, echo= F}
-ggplot(i_hal, aes(year, est/nrow(full_s_grid))) +
-  # geom_line() + # index for halibut on full HBLL south
-  # geom_ribbon(aes(ymin = lwr / nrow(full_s_grid), ymax = upr / nrow(full_s_grid)), alpha = 0.4) +
-  geom_line(data = i_hal_cda, aes(year, est / nrow(cda_grid)), colour = "red") +
-  geom_ribbon(data = i_hal_cda, aes(year, ymin = lwr / nrow(cda_grid), ymax = upr / nrow(cda_grid)), alpha = 0.4, fill = "red") +
-  # geom_line(data = i_hal_5A, aes(year, est / nrow(s_5A_grid)), colour = "blue") +
-  # geom_ribbon(data = i_hal_5A, aes(year, ymin = lwr / nrow(s_5A_grid), ymax = upr / nrow(s_5A_grid)), alpha = 0.4, fill = "blue") +
-  geom_line(data = i_hal_noncda, aes(year, est / nrow(noncda_grid)),colour = "orange") +
-  geom_ribbon(data = i_hal_noncda, aes(ymin = lwr / nrow(noncda_grid), ymax = upr / nrow(noncda_grid)), alpha = 0.4, fill = "orange") +
-
+.dat <- bind_rows(
+  mutate(i_hal_noncda, 
+    Area = "HBLL South", 
+    est = est / nrow(noncda_grid), 
+    lwr = lwr / nrow(noncda_grid), 
+    upr = upr / nrow(noncda_grid)),
+  mutate(i_hal_cda,   
+    Area = "CDA", 
+    est = est / nrow(cda_grid), 
+    lwr = lwr / nrow(cda_grid), 
+    upr = upr / nrow(cda_grid)),
+)
+ggplot(.dat, aes(year, est)) +
+  geom_line(aes(colour = Area)) +
+  geom_ribbon(aes(ymin = lwr, 
+    ymax = upr, fill = Area), alpha = 0.4) +
   xlab("Year") +
-  ylab("Average estimated catch per 100 hooks")
-  # coord_cartesian(expand = FALSE, ylim = c(0, max(i_hal$upr) * 1.04))
-# ggsave("figs/halibut-index-by-area.png", width = 6, height = 4)
+  ylab("Average estimated catch per 100 hooks") +
+  scale_fill_brewer(palette = "Set1") +
+  scale_colour_brewer(palette = "Set1")
+ggsave("figs/halibut-average-index-by-area.png", width = 7, height = 4, dpi = 400)
 ```
 
 # Yelloweye Rockfish catch predictions
