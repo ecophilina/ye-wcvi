@@ -337,17 +337,23 @@ i_hal_cda <- readRDS("data-generated/halibut-index-cda.rds")
 i_hal_noncda <- readRDS("data-generated/halibut-index-3CD-outside-cda.rds")
 i_hal_5A <- readRDS("data-generated/halibut-index-5A.rds")
 
-ggplot(i_hal, aes(year, est)) +
-  geom_line() + # index for halibut on full HBLL south
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4) +
-  geom_line(data = i_hal_5A, aes(year, est), colour = "blue") +
-  geom_ribbon(data = i_hal_5A, aes(year, ymin = lwr, ymax = upr), alpha = 0.4, fill = "blue") +
-  geom_line(data = i_hal_noncda, aes(year, est),colour = "orange") + # index for 3CD outside CDA
-  geom_ribbon(data = i_hal_noncda,aes(ymin = lwr, ymax = upr), alpha = 0.4, fill = "orange" ) +
-  geom_line(data = i_hal_cda, aes(year, est), colour = "red") +
-  geom_ribbon(data = i_hal_cda, aes(year, ymin = lwr, ymax = upr), alpha = 0.4, fill = "red") +
+.dat <- bind_rows(
+  mutate(i_hal, Area = "HBLL South"),
+  mutate(i_hal_5A, Area = "5A"),
+  mutate(i_hal_noncda, Area = "HBLL South non-CDA"),
+  mutate(i_hal_cda, Area = "CDA")
+)
+ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
+  geom_line() + 
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
   xlab("Year") +
-  ylab("Estimated total catch \nif 100 hooks set in all grid cells")
+  ylab("Estimated total fish caught\nif 100 hooks set in all grid cells") +
+  coord_cartesian(expand = FALSE, ylim = c(0, max(i_hal$upr) * 1.04)) +
+  scale_x_continuous(breaks = seq(1950, 2050, 2)) +
+  theme(plot.margin = margin(11/2, r = 11, 11/2, 11/2)) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_colour_brewer(palette = "Dark2")
+ggsave("figs/halibut-index-by-area.png", width = 6, height = 4)
 ```
 
 ## Plot estimated halibut catch per 100 hooks through time
@@ -367,6 +373,8 @@ ggplot(i_hal, aes(year, est/nrow(full_s_grid))) +
 
   xlab("Year") +
   ylab("Average estimated catch per 100 hooks")
+  # coord_cartesian(expand = FALSE, ylim = c(0, max(i_hal$upr) * 1.04))
+# ggsave("figs/halibut-index-by-area.png", width = 6, height = 4)
 ```
 
 # Yelloweye Rockfish catch predictions
