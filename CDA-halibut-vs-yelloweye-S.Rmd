@@ -443,12 +443,15 @@ if (!file.exists("data-generated/yelloweye-spatial-index-all-S.rds")) {
 # halibut index was loaded for plots above, so just load yelloweye index
 i_ye_cda <- readRDS("data-generated/yelloweye-spatial-index-cda.rds")
 i_ye_noncda <- readRDS("data-generated/yelloweye-spatial-index-3CD-outside-cda.rds")
+i_ye_5A <- readRDS("data-generated/yelloweye-spatial-index-5A.rds")
 
 print("What proportion of grid is inside CDA?")
 round(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)), 2)
 ```
 
-Pacific Halibut
+## Pacific Halibut
+
+CDA vs. 3CD
 
 ```{r echo=F}
 # print(" PACIFIC HALIBUT")
@@ -459,13 +462,34 @@ print("What proportion of estimated total catch is inside CDA in 2020?")
 round(i_hal_cda2020$est / (i_hal_cda2020$est + i_hal_noncda2020$est), 2)
 
 print("Average estimated catch per 100 hooks inside CDA:")
-(i_hal_cda2020$est / nrow(cda_grid))
+round(i_hal_cda2020$est / nrow(cda_grid),2)
 
 print("Average estimated catch per 100 hooks outside CDA:")
-(i_hal_noncda2020$est / nrow(noncda_grid))
+round(i_hal_noncda2020$est / nrow(noncda_grid),2)
 ```
 
-Yelloweye Rockfish
+CDA vs. 3CD + 5A
+
+```{r echo=F}
+# print(" PACIFIC HALIBUT")
+i_hal_cda2020 <- filter(i_hal_cda, year == 2020)
+i_hal_noncda2020 <- filter(i_hal_noncda, year == 2020)
+i_hal_5A <- filter(i_hal_5A, year == 2020)
+
+print("What proportion of estimated total catch is inside CDA in 2020?")
+round(i_hal_cda2020$est / (i_hal_cda2020$est + i_hal_noncda2020$est + i_hal_5A$est), 2)
+
+print("Average estimated catch per 100 hooks inside CDA:")
+round(i_hal_cda2020$est / nrow(cda_grid), 2)
+
+print("Average estimated catch per 100 hooks outside CDA:")
+round((i_hal_noncda2020$est + i_hal_5A$est)/(nrow(noncda_grid)+nrow(s_5A_grid)),2)
+```
+
+
+## Yelloweye Rockfish
+
+CDA vs. 3CD
 
 ```{r echo=F}
 # print("YELLOWEYE ROCKFISH")
@@ -473,12 +497,24 @@ print("What proportion of estimated total catch is inside CDA?")
 round(i_ye_cda$est / (i_ye_cda$est + i_ye_noncda$est), 2)
 
 print("Average estimated catch per 100 hooks inside CDA:")
-(i_ye_cda$est / nrow(cda_grid))
+round(i_ye_cda$est / nrow(cda_grid), 2)
 
 print("Average estimated catch per 100 hooks outside CDA:")
-(i_ye_noncda$est / nrow(noncda_grid))
+round(i_ye_noncda$est / nrow(noncda_grid), 2)
 ```
 
+CDA vs. 3CD + 5A
+
+```{r echo=F}
+print("What proportion of estimated total catch is inside CDA in 2020?")
+round(i_ye_cda$est / (i_ye_cda$est + i_ye_noncda$est + i_ye_5A$est), 2)
+
+print("Average estimated catch per 100 hooks inside CDA:")
+round(i_ye_cda$est / nrow(cda_grid), 2)
+
+print("Average estimated catch per 100 hooks outside CDA:")
+round((i_ye_noncda$est + i_ye_5A$est)/(nrow(noncda_grid)+nrow(s_5A_grid)),2)
+```
 # Maps
 
 Predictions depicted for HBLL survey grid area that falls within region 3CD. "Court defined area" area is outlined in red. Only 2020 survey catch is included on first two maps, all years of halibut catch are included on the map showing number of Yelloweye Rockfish expected per halibut caught 2020. 
@@ -531,9 +567,9 @@ ratio_df <- left_join(pyd, phd) %>% mutate(halibut = exp(hal_est), yelloweye = e
 g <- map_predictions(
   pred_data = filter(ratio_df, year == 2020),
   obs_data = filter(d_hal, year == 2020),
-  fill_aes = ye_per_hal, fill_lab = "Predicted Yelloweye \nper Halibut",
+  fill_aes = ye_per_hal, fill_lab = "Predicted\nYelloweye\nper Halibut",
   size_aes = (catch_count / hook_count) * 100,
-  size_lab = "Observed halibut\nper 100 hooks"
+  size_lab = "Halibut caught\nper 100 hooks"
 )
 g
 
