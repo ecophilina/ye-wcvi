@@ -473,7 +473,6 @@ g <- map_predictions(
 )
 g
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/test.png", width = 5.5, height = 6)
 ggsave("figs/halibut-2020-predictions-S.png", width = 5.5, height = 6)
 ```
 
