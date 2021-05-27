@@ -1,4 +1,5 @@
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
+here::i_am("report/01_introduction.Rmd")
 library(here)
 library(knitr)
 library(ggplot2)
