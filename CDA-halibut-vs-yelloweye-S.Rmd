@@ -531,7 +531,7 @@ gh <-
   geom_tile(
     data = filter(p_hal$data, year == 2020),
     aes(X * 100000, Y * 100000, fill = exp(est)), 
-    width = 3000, height = 3000, colour = NA
+    width = 2000, height = 2000, colour = NA
   ) +
   # geom_sf(colour = "red", fill = NA) +
   xlim(230957.7 + 10000, 1157991 - 300000) +
