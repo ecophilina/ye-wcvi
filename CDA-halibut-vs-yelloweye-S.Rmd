@@ -621,6 +621,11 @@ gy
 
 
 ```{r message = F, echo= F}
+p_ye_cda <- readRDS("data-generated/yelloweye-spatial-predictions-cda.rds")
+p_ye_noncda <- readRDS("data-generated/yelloweye-spatial-predictions-S-outside-cda.rds")
+p_hal_cda <- readRDS("data-generated/halibut-predictions-cda.rds")
+p_hal_noncda <- readRDS("data-generated/halibut-predictions-S-outside-cda.rds")
+
 # combine predictions for inside and out CDA
 pyd <- bind_rows(p_ye_cda$data, p_ye_noncda$data) %>% rename(ye_est = est)
 phd <- bind_rows(p_hal_cda$data, p_hal_noncda$data) %>%
