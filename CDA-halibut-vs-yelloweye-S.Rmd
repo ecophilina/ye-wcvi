@@ -502,14 +502,40 @@ bound3Dnorth <- fortify(majorbound) %>%
   gfplot:::utm2ll(utm_zone = 9)
 ```
 
+<!-- Get map data: -->
+
+```{r, echo=FALSE}
+# devtools::install_github("ropensci/rnaturalearthhires")
+map_data <- rnaturalearth::ne_countries(scale = "large",
+  returnclass = "sf", country = "canada")
+bc_coast <- suppressWarnings(suppressMessages(
+  st_crop(map_data,
+    c(xmin = -134, ymin = 46, xmax = -120, ymax = 57))))
+utm_zone9 <- 3156
+# ggplot(bc_coast) + geom_sf()
+bc_coast_proj <- sf::st_transform(bc_coast, crs = utm_zone9)
+# ggplot(bc_coast_proj) + geom_sf()
+```
+
 ```{r message = F, echo= F}
 p_hal <- readRDS("data-generated/halibut-predictions-all-S.rds")
 
-gh <- ggplot(data = focal_area) +
+focal_area_proj <- sf::st_transform(focal_area, crs = utm_zone9)
+
+# sf::st_boundary(bc_coast_proj)
+
+dir.create("figs", showWarnings = FALSE)
+gh <-
+  ggplot(data = focal_area_proj) +
+  geom_sf(data = bc_coast_proj, size = 0.3, fill = "grey87", col = "grey60") +
   geom_tile(
     data = filter(p_hal$data, year == 2020),
-    aes(longitude, latitude, fill = exp(est)), width = 0.06, height = 0.025
+    aes(X * 100000, Y * 100000, fill = exp(est)), 
+    width = 3000, height = 3000, colour = NA
   ) +
+  # geom_sf(colour = "red", fill = NA) +
+  xlim(230957.7 + 10000, 1157991 - 300000) +
+  ylim(5366427, 6353456 - 300000) +
   scale_fill_viridis_c(
     trans = ggsidekick::fourth_root_power_trans(),
     # limits=c(0, 6), na.value = "yellow",
@@ -523,41 +549,43 @@ gh <- ggplot(data = focal_area) +
     data = filter(d_hal, year == 2020),
     # data = d_hal, # we could also plot catches from all years
     mapping = aes(
-      longitude, latitude,
+      X * 1e5, Y * 1e5,
       size = (catch_count / hook_count) * 100
     ), pch = 21,
     inherit.aes = FALSE, colour = "grey10", alpha = 0.7
   ) +
-  scale_size_area(max_size = 4) +
-  geom_sf(colour = "red", fill = NA) + # add focal area
-  geom_polygon( # add coast outline
-    data = coast, aes(x = X, y = Y, group = PID),
-    fill = "grey87", col = "grey70", lwd = 0.2
-  ) +
-  geom_line( # add major management region boundaries
-    data = bound3Cnorth,
-    aes(X, Y), colour = "black", lty = 2,
-    inherit.aes = F
-  ) +
-  geom_line( # add major management region boundaries
-    data = bound3Dnorth,
-    aes(X, Y), colour = "black", lty = 2,
-    inherit.aes = F
-  ) +
-  geom_line( # add major management region boundaries
-    data = bound5Anorth,
-    aes(X, Y), colour = "black", lty = 2,
-    inherit.aes = F
-  ) +
+  scale_size_area(max_size = 3) +
+  geom_sf(colour = "red", fill = NA, size = 0.25) + # add focal area
+  # geom_polygon( # add coast outline
+    # data = coast, aes(x = X, y = Y, group = PID),
+    # fill = "grey87", col = "grey70", lwd = 0.2
+  # ) +
+  # geom_line( # add major management region boundaries
+  #   data = bound3Cnorth,
+  #   aes(X, Y), colour = "black", lty = 2,
+  #   inherit.aes = F
+  # ) +
+  # geom_line( # add major management region boundaries
+  #   data = bound3Dnorth,
+  #   aes(X, Y), colour = "black", lty = 2,
+  #   inherit.aes = F
+  # ) +
+  # geom_line( # add major management region boundaries
+  #   data = bound5Anorth,
+  #   aes(X, Y), colour = "black", lty = 2,
+  #   inherit.aes = F
+  # ) +
   annotate("text", x = -128.8, y = 51.1, label = "5A") +
   annotate("text", x = -128.8, y = 50.3, label = "3D") +
   annotate("text", x = -128.8, y = 48.8, label = "3C") +
   xlab("") +
   ylab("") + # remove axis labels
-  coord_sf(expand = F, ylim = c(48.4, 51.3), xlim = c(-130, -125.15)) + # trim points beyond grid boundaries
-  ggtitle("HBLL observed and predicted Pacific Halibut catch per 100 hooks")
+  # coord_sf(expand = F, ylim = c(48.4, 51.3), xlim = c(-130, -125.15)) + # trim points beyond grid boundaries
+  ggtitle("HBLL observed and predicted Pacific Halibut catch per 100 hooks") +
+  theme(panel.grid.major = element_line(colour = "grey92", size = 0.3))
 gh
-# ggsave("figs/halibut-2020-predictions-S.png", width = 6, height = 6)
+
+ggsave("figs/halibut-2020-predictions-S.png", width = 6, height = 6)
 ```
 
 
