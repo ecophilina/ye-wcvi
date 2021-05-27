@@ -9,15 +9,21 @@ here::dr_here()
 
 # Introduction {#sec:introduction}
 
+Yelloweye Rockfish (YE)
+
 # Methods {#sec:methods}
 
-* We fit geostatistical spatial/spatiotemporal models... using sdmTMB
+* We fit geostatistical spatial/spatiotemporal models using sdmTMB.
 
-* Negative binomial observation model with an 'offset' for number of hooks. This mean we're ultimately modelling fish caught per hook but with a statistical approach that lets us use a count distribution.
+* Remaining spatiotemporal correlation was minimal and so we used a spatial model for YE with an annual mean estimate. Spatiotemporal correlation was considerable for Halibut, and so we used a spatiotemporal model.
 
-* Not accounting for hook competition currently (the outside YE assessment chose to ignore it after some analysis).
+* Negative binomial observation model with an 'offset' for number of hooks. This means we're modelling fish caught per hook but with a statistical approach that lets us use a count distribution.
+
+* We are not accounting for hook competition currently---the outside YE assessment chose to ignore it after some analysis.
 
 * We have lots of diagnostic and validation plots; they aren't included here.
+
+* We have included a quadratic effect of depth, annual means for years, and latent "random fields" for spatial and, in the case of Halibut, spatiotemporal fields. These random fields soak up remaining spatial or spatiotemporal correlation from predictors not explicitely included in the model.
 
 # Results {#sec:results}
 
