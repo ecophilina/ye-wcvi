@@ -1,5 +1,5 @@
 ---
-title: "Estimating relative catches of Pacific Halibut and Yelloweye Rockfish off the west coast of Vancouver Island"
+title: "Quantifying relative abundance of Pacific Halibut and Yelloweye Rockfish off the west coast of Vancouver Island with geostatistical modelling"
 year: 2021
 report_number: nnn
 author: |
