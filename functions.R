@@ -141,10 +141,12 @@ get_diag <- function(m, response = "catch_count", variable = "depth_scaled", col
 map_predictions <- function(
   pred_data,
   obs_data,
+  fill_aes = exp(est),
   size_aes = (catch_count / hook_count) * 100,
   title = "",
-  size = "Observed fish\nper 100 hooks",
-  fill = "Predicted fish\nper 100 hooks") {
+  size_lab = "Observed fish\nper 100 hooks",
+  fill_lab = "Predicted fish\nper 100 hooks",
+  legend_position = c(0.05,0.05)) {
   utm_zone9 <- 3156
   # download from:
   # https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/
@@ -156,7 +158,6 @@ map_predictions <- function(
   } else {
     coast_gshhg_proj <- readRDS("data-generated/coast_gshhg.rds")
   }
-  # ggplot(coast_gshhg) + geom_sf()
 
   focal_area <- sf::st_read(dsn = "shape-files/taaqwiihak_areaVer2.shp",
     layer = "taaqwiihak_areaVer2", quiet = TRUE)
@@ -188,7 +189,7 @@ map_predictions <- function(
   g <- ggplot(focal_area_proj) +
     geom_tile(
       data = pred_data,
-      aes(X * 100000, Y * 100000, fill = exp(est)),
+      aes(X * 100000, Y * 100000, fill = {{fill_aes}}),
       width = 2000, height = 2000, colour = NA
     ) +
     geom_line( # add major management region boundaries
@@ -206,13 +207,14 @@ map_predictions <- function(
       aes(X * 1e3, Y * 1e3), colour = "grey30", lty = 1,
       inherit.aes = F
     ) +
-    geom_sf(data = coast_gshhg_proj, size = 0.1, fill = "grey75", col = "grey75") +
+    geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
+    geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey75", col = "grey55") +
     scale_fill_viridis_c(
       # trans = ggsidekick::fourth_root_power_trans(),
       trans = "sqrt",
       option = "D"
     ) +
-    labs(fill = fill, size = size) +
+    labs(fill = fill_lab, size = size_lab) +
     geom_point(
       data = obs_data,
       mapping = aes(
@@ -222,10 +224,6 @@ map_predictions <- function(
       inherit.aes = FALSE, colour = "grey10", alpha = 0.7
     ) +
     scale_size_area(max_size = 3) +
-    geom_sf(colour = "red", fill = NA, size = 0.30) + # add focal area
-    # annotate("text", x = -128.8, y = 51.1, label = "5A") + # FIXME switch to UTMs!
-    # annotate("text", x = -128.8, y = 50.3, label = "3D") +
-    # annotate("text", x = -128.8, y = 48.8, label = "3C")
     annotate("text",
       x = convert2utm9(-128.8, 51.1)[1],
       y = convert2utm9(-128.8, 51.1)[2], label = "5A") +
@@ -241,16 +239,16 @@ map_predictions <- function(
   g <- g +
     theme(panel.grid.major = element_line(colour = "grey89", size = 0.3)) +
     coord_sf(
-      xlim = c(230957.7 + 200000, 1157991 - 300000),
-      ylim = c(5366427, 6353456 - 500000)
+      xlim = c(230957.7 + 200000, 1157991 - 350000),
+      ylim = c(5366427, 6353456 - 550000)
     ) +
     guides(
       fill = guide_colorbar(order = 1),
       size = guide_legend(order = 0)
     ) +
     theme(axis.title = element_blank(),
-      legend.position = c(1, 1),
-      legend.justification = c(1, 1)
+      legend.position = legend_position,
+      legend.justification = legend_position
     )
   g
 }

@@ -10,6 +10,7 @@ library(sf)
 library(dplyr)
 library(ggplot2)
 library(sdmTMB)
+# Do we need instructions for installing other dependencies like "pbsmapping"?
 # devtools::install_github("seananderson/ggsidekick")
 library(ggsidekick) # for fourth_root_power_trans and theme_sleek
 theme_set(ggsidekick::theme_sleek())
@@ -36,6 +37,7 @@ saveRDS(blocks, "data/survey-blocks-36.rds")
 
 # I also copied hbll_s_grid.rda from gfplot into "data" folder
 # and will need a folder called "shape-files" containing "taaqwiihak_areaVer2.shp"
+# download gshhg-shp-2.3.7 from https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/ add place in data folder
 ```
 
 
@@ -499,135 +501,45 @@ ggsave("figs/halibut-predictions-S.png", width = 8, height = 10, dpi = 200)
 ```{r message = F, echo= F}
 p_ye <- readRDS("data-generated/yelloweye-spatial-predictions-all-S.rds")
 
-gy <- ggplot(data = focal_area) +
-  geom_tile(
-    data = p_ye$data,
-    aes(longitude, latitude, fill = exp(est)), width = 0.06, height = 0.025
-  ) +
-  scale_fill_viridis_c(
-    trans = ggsidekick::fourth_root_power_trans(),
-    limits = c(0, 30), na.value = "yellow",
-    option = "D"
-  ) +
-  labs(
-    fill = "Predicted \ncatch \nin 2020",
-    size = "Actual \ncatch \nin 2020"
-  ) +
-  geom_point(
-    data = filter(d_ye, year == 2020),
-    # data = d_ye, # we could also plot catches from all years
-    mapping = aes(
-      longitude, latitude,
-      size = (catch_count / hook_count) * 100
-    ), pch = 21,
-    inherit.aes = FALSE, colour = "grey10", alpha = 0.7
-  ) +
-  scale_size_area(max_size = 4) +
-  geom_sf(colour = "red", fill = NA) + # add focal area
-  geom_polygon( # add coast outline
-    data = coast, aes(x = X, y = Y, group = PID),
-    fill = "grey87", col = "grey70", lwd = 0.2
-  ) +
-  geom_line( # add major management region boundaries
-    data = bound3Cnorth,
-    aes(X, Y), colour = "black", lty = 2,
-    inherit.aes = F
-  ) +
-  geom_line( # add major management region boundaries
-    data = bound3Dnorth,
-    aes(X, Y), colour = "black", lty = 2,
-    inherit.aes = F
-  ) +
-  geom_line( # add major management region boundaries
-    data = bound5Anorth,
-    aes(X, Y), colour = "black", lty = 2,
-    inherit.aes = F
-  ) +
-  annotate("text", x = -128.8, y = 51.1, label = "5A") +
-  annotate("text", x = -128.8, y = 50.3, label = "3D") +
-  annotate("text", x = -128.8, y = 48.8, label = "3C") +
-  xlab("") +
-  ylab("") + # remove axis labels
-  coord_sf(expand = F, ylim = c(48.4, 51.3), xlim = c(-130, -125.15)) + # trim points beyond grid boundaries
-  ggtitle("HBLL observed and predicted Yelloweye Rockfish catch per 100 hooks")
-gy
-# ggsave("figs/yelloweye-2020-predictions-S.png", width = 6, height = 6)
+g <- map_predictions(
+  pred_data = filter(p_ye$data, year == 2020),
+  obs_data = filter(d_ye, year == 2020),
+  size_aes = (catch_count / hook_count) * 100
+)
+g
+dir.create("figs", showWarnings = FALSE)
+ggsave("figs/yelloweye-predictions-S.png", width = 5.5, height = 6)
 ```
 
 
 ```{r message = F, echo= F}
-p_ye_cda <- readRDS("data-generated/yelloweye-spatial-predictions-cda.rds")
-p_ye_noncda <- readRDS("data-generated/yelloweye-spatial-predictions-S-outside-cda.rds")
-p_hal_cda <- readRDS("data-generated/halibut-predictions-cda.rds")
-p_hal_noncda <- readRDS("data-generated/halibut-predictions-S-outside-cda.rds")
-
-# combine predictions for inside and out CDA
-pyd <- bind_rows(p_ye_cda$data, p_ye_noncda$data) %>% rename(ye_est = est)
-phd <- bind_rows(p_hal_cda$data, p_hal_noncda$data) %>%
+# calculate ratio of yelloweye to halibut
+pyd <- p_ye$data %>% rename(ye_est = est)
+phd <- p_hal$data %>%
   rename(hal_est = est) %>%
   select(hal_est, X, Y, year)
 
-# calculate ratio of yelloweye to halibut
 ratio_df <- left_join(pyd, phd) %>% mutate(halibut = exp(hal_est), yelloweye = exp(ye_est), ye_per_hal = yelloweye / halibut)
 
-gratio <- ggplot(data = focal_area) +
-  # plot predictions from best model with mean swept area and hook adjustment factor
-  geom_tile(
-    data = filter(ratio_df, year == 2020),
-    aes(longitude, latitude, fill = ye_per_hal), width = 0.06, height = 0.025
-  ) +
-  scale_fill_viridis_c(
-    trans = ggsidekick::fourth_root_power_trans(),
-    # limits=c(0, 40), na.value = "yellow",
-    option = "D"
-  ) +
-  labs(
-    fill = "Estimated \nYelloweye \nper Halibut",
-    size = "Observed\nhalibut\ncatches\n(all years)"
-  ) +
-  geom_point(
-    data = filter(d_hal, year == 2020),
-    # data = d_hal, # plot catch for all years together?
-    mapping = aes(
-      longitude, latitude,
-      size = (catch_count / hook_count) * 100
-    ), pch = 21,
-    inherit.aes = FALSE, colour = "grey10", alpha = 0.4
-  ) +
-  scale_size_area(max_size = 4) +
-  geom_sf(colour = "red", fill = NA) + # add focal area
-  geom_polygon( # add coast outline
-    data = coast, aes(x = X, y = Y, group = PID),
-    fill = "grey87", col = "grey70", lwd = 0.2
-  ) +
-  geom_line( # add major management region boundaries
-    data = bound3Cnorth,
-    aes(X, Y), colour = "black", lty = 2,
-    inherit.aes = F
-  ) +
-  geom_line( # add major management region boundaries
-    data = bound3Dnorth,
-    aes(X, Y), colour = "black", lty = 2,
-    inherit.aes = F
-  ) +
-  geom_line( # add major management region boundaries
-    data = bound5Anorth,
-    aes(X, Y), colour = "black", lty = 2,
-    inherit.aes = F
-  ) +
-  annotate("text", x = -128.8, y = 51.1, label = "5A") +
-  annotate("text", x = -128.8, y = 50.3, label = "3D") +
-  annotate("text", x = -128.8, y = 48.8, label = "3C") +
-  xlab("") +
-  ylab("") + # remove axis labels
-  coord_sf(expand = F, ylim = c(48.4, 51.3), xlim = c(-130, -125.15)) + # trim points beyond grid boundaries
-  ggtitle("Estimate number of Yelloweye Rockfish caught per Pacific Halibut in 2020")
-gratio
-# ggsave("figs/ye-per-halibut-w-hal-catch-S.png", width = 6, height = 6)
+g <- map_predictions(
+  pred_data = filter(ratio_df, year == 2020),
+  obs_data = filter(d_hal, year == 2020),
+  fill_var = "ye_per_hal", fill_lab = "Predicted Yelloweye \nper Halibut",
+  size_aes = (catch_count / hook_count) * 100,
+  size_lab = "Observed halibut\nper 100 hooks"
+)
+g
+
+dir.create("figs", showWarnings = FALSE)
+ggsave("figs/ye-per-halibut-w-hal-catch-S.png", width = 5.5, height = 6)
 ```
 
 # Other exploratory plots
 ```{r message=F, echo=F}
+p_hal_cda <- readRDS( "data-generated/halibut-predictions-cda.rds")
+p_hal_noncda <- readRDS( "data-generated/halibut-predictions-3CD-outside-cda.rds")
+p_ye_cda <- readRDS( "data-generated/yelloweye-spatial-predictions-cda.rds")
+p_ye_noncda <- readRDS( "data-generated/yelloweye-spatial-predictions-3CD-outside-cda.rds")
 py_cda <- p_ye_cda$data %>% rename(ye_est = est)
 py_noncda <- p_ye_noncda$data %>% rename(ye_est = est)
 ph_cda <- p_hal_cda$data %>%
