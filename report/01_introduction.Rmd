@@ -31,11 +31,11 @@ r2 <- function(x) {
 ```
 
 
-```{r halibut-preds, fig.cap="Caption here", out.width="4in"}
+```{r halibut-preds, fig.cap="Caption here", out.width="6in"}
 include_graphics(here("figs/halibut-2020-predictions-S.png"))
 ```
 
-```{r halibut-indexes, fig.cap="Caption here", out.width="5in"}
+```{r halibut-indexes, fig.cap="Caption here", out.width="6in"}
 include_graphics(here("figs/halibut-index-by-area.png"))
 ```
 

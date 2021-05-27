@@ -353,7 +353,7 @@ ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
   theme(plot.margin = margin(11/2, r = 11, 11/2, 11/2)) +
   scale_fill_brewer(palette = "Dark2") +
   scale_colour_brewer(palette = "Dark2")
-ggsave("figs/halibut-index-by-area.png", width = 7, height = 4)
+ggsave("figs/halibut-index-by-area.png", width = 7, height = 4, dpi = 400)
 ```
 
 ## Plot estimated halibut catch per 100 hooks through time
@@ -483,7 +483,7 @@ g <- map_predictions(
 )
 g
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/halibut-2020-predictions-S.png", width = 5.5, height = 6)
+ggsave("figs/halibut-2020-predictions-S.png", width = 5.5, height = 6, dpi = 400)
 ```
 
 ```{r message = F, echo= F}
