@@ -524,7 +524,7 @@ ratio_df <- left_join(pyd, phd) %>% mutate(halibut = exp(hal_est), yelloweye = e
 g <- map_predictions(
   pred_data = filter(ratio_df, year == 2020),
   obs_data = filter(d_hal, year == 2020),
-  fill_var = "ye_per_hal", fill_lab = "Predicted Yelloweye \nper Halibut",
+  fill_aes = ye_per_hal, fill_lab = "Predicted Yelloweye \nper Halibut",
   size_aes = (catch_count / hook_count) * 100,
   size_lab = "Observed halibut\nper 100 hooks"
 )
