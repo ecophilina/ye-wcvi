@@ -30,8 +30,11 @@ r2 <- function(x) {
 }
 ```
 
+```{r halibut-preds-all, fig.cap="Caption here", out.width="\\textwidth"}
+include_graphics(here("figs/halibut-predictions-S.png"))
+```
 
-```{r halibut-preds, fig.cap="Caption here", out.width="6in"}
+```{r halibut-preds-2020, fig.cap="Caption here", out.width="5.5in"}
 include_graphics(here("figs/halibut-2020-predictions-S.png"))
 ```
 
@@ -63,3 +66,10 @@ Average estimated YE caught per 100 hooks inside CDA:
 
 Average estimated YE caught per 100 hooks outside CDA:
 `r r2(i_ye_noncda$est / nrow(noncda_grid))`
+
+# Discussion
+
+* We can add static covariates like bottom type, that would create more local-scale resolution (but likely not change the overall calculations)
+
+* We haven't presented uncertainty on the inside vs. outside CDA ratios; this is possible but would require some more work
+

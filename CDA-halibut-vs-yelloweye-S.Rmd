@@ -481,9 +481,19 @@ g <- map_predictions(
   obs_data = filter(d_hal, year == 2020),
   size_aes = (catch_count / hook_count) * 100
 )
-g
+# g
 dir.create("figs", showWarnings = FALSE)
 ggsave("figs/halibut-2020-predictions-S.png", width = 5.5, height = 6, dpi = 400)
+```
+
+```{r message = F, echo= F}
+g <- map_predictions(
+  pred_data = p_hal$data,
+  obs_data = d_hal,
+  size_aes = (catch_count / hook_count) * 100
+) + facet_wrap(~year)
+# g
+ggsave("figs/halibut-predictions-S.png", width = 8, height = 10, dpi = 200)
 ```
 
 ```{r message = F, echo= F}

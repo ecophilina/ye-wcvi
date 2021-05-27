@@ -187,7 +187,7 @@ map_predictions <- function(
 
   g <- ggplot(focal_area_proj) +
     geom_tile(
-      data = filter(pred_data, year == 2020),
+      data = pred_data,
       aes(X * 100000, Y * 100000, fill = exp(est)),
       width = 2000, height = 2000, colour = NA
     ) +
@@ -223,9 +223,18 @@ map_predictions <- function(
     ) +
     scale_size_area(max_size = 3) +
     geom_sf(colour = "red", fill = NA, size = 0.30) + # add focal area
-    annotate("text", x = -128.8, y = 51.1, label = "5A") +
-    annotate("text", x = -128.8, y = 50.3, label = "3D") +
-    annotate("text", x = -128.8, y = 48.8, label = "3C")
+    # annotate("text", x = -128.8, y = 51.1, label = "5A") + # FIXME switch to UTMs!
+    # annotate("text", x = -128.8, y = 50.3, label = "3D") +
+    # annotate("text", x = -128.8, y = 48.8, label = "3C")
+    annotate("text",
+      x = convert2utm9(-128.8, 51.1)[1],
+      y = convert2utm9(-128.8, 51.1)[2], label = "5A") +
+    annotate("text", x = convert2utm9(-128.8, 50.3)[1],
+      y = convert2utm9(-128.8, 50.3)[2],
+      label = "3D") +
+    annotate("text", x = convert2utm9(-128.8, 48.8)[1],
+      y = convert2utm9(-128.8, 48.8)[2],
+      label = "3C")
   if (title != "") {
     g <- g + ggtitle(title)
   }
@@ -244,4 +253,12 @@ map_predictions <- function(
       legend.justification = c(1, 1)
     )
   g
+}
+
+convert2utm9 <- function(lon, lat) {
+  temp <- data.frame(lon = lon, lat = lat)
+  temp <- sf::st_as_sf(temp, coords = c("lon", "lat"), crs = 4326)
+  temp <- sf::st_transform(temp, crs = 3156)
+  temp
+  as.numeric(temp$geometry[[1]])
 }
