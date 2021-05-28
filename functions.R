@@ -143,11 +143,12 @@ map_predictions <- function(
   obs_data,
   fill_aes = exp(est),
   size_aes = (catch_count / hook_count) * 100,
+  obs_col = "black",
   title = "",
   size_lab = "Observed fish\nper 100 hooks",
   fill_lab = "Predicted fish\nper 100 hooks",
-  legend_position = c(1, 1),
-  legend_background = TRUE) {
+  legend_position = c(0.99, 0.99),
+  grey_waters = TRUE) {
   utm_zone9 <- 3156
   # download from:
   # https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/
@@ -176,7 +177,7 @@ map_predictions <- function(
   bound5Anorth <- fortify(majorbound) %>%
     filter(PID %in% c(5)) %>%
     filter(
-      X > 200 & X < 560 & Y > 5650
+      X > 200 & X < 600 & Y > 5650
     )
   # 3CD
   bound3Cnorth <- fortify(majorbound) %>%
@@ -199,17 +200,17 @@ map_predictions <- function(
   g <- g +
     geom_line( # add major management region boundaries
       data = bound3Cnorth,
-      aes(X * 1e3, Y * 1e3), colour = "grey30", lty = 1,
+      aes(X * 1e3, Y * 1e3), colour = "grey20", lty = 1,
       inherit.aes = F
     ) +
     geom_line( # add major management region boundaries
       data = bound3Dnorth,
-      aes(X * 1e3, Y * 1e3), colour = "grey30", lty = 1,
+      aes(X * 1e3, Y * 1e3), colour = "grey20", lty = 1,
       inherit.aes = F
     ) +
     geom_line( # add major management region boundaries
       data = bound5Anorth,
-      aes(X * 1e3, Y * 1e3), colour = "grey30", lty = 1,
+      aes(X * 1e3, Y * 1e3), colour = "grey20", lty = 1,
       inherit.aes = F
     ) +
     geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
@@ -226,7 +227,7 @@ map_predictions <- function(
         X * 1e5, Y * 1e5,
         size = {{size_aes}}
       ), pch = 21,
-      inherit.aes = FALSE, colour = "grey10", alpha = 0.7
+      inherit.aes = FALSE, colour = obs_col, alpha = 0.9
     ) +
     scale_size_area(max_size = 3) +
     annotate("text",
@@ -238,11 +239,28 @@ map_predictions <- function(
     annotate("text", x = convert2utm9(-128.8, 48.8)[1],
       y = convert2utm9(-128.8, 48.8)[2],
       label = "3C")
+
   if (title != "") {
     g <- g + ggtitle(title)
   }
+
+  if (grey_waters){
+    g <- g +
+      geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey99", col = "grey55") +
+      geom_point(
+        data = obs_data,
+        mapping = aes(
+          X * 1e5, Y * 1e5,
+          size = {{size_aes}}
+        ), pch = 21,
+        inherit.aes = FALSE, colour = "white", alpha = 0.99
+      ) + theme(
+      legend.key = element_rect(colour = NA, fill = "grey75"),
+      panel.background = element_rect(color = NA, size = 1, fill = "grey75"))
+  }
+
   g <- g +
-    theme(panel.grid.major = element_line(colour = "grey89", size = 0.3)) +
+    theme(panel.grid.major = element_line(colour = "grey60", size = 0.3)) +
     coord_sf(
       xlim = c(230957.7 + 200000, 1157991 - 350000),
       ylim = c(5366427, 6353456 - 550000)
@@ -252,13 +270,10 @@ map_predictions <- function(
       size = guide_legend(order = 0)
     ) +
     theme(axis.title = element_blank(),
+      legend.box.background = element_rect(color = NA, size = 1, fill = "#ffffff90"),
       legend.position = legend_position,
       legend.justification = c(1, 1)
     )
-  if (legend_background){
-    g <- g + theme(
-      legend.box.background = element_rect(color = NA, size = 1, fill = "#FFFFFF90"))
-  }
   g
 }
 
