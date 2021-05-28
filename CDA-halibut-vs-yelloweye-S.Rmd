@@ -532,7 +532,7 @@ g <- map_predictions(
   obs_data = filter(d_hal, year == 2020),
   size_aes = (catch_count / hook_count) * 100
 )
-# g
+g
 dir.create("figs", showWarnings = FALSE)
 ggsave("figs/halibut-2020-predictions-S.png", width = 5.5, height = 6, dpi = 400)
 ```
@@ -542,10 +542,12 @@ g <- map_predictions(
   pred_data = p_hal$data,
   obs_data = d_hal,
   size_aes = (catch_count / hook_count) * 100,
-  legend_position = c(1, 0)
+  legend_position = "right"
 ) + facet_wrap(~year)
-# g 
-ggsave("figs/halibut-predictions-S.png", width = 9, height = 10, dpi = 200)
+
+g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0)) #haven't tested yet as slow!
+
+ggsave("figs/halibut-predictions-S3.png", width = 9, height = 10, dpi = 200)
 ```
 
 ```{r message = F, echo= F}
@@ -555,8 +557,7 @@ g <- map_predictions(
   pred_data = filter(p_ye$data, year == 2020),
   obs_data = filter(d_ye, year == 2020),
   size_aes = (catch_count / hook_count) * 100
-) +
-   theme(legend.justification = c(1, 0))
+) 
 # g
 dir.create("figs", showWarnings = FALSE)
 ggsave("figs/yelloweye-2020-predictions-S.png", width = 5.5, height = 6, dpi = 400)
@@ -594,11 +595,10 @@ g <- map_predictions(
   pred_data = p_ye$data,
   obs_data = d_ye,
   size_aes = (catch_count / hook_count) * 100,
-  legend_position = c(1, 0)
-) + facet_wrap(~year) +
-   theme(legend.justification = c(1, 0))
-# g 
-ggsave("figs/ye-predictions-S.png", width = 9, height = 10, dpi = 200)
+  legend_position = "right"
+) + facet_wrap(~year)
+g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0)) #haven't tested yet as slow!
+ggsave("figs/ye-predictions-S3.png", width = 9, height = 10, dpi = 200)
 ```
 
 # Other exploratory plots
