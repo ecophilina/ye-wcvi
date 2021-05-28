@@ -74,7 +74,7 @@ include_graphics(here("figs/yelloweye-2020-predictions-S.png"))
 include_graphics(here("figs/ye-per-halibut-2020-w-hal-catch-S.png"))
 ```
 
-```{r halibut-indexes, fig.cap="Halibut index of relative abundance in various regions. Lines are means and ribbons are 95\\% confidence intervals (CIs). We could do the same for YE and YE/Halibut if needed.", out.width="6in"}
+```{r halibut-indexes, fig.cap="Halibut index of relative abundance in HBLL grid cells within various regions. Lines are means and ribbons are 95\\% confidence intervals (CIs). We could do the same for YE and YE/Halibut if needed.", out.width="6in"}
 include_graphics(here("figs/halibut-index-by-area.png"))
 ```
 
@@ -92,12 +92,15 @@ i_hal_5A2020 <- filter(i_hal_5A, year == 2020)
 
 ## Some calculated statistics:
 
-Proportion of area 3CD inside CDA: `r r2(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)))`
+All values are for only those 2x2 km grid cells included in the HBLL surveys.
 
-Proportion of estimated total Halibut in **Area 3CD** expected to be inside CDA in 2020: 
+
+Proportion of HBLL grid cells inside area 3CD that are also inside the CDA: `r r2(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)))`
+
+Proportion of estimated total Halibut from HBLL grid cells in **Area 3CD** expected to be inside CDA in 2020: 
 `r r2(i_hal_cda2020$est / (i_hal_cda2020$est + i_hal_noncda2020$est))`
 
-Proportion of estimated total Halibut in **Areas 3CD + 5A** expected to be inside CDA:
+Proportion of estimated total Halibut from HBLL grid cells in **Areas 3CD + 5A** expected to be inside CDA:
 `r r2(i_hal_cda2020$est / (i_hal_cda2020$est + i_hal_noncda2020$est + i_hal_5A2020$est))`
 
 Average estimated Halibut caught per 100 hooks inside CDA in 2020:
@@ -110,10 +113,10 @@ Average estimated Halibut caught per 100 hooks in **Areas 3CD + 5A** in 2020 (ou
 `r r2((i_hal_noncda2020$est + i_hal_5A2020$est) / (nrow(noncda_grid) + nrow(s_5A_grid)))`
 
 
-Proportion of estimated YE in **Area 3CD** expected to be inside CDA:
+Proportion of estimated YE from HBLL grid cells in **Area 3CD** expected to be inside CDA:
 `r r2(i_ye_cda$est / (i_ye_cda$est + i_ye_noncda$est))`
 
-Proportion of estimated YE in **Areas 3CD + 5A** expected to be inside CDA:
+Proportion of estimated YE from HBLL grid cells in **Areas 3CD + 5A** expected to be inside CDA:
 `r r2(i_ye_cda$est / (i_ye_cda$est + i_ye_noncda$est + i_ye_5A$est))`
 
 
