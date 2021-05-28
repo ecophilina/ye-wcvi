@@ -586,6 +586,19 @@ dir.create("figs", showWarnings = FALSE)
 ggsave("figs/ye-per-halibut-2020-w-hal-catch-S.png", width = 5.5, height = 6, dpi = 400)
 ```
 
+Raw data
+
+```{r}
+g <- map_predictions(
+  pred_data = p_ye$data,
+  obs_data = d_ye,
+  size_aes = (catch_count / hook_count) * 100,
+  legend_position = c(1, 0)
+) + facet_wrap(~year)
+# g 
+ggsave("figs/ye-predictions-S.png", width = 9, height = 10, dpi = 200)
+```
+
 # Other exploratory plots
 ```{r message=F, echo=F}
 p_hal_cda <- readRDS( "data-generated/halibut-predictions-cda.rds")

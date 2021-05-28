@@ -58,7 +58,11 @@ r2 <- function(x) {
 include_graphics(here("figs/halibut-predictions-S.png"))
 ```
 
-```{r halibut-preds-2020, fig.cap="Halibut in 2020. This is a zoomed in version of just 2020 from the previous plot.", out.width="5.5in"}
+```{r ye-preds-all, fig.cap="Observed (circle area) and predicted (colour) Yelloweye Rockfish in the HBLL survey per 100 hooks across all years. The CDA is outlined in red. Note that the colour axis in fourth-root transformed to improve visual interpretation. The spatial distribution is assumed constant across years right now, but the mean is allowed to change through time (it is relatively constant).", out.width="\\textwidth"}
+include_graphics(here("figs/ye-predictions-S.png"))
+```
+
+```{r halibut-preds-2020, fig.cap="Halibut in 2020. This is a zoomed in version of just 2020.", out.width="5.5in"}
 include_graphics(here("figs/halibut-2020-predictions-S.png"))
 ```
 
