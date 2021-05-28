@@ -74,11 +74,11 @@ include_graphics(here("figs/yelloweye-2020-predictions-S.png"))
 include_graphics(here("figs/ye-per-halibut-2020-w-hal-catch-S.png"))
 ```
 
-```{r halibut-indexes, fig.cap="Halibut index of relative abundance in various regions. Lines are means and ribbons are 95\\% confidence intervals (CIs).", out.width="6in"}
+```{r halibut-indexes, fig.cap="Halibut index of relative abundance in various regions. Lines are means and ribbons are 95\\% confidence intervals (CIs). We could do the same for YE and YE/Halibut if needed.", out.width="6in"}
 include_graphics(here("figs/halibut-index-by-area.png"))
 ```
 
-```{r halibut-indexes-avg, fig.cap="Average Halibut relative abundance per HBLL grid cell in CDA vs. in area 3CD but outside CDA.", out.width="6in"}
+```{r halibut-indexes-avg, fig.cap="Average Halibut relative abundance per HBLL grid cell in CDA vs. in area 3CD but outside CDA. Again, could be done for YE and YE/Halibut.", out.width="6in"}
 include_graphics(here("figs/halibut-average-index-by-area.png"))
 ```
 
