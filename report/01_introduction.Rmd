@@ -16,13 +16,13 @@ here::dr_here()
 
 # Methods {#sec:methods}
 
-* We fit geostatistical spatial/spatiotemporal models using sdmTMB.
+* We fit geostatistical spatial/spatiotemporal models using the R package sdmTMB <https://github.com/pbs-assess/sdmTMB>.
 
-* For YE, the remaining spatiotemporal correlation was minimal and so we used a spatial model with an annual mean estimate. Spatiotemporal correlation was considerable for Halibut, and so we used a spatiotemporal model.
+* For YE, the spatiotemporal correlation was minimal and so we used a spatial model with annual mean parameters. Spatiotemporal correlation was considerable for Halibut, and so we used a spatiotemporal model. Our Halibut model is very similar to the model used by the IPHC for index standardization.
 
-* We used a negative binomial observation model with a log link and an with an 'offset' for number of hooks. This means we're modelling fish caught per hook but with a statistical approach that lets us use a count distribution. The negative binomial distribution lets the observation variance scale quadratically with the mean.
+* We used a negative binomial observation model with a log link and an an 'offset' for number of hooks. This means we are modelling fish caught per hook but with a statistical approach that lets us use a count distribution. The negative binomial distribution lets the observation variance scale quadratically with the mean, which is typically needed for this type of data.
 
-* We are not accounting for hook competition currently---the outside YE assessment chose to ignore it after some analysis.
+* We are not accounting for hook competition currently---the outside YE assessment chose to ignore it after some analysis. This could be included.
 
 * We have many diagnostic and validation plots; they are not included here.
 
