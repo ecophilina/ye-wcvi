@@ -163,22 +163,26 @@ full_s_grid_sf <- st_as_sf(full_s_grid_utm, coords = c("longitude", "latitude"))
 st_crs(full_s_grid_sf) <- 4326 # set the coordinate reference system
 full_s_grid <- sfc_as_cols(full_s_grid_sf, c("longitude", "latitude"))
 st_geometry(full_s_grid) <- NULL
+
+saveRDS(full_s_grid, file = "data-generated/full_s_grid.rds")
 ```
 
 Trim prediction grid for just area 5A
 
 ```{r}
-s_5A_grid_utm <- filter(s_grid_utm, latitude < 51.24999 & latitude > 50.5)
+s_5A_grid_utm <- filter(s_grid_utm, latitude < 51.24999 & latitude > 50.5)  # trims grid to be just area 5A
 s_5A_grid_sf <- st_as_sf(s_5A_grid_utm, coords = c("longitude", "latitude"))
 st_crs(s_5A_grid_sf) <- 4326 # set the coordinate reference system
 s_5A_grid <- sfc_as_cols(s_5A_grid_sf, c("longitude", "latitude"))
 st_geometry(s_5A_grid) <- NULL
+
+saveRDS(s_5A_grid, file = "data-generated/s_5A_grid.rds")
 ```
 
 Split area 3CD into areas inside and outside court defined area (CDA)
 
 ```{r message= F}
-s_3CD_grid_utm <- filter(s_grid_utm, latitude < 50.5)
+s_3CD_grid_utm <- filter(s_grid_utm, latitude < 50.5) # trims grid to be just area 3CD
 s_3CD_grid_sf <- st_as_sf(s_3CD_grid_utm, coords = c("longitude", "latitude"))
 st_crs(s_3CD_grid_sf) <- 4326 # set the coordinate reference system
 # s_grid_sf
