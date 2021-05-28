@@ -6,7 +6,7 @@ author: |
   Philina A. English,
   Sean C. Anderson,
   Dana R. Haggarty
-author_list: "Last, F.M. and Smith, A.B."
+author_list: "English, P.A., Anderson, S.C., and Haggarty, D.R."
 region: Pacific Region
 isbn: ""
 address: |
@@ -14,7 +14,7 @@ address: |
   Fisheries and Oceans Canada, 3190 Hammond Bay Road\
   Nanaimo, British Columbia, V9T 6N7, Canada\
 phone: "(555) 555-5555"
-author_footnote: "Email: First.Author@dfo-mpo.gc.ca | telephone: (250) 756-5555"
+author_footnote: "Email: Philina.English@dfo-mpo.gc.ca | telephone: (250) 756-5555"
 abstract: |
   Abstract text. 
 abstract_other: |
