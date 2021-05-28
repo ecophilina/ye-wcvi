@@ -146,8 +146,8 @@ map_predictions <- function(
   title = "",
   size_lab = "Observed fish\nper 100 hooks",
   fill_lab = "Predicted fish\nper 100 hooks",
-  legend_position = c(0.95,0.95),
-  legend_background = T) {
+  legend_position = c(1, 1),
+  legend_background = TRUE) {
   utm_zone9 <- 3156
   # download from:
   # https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/
@@ -253,11 +253,11 @@ map_predictions <- function(
     ) +
     theme(axis.title = element_blank(),
       legend.position = legend_position,
-      legend.justification = legend_position
+      legend.justification = c(1, 1)
     )
-  if(legend_background){
+  if (legend_background){
     g <- g + theme(
-      legend.box.background = element_rect(color="white", size=1))
+      legend.box.background = element_rect(color = NA, size = 1, fill = "#FFFFFF90"))
   }
   g
 }

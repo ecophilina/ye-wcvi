@@ -542,9 +542,9 @@ g <- map_predictions(
   pred_data = p_hal$data,
   obs_data = d_hal,
   size_aes = (catch_count / hook_count) * 100,
-  legend_position = "right"
+  legend_position = c(1, 0)
 ) + facet_wrap(~year)
-g 
+# g 
 ggsave("figs/halibut-predictions-S.png", width = 9, height = 10, dpi = 200)
 ```
 
@@ -556,9 +556,9 @@ g <- map_predictions(
   obs_data = filter(d_ye, year == 2020),
   size_aes = (catch_count / hook_count) * 100
 )
-g
+# g
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/yelloweye-2020-predictions-S.png", width = 5.5, height = 6)
+ggsave("figs/yelloweye-2020-predictions-S.png", width = 5.5, height = 6, dpi = 400)
 ```
 
 
@@ -580,10 +580,10 @@ g <- map_predictions(
   size_aes = (catch_count / hook_count) * 100,
   size_lab = "Halibut caught\nper 100 hooks"
 )
-g
+# g
 
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/ye-per-halibut-2020-w-hal-catch-S.png", width = 5.5, height = 6)
+ggsave("figs/ye-per-halibut-2020-w-hal-catch-S.png", width = 5.5, height = 6, dpi = 400)
 ```
 
 # Other exploratory plots
