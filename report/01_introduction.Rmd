@@ -70,7 +70,7 @@ include_graphics(here("figs/halibut-2020-predictions-S.png"))
 include_graphics(here("figs/yelloweye-2020-predictions-S.png"))
 ```
 
-```{r ye-per-hal-preds-2020, fig.cap="YE per Halibut in 2020. Not that the circles represent the number of halibut caught and so are a different data type from the predictions.", out.width="5.5in"}
+```{r ye-per-hal-preds-2020, fig.cap="YE per Halibut in 2020. Note that the circles represent the number of halibut caught and so are a different data type from the predictions.", out.width="5.5in"}
 include_graphics(here("figs/ye-per-halibut-2020-w-hal-catch-S.png"))
 ```
 

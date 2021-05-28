@@ -555,7 +555,8 @@ g <- map_predictions(
   pred_data = filter(p_ye$data, year == 2020),
   obs_data = filter(d_ye, year == 2020),
   size_aes = (catch_count / hook_count) * 100
-)
+) +
+   theme(legend.justification = c(1, 0))
 # g
 dir.create("figs", showWarnings = FALSE)
 ggsave("figs/yelloweye-2020-predictions-S.png", width = 5.5, height = 6, dpi = 400)
@@ -588,13 +589,14 @@ ggsave("figs/ye-per-halibut-2020-w-hal-catch-S.png", width = 5.5, height = 6, dp
 
 Raw data
 
-```{r}
+```{r ye-map-all, cache=TRUE, echo=F, message=F}
 g <- map_predictions(
   pred_data = p_ye$data,
   obs_data = d_ye,
   size_aes = (catch_count / hook_count) * 100,
   legend_position = c(1, 0)
-) + facet_wrap(~year)
+) + facet_wrap(~year) +
+   theme(legend.justification = c(1, 0))
 # g 
 ggsave("figs/ye-predictions-S.png", width = 9, height = 10, dpi = 200)
 ```
