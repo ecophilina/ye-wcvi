@@ -9,6 +9,7 @@ output: html_document
 library(sf)
 library(dplyr)
 library(ggplot2)
+# remotes::install_github("pbs-assess/sdmTMB", ref = "pc-prior") # for faster models
 library(sdmTMB)
 # Do we need instructions for installing other dependencies like "pbsmapping"?
 # devtools::install_github("seananderson/ggsidekick")
@@ -342,9 +343,10 @@ i_hal_5A <- readRDS("data-generated/halibut-index-5A.rds")
 .dat <- bind_rows(
   mutate(i_hal, Area = "HBLL South"),
   mutate(i_hal_5A, Area = "5A"),
-  mutate(i_hal_noncda, Area = "HBLL South non-CDA"),
+  mutate(i_hal_noncda, Area = "non-CDA 3CD"),
   mutate(i_hal_cda, Area = "CDA")
-)
+) 
+.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD", "5A", "HBLL South"))
 ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
   geom_line() + 
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
@@ -353,8 +355,8 @@ ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
   coord_cartesian(expand = FALSE, ylim = c(0, max(i_hal$upr) * 1.04)) +
   scale_x_continuous(breaks = seq(1950, 2050, 2)) +
   theme(plot.margin = margin(11/2, r = 11, 11/2, 11/2)) +
-  scale_fill_brewer(palette = "Dark2") +
-  scale_colour_brewer(palette = "Dark2")
+  scale_fill_brewer(palette = "Set1") +
+  scale_colour_brewer(palette = "Set1")
 ggsave("figs/halibut-index-by-area.png", width = 7, height = 4, dpi = 400)
 ```
 
@@ -365,7 +367,7 @@ Average predicted catch within the entire court defined area is in red, remainde
 ```{r message = F, echo= F}
 .dat <- bind_rows(
   mutate(i_hal_noncda, 
-    Area = "HBLL South", 
+    Area = "non-CDA 3CD", 
     est = est / nrow(noncda_grid), 
     lwr = lwr / nrow(noncda_grid), 
     upr = upr / nrow(noncda_grid)),
@@ -535,10 +537,11 @@ ggsave("figs/halibut-2020-predictions-S.png", width = 5.5, height = 6, dpi = 400
 g <- map_predictions(
   pred_data = p_hal$data,
   obs_data = d_hal,
-  size_aes = (catch_count / hook_count) * 100
+  size_aes = (catch_count / hook_count) * 100,
+  legend_position = "right"
 ) + facet_wrap(~year)
-# g
-ggsave("figs/halibut-predictions-S.png", width = 8, height = 10, dpi = 200)
+g 
+ggsave("figs/halibut-predictions-S.png", width = 9, height = 10, dpi = 200)
 ```
 
 ```{r message = F, echo= F}
@@ -557,6 +560,8 @@ ggsave("figs/yelloweye-2020-predictions-S.png", width = 5.5, height = 6)
 
 ```{r message = F, echo= F}
 # calculate ratio of yelloweye to halibut
+p_ye <- readRDS("data-generated/yelloweye-spatial-predictions-all-S.rds")
+p_hal <- readRDS("data-generated/halibut-predictions-all-S.rds")
 pyd <- p_ye$data %>% rename(ye_est = est)
 phd <- p_hal$data %>%
   rename(hal_est = est) %>%
