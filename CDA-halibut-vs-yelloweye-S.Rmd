@@ -537,7 +537,7 @@ dir.create("figs", showWarnings = FALSE)
 ggsave("figs/halibut-2020-predictions-S.png", width = 5.5, height = 6, dpi = 400)
 ```
 
-```{r message = F, echo= F}
+```{r map-predictions-all, message = F, echo= F, cache=TRUE}
 g <- map_predictions(
   pred_data = p_hal$data,
   obs_data = d_hal,
