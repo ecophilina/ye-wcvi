@@ -51,7 +51,7 @@ Load custom functions including one that takes the set data and hook data retrie
 source("functions.R")
 ```
 
-```{r message = F}
+```{r message=F}
 model_data_prep <- function(setdata, hookdata) {
   # add in survey blocks
   block_ids <- readRDS("data/survey-blocks-36.rds")
@@ -129,7 +129,7 @@ saveRDS(d_ye, "data-generated/yelloweye-surv-36-model-data.rds")
 
 # Make prediction grid
 
-```{r message= F}
+```{r message=F}
 # shouldn't matter which species this is based on since the offsets are currently the same for both
 d_utm <- readRDS("data-generated/yelloweye-surv-36-model-data.rds")
 
@@ -248,7 +248,7 @@ get_diag(m_halibut)
 
 # Yelloweye Rockfish model
 
-```{r eval = TRUE}
+```{r eval=TRUE}
 d_ye <- readRDS("data-generated/yelloweye-surv-36-model-data.rds")
 
 f <- "models/yelloweye-hook-count-offset-400kn-spatial-only.rds"
@@ -338,7 +338,7 @@ saveRDS(i_hal_S, "data-generated/halibut-index-all-S.rds")
 
 Total catch index for entire court defined area is in red, remainder of southern stock area is in black.
 
-```{r message = F, echo= F}
+```{r message=F, echo=F}
 i_hal <- readRDS("data-generated/halibut-index-all-S.rds")
 i_hal_cda <- readRDS("data-generated/halibut-index-cda.rds")
 i_hal_noncda <- readRDS("data-generated/halibut-index-3CD-outside-cda.rds")
@@ -445,7 +445,7 @@ if (!file.exists("data-generated/yelloweye-spatial-index-all-S.rds")) {
 
 # Calculate overall proportion of predicted catch in 3CD is inside vs outside CDA
 
-```{r echo= F}
+```{r echo=F}
 # halibut index was loaded for plots above, so just load yelloweye index
 i_ye_cda <- readRDS("data-generated/yelloweye-spatial-index-cda.rds")
 i_ye_noncda <- readRDS("data-generated/yelloweye-spatial-index-3CD-outside-cda.rds")
@@ -525,7 +525,7 @@ round((i_ye_noncda$est + i_ye_5A$est)/(nrow(noncda_grid)+nrow(s_5A_grid)),2)
 
 Predictions depicted for HBLL survey grid area that falls within region 3CD. "Court defined area" area is outlined in red. Only 2020 survey catch is included on first two maps, all years of halibut catch are included on the map showing number of Yelloweye Rockfish expected per halibut caught 2020. 
 
-```{r message = F, echo= F}
+```{r message=F, echo=F}
 p_hal <- readRDS("data-generated/halibut-predictions-all-S.rds")
 g <- map_predictions(
   pred_data = filter(p_hal$data, year == 2020),
@@ -537,7 +537,7 @@ dir.create("figs", showWarnings = FALSE)
 ggsave("figs/halibut-2020-predictions-S.png", width = 5.5, height = 6, dpi = 400)
 ```
 
-```{r map-predictions-all, message = F, echo= F, cache=TRUE}
+```{r map-predictions-all, message=F, echo=F, cache=TRUE}
 g <- map_predictions(
   pred_data = p_hal$data,
   obs_data = d_hal,
@@ -545,12 +545,12 @@ g <- map_predictions(
   legend_position = "right"
 ) + facet_wrap(~year)
 
-g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0)) #haven't tested yet as slow!
+g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0)) 
 
-ggsave("figs/halibut-predictions-S3.png", width = 9, height = 10, dpi = 200)
+ggsave("figs/halibut-predictions-S.png", width = 9, height = 10, dpi = 200)
 ```
 
-```{r message = F, echo= F}
+```{r message=F, echo=F}
 p_ye <- readRDS("data-generated/yelloweye-spatial-predictions-all-S.rds")
 
 g <- map_predictions(
@@ -558,13 +558,13 @@ g <- map_predictions(
   obs_data = filter(d_ye, year == 2020),
   size_aes = (catch_count / hook_count) * 100
 ) 
-# g
+g
 dir.create("figs", showWarnings = FALSE)
 ggsave("figs/yelloweye-2020-predictions-S.png", width = 5.5, height = 6, dpi = 400)
 ```
 
 
-```{r message = F, echo= F}
+```{r message=F, echo=F}
 # calculate ratio of yelloweye to halibut
 p_ye <- readRDS("data-generated/yelloweye-spatial-predictions-all-S.rds")
 p_hal <- readRDS("data-generated/halibut-predictions-all-S.rds")
@@ -582,7 +582,7 @@ g <- map_predictions(
   size_aes = (catch_count / hook_count) * 100,
   size_lab = "Halibut caught\nper 100 hooks"
 )
-# g
+g
 
 dir.create("figs", showWarnings = FALSE)
 ggsave("figs/ye-per-halibut-2020-w-hal-catch-S.png", width = 5.5, height = 6, dpi = 400)
@@ -597,8 +597,8 @@ g <- map_predictions(
   size_aes = (catch_count / hook_count) * 100,
   legend_position = "right"
 ) + facet_wrap(~year)
-g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0)) #haven't tested yet as slow!
-ggsave("figs/ye-predictions-S3.png", width = 9, height = 10, dpi = 200)
+g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0)) 
+ggsave("figs/ye-predictions-S.png", width = 9, height = 10, dpi = 200)
 ```
 
 # Other exploratory plots
@@ -667,7 +667,7 @@ ggplot(filter(
 ### Experiment with accumulation curve
 Solid lines are cumulative halibut catch potential for each addition cell fished in decreasing order of predicted halibut abundance.
 Dashed lines are the cumulative yelloweye catch that might be anticipated for those same cells.
-```{r message = F, echo= F}
+```{r message=F, echo=F}
 ggplot(
   data = ratio_cda,
   aes(x = ordered)
