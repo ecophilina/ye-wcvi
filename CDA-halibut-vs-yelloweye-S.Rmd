@@ -304,7 +304,7 @@ p_hal_noncda <- predict(m_halibut, newdata = noncda_grid, return_tmb_object = TR
 saveRDS(p_hal_noncda, "data-generated/halibut-predictions-3CD-outside-cda.rds")
 
 i_hal_noncda <- get_index(p_hal_noncda)
-saveRDS(i_hal_noncda, "data-generated/halibut-index-3CD-outside-cda.rds")
+saveRDS(i_hal_noncda, f)
 }
 ```
 
@@ -557,7 +557,6 @@ CDA vs. 3CD
 # print("YELLOWEYE ROCKFISH")
 i_ye_cda2020 <- filter(i_ye_cda, year == 2020)
 i_ye_noncda2020 <- filter(i_ye_noncda, year == 2020)
-i_ye_5A2020 <- filter(i_ye_5A, year == 2020)
 
 print("What proportion of estimated total catch is inside CDA?")
 round(i_ye_cda2020$est / (i_ye_cda2020$est + i_ye_noncda2020$est), 2)
@@ -572,6 +571,10 @@ round(i_ye_noncda2020$est / nrow(noncda_grid), 2)
 CDA vs. 3CD + 5A
 
 ```{r echo=F}
+i_ye_cda2020 <- filter(i_ye_cda, year == 2020)
+i_ye_noncda2020 <- filter(i_ye_noncda, year == 2020)
+i_ye_5A2020 <- filter(i_ye_5A, year == 2020)
+
 print("What proportion of estimated total catch is inside CDA in 2020?")
 round(i_ye_cda2020$est / (i_ye_cda2020$est + i_ye_noncda2020$est + i_ye_5A2020$est), 2)
 
@@ -581,6 +584,7 @@ round(i_ye_cda2020$est / nrow(cda_grid), 2)
 print("Average estimated catch per 100 hooks outside CDA:")
 round((i_ye_noncda2020$est + i_ye_5A2020$est)/(nrow(noncda_grid)+nrow(s_5A_grid)),2)
 ```
+
 # Maps
 
 Predictions depicted for HBLL survey grid area that falls within region 3CD. "Court defined area" area is outlined in red. Only 2020 survey catch is included on first two maps, all years of halibut catch are included on the map showing number of Yelloweye Rockfish expected per halibut caught 2020. 
