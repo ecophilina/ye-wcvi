@@ -605,7 +605,7 @@ g <- map_predictions(
   legend_position = "right"
 ) + facet_wrap(~year)
 
-g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0)) 
+g <- g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0)) 
 
 ggsave("figs/halibut-predictions-S.png", width = 9, height = 10, dpi = 200)
 ```
@@ -657,7 +657,7 @@ g <- map_predictions(
   size_aes = (catch_count / hook_count) * 100,
   legend_position = "right"
 ) + facet_wrap(~year)
-g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0)) 
+g <- g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0)) 
 ggsave("figs/ye-predictions-S.png", width = 9, height = 10, dpi = 200)
 ```
 
