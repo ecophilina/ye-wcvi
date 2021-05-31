@@ -33,9 +33,10 @@ here::dr_here()
 # Results {#sec:results}
 
 ```{r}
-i_ye_cda <- readRDS(here("data-generated/yelloweye-spatial-index-cda.rds"))
-i_ye_noncda <- readRDS(here("data-generated/yelloweye-spatial-index-3CD-outside-cda.rds"))
-i_ye_5A <- readRDS(here("data-generated/yelloweye-spatial-index-5A.rds"))
+i_ye <- readRDS(here("data-generated/yelloweye-spatial-index-all-S2.rds"))
+i_ye_cda <- readRDS(here("data-generated/yelloweye-spatial-index-cda2.rds"))
+i_ye_noncda <- readRDS(here("data-generated/yelloweye-spatial-index-3CD-outside-cda2.rds"))
+i_ye_5A <- readRDS(here("data-generated/yelloweye-spatial-index-5A2.rds"))
 
 i_hal <- readRDS(here("data-generated/halibut-index-all-S.rds"))
 i_hal_cda <- readRDS(here("data-generated/halibut-index-cda.rds"))
@@ -74,20 +75,31 @@ include_graphics(here("figs/yelloweye-2020-predictions-S.png"))
 include_graphics(here("figs/ye-per-halibut-2020-w-hal-catch-S.png"))
 ```
 
-```{r halibut-indexes, fig.cap="Halibut index of relative abundance in HBLL grid cells within various regions. Lines are means and ribbons are 95\\% confidence intervals (CIs). We could do the same for YE and YE/Halibut if needed.", out.width="6in"}
+```{r halibut-indexes, fig.cap="Halibut index of relative abundance in HBLL grid cells within various regions. Lines are means and ribbons are 95\\% confidence intervals (CIs).", out.width="6in"}
 include_graphics(here("figs/halibut-index-by-area.png"))
+```
+
+```{r yelloweye-indexes, fig.cap="Yelloweye Rockfish index of relative abundance in HBLL grid cells within various regions. Lines are means and ribbons are 95\\% confidence intervals (CIs). We could do the same for YE/Halibut if needed.", out.width="6in"}
+include_graphics(here("figs/yelloweye-index-by-area.png"))
 ```
 
 ```{r halibut-indexes-avg, fig.cap="Average Halibut relative abundance per HBLL grid cell in CDA vs. in area 3CD but outside CDA. Again, could be done for YE and YE/Halibut.", out.width="6in"}
 include_graphics(here("figs/halibut-average-index-by-area.png"))
 ```
 
+```{r yelloweye-indexes-avg, fig.cap="Average Yelloweye Rockfish relative abundance per HBLL grid cell in CDA vs. in area 3CD but outside CDA. Again, could be done for YE/Halibut.", out.width="6in"}
+include_graphics(here("figs/yelloweye-average-index-by-area.png"))
+```
 \clearpage
 
-```{r filter-hal}
+```{r filter-indices}
 i_hal_cda2020 <- filter(i_hal_cda, year == 2020)
 i_hal_noncda2020 <- filter(i_hal_noncda, year == 2020)
 i_hal_5A2020 <- filter(i_hal_5A, year == 2020)
+
+i_ye_cda2020 <- filter(i_ye_cda, year == 2020)
+i_ye_noncda2020 <- filter(i_ye_noncda, year == 2020)
+i_ye_5A2020 <- filter(i_ye_5A, year == 2020)
 ```
 
 ## Some calculated statistics:
@@ -114,20 +126,20 @@ Average estimated Halibut caught per 100 hooks in **Areas 3CD + 5A** in 2020 (ou
 
 
 Proportion of estimated YE from HBLL grid cells in **Area 3CD** expected to be inside CDA:
-`r r2(i_ye_cda$est / (i_ye_cda$est + i_ye_noncda$est))`
+`r r2(i_ye_cda2020$est / (i_ye_cda2020$est + i_ye_noncda2020$est))`
 
 Proportion of estimated YE from HBLL grid cells in **Areas 3CD + 5A** expected to be inside CDA:
-`r r2(i_ye_cda$est / (i_ye_cda$est + i_ye_noncda$est + i_ye_5A$est))`
+`r r2(i_ye_cda2020$est / (i_ye_cda2020$est + i_ye_noncda2020$est + i_ye_5A2020$est))`
 
 
 Average estimated YE caught per 100 hooks inside CDA:
-`r r2(i_ye_cda$est / nrow(cda_grid))`
+`r r2(i_ye_cda2020$est / nrow(cda_grid))`
 
 Average estimated YE caught per 100 hooks in **Area 3CD** outside CDA:
-`r r2(i_ye_noncda$est / nrow(noncda_grid))`
+`r r2(i_ye_noncda2020$est / nrow(noncda_grid))`
 
 Average estimated YE caught per 100 hooks in **Areas 3CD + 5A** (outside CDA):
-`r r2((i_ye_noncda$est + i_ye_5A$est) / (nrow(noncda_grid) + nrow(s_5A_grid)))`
+`r r2((i_ye_noncda2020$est + i_ye_5A2020$est) / (nrow(noncda_grid) + nrow(s_5A_grid)))`
 
 
 

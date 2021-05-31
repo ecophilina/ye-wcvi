@@ -251,7 +251,7 @@ get_diag(m_halibut)
 ```{r eval=TRUE}
 d_ye <- readRDS("data-generated/yelloweye-surv-36-model-data.rds")
 
-f <- "models/yelloweye-hook-count-offset-400kn-spatial-only.rds"
+f <- "models/yelloweye-hook-count-offset-400kn-spatial-only-T.rds"
 if (!file.exists(f)) {
   m_ye <- sdmTMB(
     formula = catch_count ~ 0 + as.factor(year) +
@@ -259,7 +259,8 @@ if (!file.exists(f)) {
       offset,
     data = d_ye,
     spde = mesh400kn,
-    time = NULL,
+    spatial_only = T,
+    time = "year",
     silent = FALSE,
     anisotropy = TRUE,
     reml = TRUE,
@@ -271,7 +272,7 @@ if (!file.exists(f)) {
 
 
 ```{r}
-m_ye <- readRDS(file = "models/yelloweye-hook-count-offset-400kn-spatial-only.rds")
+m_ye <- readRDS(file = "models/yelloweye-hook-count-offset-400kn-spatial-only-T.rds")
 m_ye
 # tidy(m_ye, "ran_pars", conf.int = TRUE)
 ```
@@ -397,59 +398,114 @@ ggsave("figs/halibut-average-index-by-area.png", width = 7, height = 4, dpi = 40
 For CDA only
 
 ```{r eval = TRUE}
-if (!file.exists("data-generated/yelloweye-spatial-predictions-cda.rds")) {
+f <- "data-generated/yelloweye-spatial-index-cda2.rds"
+if (!file.exists(f)) {
   p_ye_cda <- predict(m_ye, newdata = cda_grid, return_tmb_object = TRUE)
   saveRDS(p_ye_cda, "data-generated/yelloweye-spatial-predictions-cda.rds")
   
   i_ye_cda <- get_index(p_ye_cda)
-  saveRDS(i_ye_cda, "data-generated/yelloweye-spatial-index-cda.rds")
+  saveRDS(i_ye_cda, f)
 }
 ```
 
 For 3CD outside CDA
 
 ```{r eval = T}
-if (!file.exists("data-generated/yelloweye-spatial-index-3CD-outside-cda.rds")) {
+f <- "data-generated/yelloweye-spatial-index-3CD-outside-cda2.rds"
+if (!file.exists(f)) {
   p_ye_noncda <- predict(m_ye, newdata = noncda_grid, return_tmb_object = TRUE)
   saveRDS(p_ye_noncda, "data-generated/yelloweye-spatial-predictions-3CD-outside-cda.rds")
 
   i_ye_noncda <- get_index(p_ye_noncda)
-  saveRDS(i_ye_noncda, "data-generated/yelloweye-spatial-index-3CD-outside-cda.rds")
+  saveRDS(i_ye_noncda, f)
 }
 ```
 
 For area 5A 
 
 ```{r eval = T}
-if (!file.exists("data-generated/yelloweye-spatial-index-5A.rds")) {
+f <- "data-generated/yelloweye-spatial-index-5A2.rds"
+if (!file.exists(f)) {
   p_ye_5A <- predict(m_ye, newdata = s_5A_grid, return_tmb_object = TRUE)
   saveRDS(p_ye_noncda, "data-generated/yelloweye-spatial-predictions-5A.rds")
 
   i_ye_5A <- get_index(p_ye_5A)
-  saveRDS(i_ye_5A, "data-generated/yelloweye-spatial-index-5A.rds")
+  saveRDS(i_ye_5A, f)
 }
 ```
 
 For entire southern outside yelloweye stock including CDA
 
 ```{r eval = T}
-if (!file.exists("data-generated/yelloweye-spatial-index-all-S.rds")) {
+f <- "data-generated/yelloweye-spatial-index-all-S2.rds"
+if (!file.exists(f)) {
   p_ye_S <- predict(m_ye, newdata = full_s_grid, return_tmb_object = TRUE)
   saveRDS(p_ye_S, "data-generated/yelloweye-spatial-predictions-all-S.rds")
 
   i_ye_S <- get_index(p_ye_S)
-  saveRDS(i_ye_S, "data-generated/yelloweye-spatial-index-all-S.rds")
+  saveRDS(i_ye_S, f)
 }
+```
+Total catch index for entire court defined area is in red, remainder of southern stock area is in black.
+
+```{r message=F, echo=F}
+i_ye <- readRDS("data-generated/yelloweye-spatial-index-all-S2.rds")
+i_ye_cda <- readRDS("data-generated/yelloweye-spatial-index-cda2.rds")
+i_ye_noncda <- readRDS("data-generated/yelloweye-spatial-index-3CD-outside-cda2.rds")
+i_ye_5A <- readRDS("data-generated/yelloweye-spatial-index-5A2.rds")
+
+.dat <- bind_rows(
+  mutate(i_ye, Area = "HBLL South"),
+  mutate(i_ye_5A, Area = "5A"),
+  mutate(i_ye_noncda, Area = "non-CDA 3CD"),
+  mutate(i_ye_cda, Area = "CDA")
+) 
+.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD", "5A", "HBLL South"))
+ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
+  geom_line() + 
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
+  xlab("Year") +
+  ylab("Estimated total fish caught\nif 100 hooks set in all grid cells") +
+  coord_cartesian(expand = FALSE, ylim = c(0, max(i_ye$upr) * 1.04)) +
+  scale_x_continuous(breaks = seq(1950, 2050, 2)) +
+  theme(plot.margin = margin(11/2, r = 11, 11/2, 11/2)) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_colour_brewer(palette = "Set1")
+ggsave("figs/yelloweye-index-by-area.png", width = 7, height = 4, dpi = 400)
+```
+
+## Plot estimated halibut catch per 100 hooks through time
+
+Average predicted catch within the entire court defined area is in red, remainder of southern stock area is in black.
+
+```{r message = F, echo= F}
+.dat <- bind_rows(
+  mutate(i_ye_noncda, 
+    Area = "non-CDA 3CD", 
+    est = est / nrow(noncda_grid), 
+    lwr = lwr / nrow(noncda_grid), 
+    upr = upr / nrow(noncda_grid)),
+  mutate(i_ye_cda,   
+    Area = "CDA", 
+    est = est / nrow(cda_grid), 
+    lwr = lwr / nrow(cda_grid), 
+    upr = upr / nrow(cda_grid)),
+)
+ggplot(.dat, aes(year, est)) +
+  geom_line(aes(colour = Area)) +
+  geom_ribbon(aes(ymin = lwr, 
+    ymax = upr, fill = Area), alpha = 0.4) +
+  xlab("Year") +
+  ylab("Average estimated catch per 100 hooks") +
+  scale_fill_brewer(palette = "Set1") +
+  scale_colour_brewer(palette = "Set1")
+ggsave("figs/yelloweye-average-index-by-area.png", width = 7, height = 4, dpi = 400)
 ```
 
 
 # Calculate overall proportion of predicted catch in 3CD is inside vs outside CDA
 
 ```{r echo=F}
-# halibut index was loaded for plots above, so just load yelloweye index
-i_ye_cda <- readRDS("data-generated/yelloweye-spatial-index-cda.rds")
-i_ye_noncda <- readRDS("data-generated/yelloweye-spatial-index-3CD-outside-cda.rds")
-i_ye_5A <- readRDS("data-generated/yelloweye-spatial-index-5A.rds")
 
 print("What proportion of grid is inside CDA?")
 round(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)), 2)
@@ -499,27 +555,31 @@ CDA vs. 3CD
 
 ```{r echo=F}
 # print("YELLOWEYE ROCKFISH")
+i_ye_cda2020 <- filter(i_ye_cda, year == 2020)
+i_ye_noncda2020 <- filter(i_ye_noncda, year == 2020)
+i_ye_5A2020 <- filter(i_ye_5A, year == 2020)
+
 print("What proportion of estimated total catch is inside CDA?")
-round(i_ye_cda$est / (i_ye_cda$est + i_ye_noncda$est), 2)
+round(i_ye_cda2020$est / (i_ye_cda2020$est + i_ye_noncda2020$est), 2)
 
 print("Average estimated catch per 100 hooks inside CDA:")
-round(i_ye_cda$est / nrow(cda_grid), 2)
+round(i_ye_cda2020$est / nrow(cda_grid), 2)
 
 print("Average estimated catch per 100 hooks outside CDA:")
-round(i_ye_noncda$est / nrow(noncda_grid), 2)
+round(i_ye_noncda2020$est / nrow(noncda_grid), 2)
 ```
 
 CDA vs. 3CD + 5A
 
 ```{r echo=F}
 print("What proportion of estimated total catch is inside CDA in 2020?")
-round(i_ye_cda$est / (i_ye_cda$est + i_ye_noncda$est + i_ye_5A$est), 2)
+round(i_ye_cda2020$est / (i_ye_cda2020$est + i_ye_noncda2020$est + i_ye_5A2020$est), 2)
 
 print("Average estimated catch per 100 hooks inside CDA:")
-round(i_ye_cda$est / nrow(cda_grid), 2)
+round(i_ye_cda2020$est / nrow(cda_grid), 2)
 
 print("Average estimated catch per 100 hooks outside CDA:")
-round((i_ye_noncda$est + i_ye_5A$est)/(nrow(noncda_grid)+nrow(s_5A_grid)),2)
+round((i_ye_noncda2020$est + i_ye_5A2020$est)/(nrow(noncda_grid)+nrow(s_5A_grid)),2)
 ```
 # Maps
 
