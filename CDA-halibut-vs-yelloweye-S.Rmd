@@ -92,6 +92,7 @@ model_data_prep <- function(setdata, hookdata) {
 
   # convert to utms for sdmTMB model
   d_utm <- convert2utm(d, coords = c("lon", "lat"))
+
   d_utm$depth_log <- log(d_utm$depth_m)
   d_utm$depth_centred <- d_utm$depth_log - mean(d_utm$depth_log)
   d_utm$depth_mean <- mean(d_utm$depth_log)
