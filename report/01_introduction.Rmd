@@ -16,7 +16,9 @@ here::dr_here()
 
 # Methods {#sec:methods}
 
-* We fit geostatistical spatial/spatiotemporal models using the R package sdmTMB <https://github.com/pbs-assess/sdmTMB>.
+* We fit geostatistical spatial/spatiotemporal models to the HBLL survey data using the R package sdmTMB <https://github.com/pbs-assess/sdmTMB>. 
+
+* The HBLL survey focuses on rockfish habitats, rather than a broader range of habitats and depths that halibut occupy.  Therefore, the proportion of halibut available may be quite different if calculated across the whole area. 
 
 * For YE, the spatiotemporal correlation was minimal and so we used a spatial model with annual mean parameters. Spatiotemporal correlation was considerable for Halibut, and so we used a spatiotemporal model. Our Halibut model is very similar to the model used by the IPHC for index standardization.
 
@@ -28,7 +30,9 @@ here::dr_here()
 
 * We have included a quadratic effect of depth, annual means for years, and latent "random fields" for spatial and, in the case of Halibut, spatiotemporal fields. These random fields soak up remaining spatial or spatiotemporal correlation from predictors not explicitly included in the model.
 
-* We then calculate expected fish caught for HBLL grid cells in a particular region for a given constant number of hooks and sum these values to come up with an expected number for an entire region.
+* We then calculate expected fish caught for HBLL grid cells in a particular region for a given constant number of hooks and sum these values to come up with an expected number for grid cells within each region.
+
+\clearpage
 
 # Results {#sec:results}
 
@@ -55,11 +59,11 @@ r2 <- function(x) {
 }
 ```
 
-```{r halibut-preds-all, fig.cap="Observed (circle area) and predicted (colour) Halibut in the HBLL survey per 100 hooks across all years. The CDA is outlined in red. Note that the colour axis is fourth-root transformed to improve visual interpretation.", out.width="\\textwidth"}
+```{r halibut-preds-all, fig.cap="Observed (circle area) and predicted (colour) Halibut in the HBLL survey per 100 hooks across all years. The CDA is outlined in red. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="\\textwidth"}
 include_graphics(here("figs/halibut-predictions-S.png"))
 ```
 
-```{r ye-preds-all, fig.cap="Observed (circle area) and predicted (colour) Yelloweye Rockfish in the HBLL survey per 100 hooks across all years. The CDA is outlined in red. Note that the colour axis in fourth-root transformed to improve visual interpretation. The spatial distribution is assumed constant across years right now, but the mean is allowed to change through time.", out.width="\\textwidth"}
+```{r ye-preds-all, fig.cap="Observed (circle area) and predicted (colour) Yelloweye Rockfish in the HBLL survey per 100 hooks across all years. The CDA is outlined in red. Note that the colour axis is square root transformed to improve visual interpretation. The spatial distribution is assumed constant across years right now, but the mean is allowed to change through time.", out.width="\\textwidth"}
 include_graphics(here("figs/ye-predictions-S.png"))
 ```
 
@@ -71,7 +75,7 @@ include_graphics(here("figs/halibut-2020-predictions-S.png"))
 include_graphics(here("figs/yelloweye-2020-predictions-S.png"))
 ```
 
-```{r ye-per-hal-preds-2020, fig.cap="YE per Halibut in 2020. Note that the circles represent the number of halibut caught and so are a different data type from the predictions.", out.width="5.5in"}
+```{r ye-per-hal-preds-2020, fig.cap="YE per Halibut in 2020. Note that the circles represent the number of halibut caught and so are a different data type from the predictions. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="5.5in"}
 include_graphics(here("figs/ye-per-halibut-2020-w-hal-catch-S.png"))
 ```
 
@@ -145,8 +149,11 @@ Average estimated YE caught per 100 hooks in **Areas 3CD + 5A** (outside CDA):
 
 # Discussion
 
-* We can add static covariates like bottom type. We expect this would create more fine-scale spatial resolution to the predictions, but is unlikely to change the overall calculations qualitatively.
+* Currently, these calculations are based on only the HBLL survey grid within the various boundaries. 
+
+* Adding static covariates like bottom type would create more fine-scale spatial resolution to the predictions. While this is unlikely to change these calculations qualitatively within the HBLL grids, it might allow extrapolation beyond the survey grid. However, extrapolation to inadequately sampled habitat types is still problematic.
 
 * We have not presented uncertainty on the inside vs. outside CDA ratios; this is possible but would require additional work.
 
-* Note that we're only including the HBLL grid within the various boundaries. We could try extrapolating to the full management areas, but at the very least we'd want a habitate type covariate.
+* Building similar models from International Pacific Halibut Commission (IPHC) survey data could provide alternate estimates of catch ratios, but the local resolution would be coarser. 
+
