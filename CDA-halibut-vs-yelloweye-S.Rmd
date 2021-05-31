@@ -583,6 +583,55 @@ print("Average estimated catch per 100 hooks outside CDA:")
 round((i_ye_noncda2020$est + i_ye_5A2020$est)/(nrow(noncda_grid)+nrow(s_5A_grid)),2)
 ```
 
+
+### Plot ratio of yelloweye to halibut through time
+```{r message=F, echo=F}
+i_hal <- readRDS("data-generated/halibut-index-all-S.rds")
+i_hal_cda <- readRDS("data-generated/halibut-index-cda.rds")
+i_hal_noncda <- readRDS("data-generated/halibut-index-3CD-outside-cda.rds")
+i_hal_5A <- readRDS("data-generated/halibut-index-5A.rds")
+
+.dat1 <- bind_rows(
+  mutate(i_hal, Area = "HBLL South"),
+  mutate(i_hal_5A, Area = "5A"),
+  mutate(i_hal_noncda, Area = "non-CDA 3CD"),
+  mutate(i_hal_cda, Area = "CDA")
+) %>% rename(est_hal = est, lwr_hal = lwr, upr_hal = upr)
+.dat1$Area <- ordered(.dat1$Area, levels = c("CDA", "non-CDA 3CD", "5A", "HBLL South"))
+
+i_ye <- readRDS("data-generated/yelloweye-spatial-index-all-S2.rds")
+i_ye_cda <- readRDS("data-generated/yelloweye-spatial-index-cda2.rds")
+i_ye_noncda <- readRDS("data-generated/yelloweye-spatial-index-3CD-outside-cda2.rds")
+i_ye_5A <- readRDS("data-generated/yelloweye-spatial-index-5A2.rds")
+
+.dat2 <- bind_rows(
+  mutate(i_ye, Area = "HBLL South"),
+  mutate(i_ye_5A, Area = "5A"),
+  mutate(i_ye_noncda, Area = "non-CDA 3CD"),
+  mutate(i_ye_cda, Area = "CDA")
+) %>% rename(est_ye = est, lwr_ye = lwr, upr_ye = upr)
+.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 3CD", "5A", "HBLL South"))
+
+.dat <- left_join(.dat1, .dat2, by= c("year", "Area")) %>% mutate(ye_per_hal = est_ye/est_hal, 
+  lwr = lwr_ye/est_hal, upr = upr_ye/est_hal
+  # lwr = est_ye/upr_hal, upr = est_ye/lwr_hal # halibut index is less uncertain
+  # lwr = lwr_ye/upr_hal, upr = upr_ye/lwr_hal # if think using all the uncertainty amounts to ~99.7% CIs
+  ) %>% filter(Area %in% c("non-CDA 3CD", "CDA"))
+
+ggplot(.dat, aes(year, ye_per_hal, fill = Area, colour = Area)) +
+  geom_line() + 
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
+  xlab("Year") +
+  ylab("Estimated yelloweye caught per halibut") +
+  coord_cartesian(expand = FALSE, ylim = c(0, max(.dat$upr) * 1.04)) +
+  scale_x_continuous(breaks = seq(1950, 2050, 2)) +
+  theme(plot.margin = margin(11/2, r = 11, 11/2, 11/2)) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_colour_brewer(palette = "Set1")
+ggsave("figs/ye-per-hal-index-by-area.png", width = 7, height = 4, dpi = 400)
+```
+
+
 # Maps
 
 Predictions depicted for HBLL survey grid area that falls within region 3CD. "Court defined area" area is outlined in red. Only 2020 survey catch is included on first two maps, all years of halibut catch are included on the map showing number of Yelloweye Rockfish expected per halibut caught 2020. 
