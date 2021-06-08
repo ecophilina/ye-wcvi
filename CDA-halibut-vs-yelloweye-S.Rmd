@@ -288,12 +288,12 @@ get_diag(m_ye)
 For CDA only
 
 ```{r eval = TRUE}
-f <- "data-generated/halibut-predictions-cda.rds"
+f <- "data-generated/halibut-index-cda.rds"
 if (!file.exists(f)) {
-  p_hal_cda <- predict(m_halibut, newdata = cda_grid, return_tmb_object = TRUE)
-  saveRDS(p_hal_cda, f)
-  i_hal_cda <- get_index(p_hal_cda)
-  saveRDS(i_hal_cda, "data-generated/halibut-index-cda.rds")
+  p_hal_cda <- predict(m_halibut, newdata = cda_grid, return_tmb_object = TRUE, return_sims = TRUE)
+  saveRDS(p_hal_cda, "data-generated/halibut-predictions-cda.rds")
+  i_hal_cda <- get_index(p_hal_cda, bias_correct = T)
+  saveRDS(i_hal_cda, f)
 }
 ```
 
@@ -305,7 +305,7 @@ if (!file.exists(f)) {
 p_hal_noncda <- predict(m_halibut, newdata = noncda_grid, return_tmb_object = TRUE)
 saveRDS(p_hal_noncda, "data-generated/halibut-predictions-3CD-outside-cda.rds")
 
-i_hal_noncda <- get_index(p_hal_noncda)
+i_hal_noncda <- get_index(p_hal_noncda, bias_correct = T)
 saveRDS(i_hal_noncda, f)
 }
 ```
@@ -318,8 +318,8 @@ if (!file.exists(f)) {
 p_hal_5A <- predict(m_halibut, newdata = s_5A_grid, return_tmb_object = TRUE)
 saveRDS(p_hal_noncda, "data-generated/halibut-predictions-5A.rds")
 
-i_hal_5A <- get_index(p_hal_5A)
-saveRDS(i_hal_5A, "data-generated/halibut-index-5A.rds")
+i_hal_5A <- get_index(p_hal_5A, bias_correct = T)
+saveRDS(i_hal_5A, f)
 }
 ```
 
@@ -331,7 +331,7 @@ if (!file.exists(f)) {
 p_hal_S <- predict(m_halibut, newdata = full_s_grid, return_tmb_object = TRUE)
 saveRDS(p_hal_S, "data-generated/halibut-predictions-all-S.rds")
 
-i_hal_S <- get_index(p_hal_S)
+i_hal_S <- get_index(p_hal_S, bias_correct = T)
 saveRDS(i_hal_S, "data-generated/halibut-index-all-S.rds")
 }
 ```
@@ -405,7 +405,7 @@ if (!file.exists(f)) {
   p_ye_cda <- predict(m_ye, newdata = cda_grid, return_tmb_object = TRUE)
   saveRDS(p_ye_cda, "data-generated/yelloweye-spatial-predictions-cda.rds")
   
-  i_ye_cda <- get_index(p_ye_cda)
+  i_ye_cda <- get_index(p_ye_cda, bias_correct = T)
   saveRDS(i_ye_cda, f)
 }
 ```
@@ -418,7 +418,7 @@ if (!file.exists(f)) {
   p_ye_noncda <- predict(m_ye, newdata = noncda_grid, return_tmb_object = TRUE)
   saveRDS(p_ye_noncda, "data-generated/yelloweye-spatial-predictions-3CD-outside-cda.rds")
 
-  i_ye_noncda <- get_index(p_ye_noncda)
+  i_ye_noncda <- get_index(p_ye_noncda, bias_correct = T)
   saveRDS(i_ye_noncda, f)
 }
 ```
@@ -431,7 +431,7 @@ if (!file.exists(f)) {
   p_ye_5A <- predict(m_ye, newdata = s_5A_grid, return_tmb_object = TRUE)
   saveRDS(p_ye_noncda, "data-generated/yelloweye-spatial-predictions-5A.rds")
 
-  i_ye_5A <- get_index(p_ye_5A)
+  i_ye_5A <- get_index(p_ye_5A, bias_correct = T)
   saveRDS(i_ye_5A, f)
 }
 ```
@@ -444,10 +444,11 @@ if (!file.exists(f)) {
   p_ye_S <- predict(m_ye, newdata = full_s_grid, return_tmb_object = TRUE)
   saveRDS(p_ye_S, "data-generated/yelloweye-spatial-predictions-all-S.rds")
 
-  i_ye_S <- get_index(p_ye_S)
+  i_ye_S <- get_index(p_ye_S, bias_correct = T)
   saveRDS(i_ye_S, f)
 }
 ```
+
 Total catch index for entire court defined area is in red, remainder of southern stock area is in black.
 
 ```{r message=F, echo=F}
@@ -515,59 +516,62 @@ round(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)), 2)
 
 ## Pacific Halibut
 
+```{r}
+i_hal_cda2020 <- filter(i_hal_cda, year == 2020)
+
+print("Average estimated catch per 100 hooks inside CDA:")
+round(i_hal_cda2020$est / nrow(cda_grid), 2)
+```
+
 CDA vs. 3CD
 
 ```{r echo=F}
-# print(" PACIFIC HALIBUT")
 i_hal_cda2020 <- filter(i_hal_cda, year == 2020)
 i_hal_noncda2020 <- filter(i_hal_noncda, year == 2020)
 
-print("What proportion of estimated total catch is inside CDA in 2020?")
-round(i_hal_cda2020$est / (i_hal_cda2020$est + i_hal_noncda2020$est), 2)
-
-print("Average estimated catch per 100 hooks inside CDA:")
-round(i_hal_cda2020$est / nrow(cda_grid),2)
-
 print("Average estimated catch per 100 hooks outside CDA:")
 round(i_hal_noncda2020$est / nrow(noncda_grid),2)
+
+print("What proportion of estimated total catch is inside CDA in 2020?")
+round(i_hal_cda2020$est / (i_hal_cda2020$est + i_hal_noncda2020$est), 2)
 ```
 
 CDA vs. 3CD + 5A
 
 ```{r echo=F}
-# print(" PACIFIC HALIBUT")
 i_hal_cda2020 <- filter(i_hal_cda, year == 2020)
 i_hal_noncda2020 <- filter(i_hal_noncda, year == 2020)
 i_hal_5A <- filter(i_hal_5A, year == 2020)
 
-print("What proportion of estimated total catch is inside CDA in 2020?")
-round(i_hal_cda2020$est / (i_hal_cda2020$est + i_hal_noncda2020$est + i_hal_5A$est), 2)
-
-print("Average estimated catch per 100 hooks inside CDA:")
-round(i_hal_cda2020$est / nrow(cda_grid), 2)
-
 print("Average estimated catch per 100 hooks outside CDA:")
 round((i_hal_noncda2020$est + i_hal_5A$est)/(nrow(noncda_grid)+nrow(s_5A_grid)),2)
+
+print("What proportion of estimated total catch is inside CDA in 2020?")
+round(i_hal_cda2020$est / (i_hal_cda2020$est + i_hal_noncda2020$est + i_hal_5A$est), 2)
 ```
 
 
 ## Yelloweye Rockfish
 
-CDA vs. 3CD
 
 ```{r echo=F}
-# print("YELLOWEYE ROCKFISH")
 i_ye_cda2020 <- filter(i_ye_cda, year == 2020)
-i_ye_noncda2020 <- filter(i_ye_noncda, year == 2020)
-
-print("What proportion of estimated total catch is inside CDA?")
-round(i_ye_cda2020$est / (i_ye_cda2020$est + i_ye_noncda2020$est), 2)
 
 print("Average estimated catch per 100 hooks inside CDA:")
 round(i_ye_cda2020$est / nrow(cda_grid), 2)
+```
+
+CDA vs. 3CD
+
+```{r echo=F}
+i_ye_cda2020 <- filter(i_ye_cda, year == 2020)
+i_ye_noncda2020 <- filter(i_ye_noncda, year == 2020)
 
 print("Average estimated catch per 100 hooks outside CDA:")
 round(i_ye_noncda2020$est / nrow(noncda_grid), 2)
+
+print("What proportion of estimated total catch is inside CDA?")
+round(i_ye_cda2020$est / (i_ye_cda2020$est + i_ye_noncda2020$est), 2)
 ```
 
 CDA vs. 3CD + 5A
@@ -577,14 +581,11 @@ i_ye_cda2020 <- filter(i_ye_cda, year == 2020)
 i_ye_noncda2020 <- filter(i_ye_noncda, year == 2020)
 i_ye_5A2020 <- filter(i_ye_5A, year == 2020)
 
-print("What proportion of estimated total catch is inside CDA in 2020?")
-round(i_ye_cda2020$est / (i_ye_cda2020$est + i_ye_noncda2020$est + i_ye_5A2020$est), 2)
-
-print("Average estimated catch per 100 hooks inside CDA:")
-round(i_ye_cda2020$est / nrow(cda_grid), 2)
-
 print("Average estimated catch per 100 hooks outside CDA:")
 round((i_ye_noncda2020$est + i_ye_5A2020$est)/(nrow(noncda_grid)+nrow(s_5A_grid)),2)
+
+print("What proportion of estimated total catch is inside CDA in 2020?")
+round(i_ye_cda2020$est / (i_ye_cda2020$est + i_ye_noncda2020$est + i_ye_5A2020$est), 2)
 ```
 
 
