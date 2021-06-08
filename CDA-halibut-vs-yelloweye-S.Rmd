@@ -33,6 +33,10 @@ saveRDS(yesetdata, "data/yelloweye-surv-sets.rds")
 yehookdata <- gfdata::get_ll_hook_data("Yelloweye Rockfish", ssid = c(36))
 saveRDS(yehookdata, "data/yelloweye-hook-dat36.rds")
 
+# get detailed biological data, I have retrieved data from all surveys in case comparisons between surveys are needed later
+yesampledata <- gfdata::get_survey_samples("Yelloweye Rockfish")
+saveRDS(yesampledata, "data/yelloweye-surv-samples-all.rds")
+
 blocks <- gfdata::get_survey_blocks(ssid = 36)
 saveRDS(blocks, "data/survey-blocks-36.rds")
 
@@ -84,7 +88,7 @@ model_data_prep <- function(setdata, hookdata) {
 
   d <- d %>%
     select(
-      survey_abbrev, year, longitude, latitude, catch_count, hook_count,
+      survey_abbrev, year, longitude, latitude, fishing_event_id, catch_count, hook_count,
       grouping_code, depth_m, block_designation, hook_adjust_factor, prop_bait_hooks
     ) %>%
     mutate(lon = longitude, lat = latitude) %>%
@@ -790,4 +794,110 @@ ggplot(
   coord_cartesian(expand = F, xlim = c(0, 2500), ylim = c(0, 9000)) +
   ylab("Fish caught") +
   xlab("Number of cells fished (in order of decreasing Halibut abundance)")
+```
+
+
+# Investigate weights of yelloweye caught
+
+### Is there an overall trend in fish size through time?
+
+```{r message=F, echo=F}
+# load biological sample data
+yesampledata <- readRDS("data/yelloweye-surv-samples-all.rds") %>% filter(survey_abbrev == "HBLL OUT S")
+
+# calculate mean weigths for all of HBLL S
+yemeanweights <- yesampledata %>% filter(!is.na(weight)) %>% group_by(year) %>% summarise(mean_weight = mean(weight/1000, na.rm = T), 
+  upr_ci = Rmisc::CI(weight/1000, ci=0.95)[1], lwr_ci = Rmisc::CI(weight/1000, ci=0.95)[3],
+  upr_weight = quantile(weight/1000, 0.975), lwr_weight = quantile(weight/1000, 0.025),
+  n = n())
+
+# plot mean weights through time for whole HBLL
+ggplot(yemeanweights) + geom_path(aes(year, mean_weight)) + ylim(0, 6) +
+  geom_ribbon(aes(year, mean_weight, ymax = upr_weight, ymin = lwr_weight), alpha = 0.2) + 
+  geom_linerange(aes(year, ymax = upr_ci, ymin = lwr_ci), size = 1) + 
+  ylab("Individual Fish Weights (kg)") + xlab("Year") +
+  ggtitle("Mean and 95th percentile range for Yelloweye Rockfish caught on HBLL S")
+ggsave("annual_yelloweye_weights.png", width = 4, height = 4)
+```
+
+
+### Does the annual distribution of fish weights differ within the CDA?
+
+```{r message=F, echo=F}
+# get the fishing events that occurred within CDA
+d_ye_sf <- st_as_sf(d_ye, coords = c("longitude", "latitude"))
+st_crs(d_ye_sf) <- 4326 # set the coordinate reference system
+d_ye_intersected <- sf::st_intersects(d_ye_sf, focal_area)
+cda_ye_sf <- d_ye_sf[which(lengths(d_ye_intersected) > 0), ]
+noncda_ye_sf <- d_ye_sf[which(lengths(d_ye_intersected) == 0), ]
+
+cda_ye_ids <- cda_ye_sf
+st_geometry(cda_ye_ids) <- NULL
+cda_ye_ids <- cda_ye_ids %>% select(fishing_event_id, year, catch_count) %>% distinct() # keep catch count for comparison with sample totals
+
+# make dataframe of just samples from the CDA and calculate tallies of events, total catch, sampled weights and total catch/events
+cda_ye_samples <- inner_join(cda_ye_ids, yesampledata) %>% group_by(year) %>% mutate(cda_weights = n())
+cda_ye_catch <- cda_ye_ids %>% group_by(year) %>% summarise(cda_catch = sum(catch_count))
+cda_ye_sample_sum <- cda_ye_samples %>% select(year, cda_weights) %>% distinct()
+cda_events <- cda_ye_ids %>% group_by(year) %>% summarise(cda_events = n())
+cda_sampling <- left_join(cda_events, cda_ye_catch) %>% left_join(cda_ye_sample_sum) %>% mutate(catch_rate = round(cda_catch/cda_events, 1))
+
+# plot CDA weights against overall distribution for HBLL S
+ggplot(yesampledata) + 
+  geom_violin(aes(as.factor(year), weight/1000), alpha = 0.2, scale = "count", colour = "black", fill = "grey") + 
+  # geom_violin(data = cda_ye_samples, aes(as.factor(year), weight/1000), alpha = 0.9, scale = "count", colour = "red", fill = "red", adjust = 1/5) +
+  geom_point(data = cda_ye_samples, aes(as.factor(year), weight/1000), alpha = 0.7, colour = "red", fill = "red") + 
+  geom_linerange(data = yemeanweights, aes(as.factor(year), ymax = upr_ci, ymin = lwr_ci), size = 5) + 
+  ylab("Individual Fish Weights (kg)") + xlab("") +
+  ggtitle("Annual distributions of Yelloweye Rockfish weights (all HBLL S = black; within CDA = red)")
+ggsave("yelloweye_weights.png", width = 5, height = 3.5)
+```
+
+
+
+### How spatially variable are mean weigths through time for whole HBLL S?
+```{r message=F, echo=F, warning=F}
+# calculate the mean weights from each fishing event
+yeeventweights <- yesampledata %>% filter(!is.na(weight)) %>% 
+  group_by(year, fishing_event_id) %>% 
+  summarise(
+    mean_weight = mean(weight/1000, na.rm = T), 
+    upr_ci = Rmisc::CI(weight/1000, ci=0.95)[1], lwr_ci = Rmisc::CI(weight/1000, ci=0.95)[3],
+    upr_weight = quantile(weight/1000, 0.975), lwr_weight = quantile(weight/1000, 0.025),
+    n = n()
+  ) %>% filter(n > 10) # filter for fishing events with at least 10 fish measured
+
+ggplot(yeeventweights) + 
+  geom_violin(aes(as.factor(year), mean_weight), alpha = 0.2, scale = "count", colour = "black", fill = "grey") + 
+  geom_linerange(data = yemeanweights, aes(as.factor(year), ymax = upr_ci, ymin = lwr_ci), size = 3) + 
+  ylab("Mean Weight (kg)") + xlab("") +
+  ggtitle("Annual mean and variability in Yelloweye Rockfish weights", subtitle = "for events with > 10 fish sampled")
+ggsave("yelloweye_event_weights.png", width = 6, height = 4.5)
+```
+
+
+```{r message=F, echo=F, warning=F}
+yeeventweights1 <- yesampledata %>% filter(!is.na(weight)) %>% 
+  group_by(year, fishing_event_id) %>% 
+  summarise(
+    mean_weight = mean(weight/1000, na.rm = T), 
+    med_weight = median(weight/1000, na.rm = T), 
+    upr_ci = Rmisc::CI(weight/1000, ci=0.95)[1], lwr_ci = Rmisc::CI(weight/1000, ci=0.95)[3],
+    upr_weight = quantile(weight/1000, 0.975), lwr_weight = quantile(weight/1000, 0.025),
+    n = n()
+  ) %>% filter(n > 1)
+
+ggplot(yeeventweights1) + 
+  geom_col(aes(med_weight, n), size = 2, colour = "grey") + 
+  # geom_linerange(data = yemeanweights, aes(as.factor(year), ymax = upr_ci, ymin = lwr_ci), size = 3) + 
+  ylab("Number of fish sampled") + xlab("Median weight of fish sampled (kg)") +
+  # facet_wrap(~year) +
+  ggtitle("")
+
+ggplot(yeeventweights1) + 
+  geom_col(aes(mean_weight, n), size = 2, colour = "grey") + 
+  # geom_linerange(data = yemeanweights, aes(as.factor(year), ymax = upr_ci, ymin = lwr_ci), size = 3) + 
+  ylab("Number of fish sampled") + xlab("Mean weight of fish sampled (kg)") +
+  # facet_wrap(~year) +
+  ggtitle("")
 ```
