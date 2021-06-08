@@ -29,6 +29,25 @@ expand_prediction_grid <- function(grid, years) {
   nd
 }
 
+# sim predictions and index function
+get_all_sims <- function(fit_obj, newdata, sims = 200, level = 0.95,
+  return_sims = TRUE, return_full_obj = TRUE,
+  est_function = stats::median,
+  agg_function = function(x) sum(exp(x))){
+
+  pred_obj <- predict(fit_obj, newdata = newdata, sims = sims)
+  # browser()
+  i_sims <- get_index_sims(pred_obj, return_sims = return_sims, level = level,
+    est_function = est_function, agg_function = agg_function)
+
+  if (return_full_obj)
+    return(list(data = i_sims, grid = newdata, sim.predictions = pred_obj#, fit_obj = fit_obj
+      ))
+  else
+    return(i_sim)
+}
+
+
 # leaves coast lines defined in lat lon unlike gfplot function
 load_coastll <- function(xlim_ll, ylim_ll, utm_zone, buffer = 0) {
   data("nepacLLhigh", package = "PBSmapping", envir = environment())
