@@ -11,6 +11,12 @@ convert2utm <- function(df, coords = c("X", "Y"), out_crs = 3156) {
     df[, which(!names(df) %in% coords), drop = FALSE])
 }
 
+utm2ll <- function(x, utm_zone = 9) {
+  attr(x, "projection") <- "UTM"
+  attr(x, "zone") <- utm_zone
+  suppressMessages(PBSmapping::convUL(x))
+}
+
 # to add sf geometry back onto dataframe
 sfc_as_cols <- function(x, names = c("x","y")) {
   stopifnot(inherits(x,"sf") && inherits(sf::st_geometry(x),"sfc_POINT"))
@@ -37,16 +43,18 @@ get_all_sims <- function(fit_obj, newdata, sims = 200, level = 0.95,
 
   pred_obj <- predict(fit_obj, newdata = newdata, sims = sims)
   # browser()
-  i_sims <- get_index_sims(pred_obj, return_sims = return_sims, level = level,
+  i <- get_index_sims(pred_obj, return_sims = F, level = level,
     est_function = est_function, agg_function = agg_function)
 
-  if (return_full_obj)
-    return(list(data = i_sims, grid = newdata, sim.predictions = pred_obj#, fit_obj = fit_obj
+  if(return_sims){
+  i_sims <- get_index_sims(pred_obj, return_sims = T, level = level,
+    est_function = est_function, agg_function = agg_function)
+    return(list(index = i, sims = i_sims, grid = newdata, sim.predictions = pred_obj#, fit_obj = fit_obj
       ))
-  else
-    return(i_sim)
+  } else {
+    return(i)
+  }
 }
-
 
 # leaves coast lines defined in lat lon unlike gfplot function
 load_coastll <- function(xlim_ll, ylim_ll, utm_zone, buffer = 0) {
@@ -161,6 +169,8 @@ map_predictions <- function(
   pred_data = NULL,
   obs_data,
   fill_aes = exp(est),
+  pred_min = min(exp(pred_data$est), na.rm = T),
+  pred_max = max(exp(pred_data$est), na.rm = T),
   size_aes = (catch_count / hook_count) * 100,
   obs_col = "black",
   title = "",
@@ -237,6 +247,8 @@ map_predictions <- function(
     scale_fill_viridis_c(
       # trans = ggsidekick::fourth_root_power_trans(),
       trans = "sqrt",
+      limits = c(pred_min, pred_max),
+      na.value = "yellow",
       option = "D"
     ) +
     labs(fill = fill_lab, size = size_lab) +
