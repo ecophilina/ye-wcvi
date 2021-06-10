@@ -297,7 +297,7 @@ if (!file.exists(f)) {
   saveRDS(i_hal_cda, f)
 }
 
-ss <- "data-generated/halibut-index-cda-sim-200.rds"
+ss <- "data-generated/halibut-index-cda-sim-500.rds"
 if (!file.exists(ss)) {
   i_hal_cda2 <- get_all_sims(m_halibut, newdata = cda_grid)
   saveRDS(i_hal_cda2, ss)
@@ -316,7 +316,7 @@ i_hal_noncda <- get_index(p_hal_noncda, bias_correct = T)
 saveRDS(i_hal_noncda, f)
 }
 
-ss <- "data-generated/halibut-index-3CD-outside-cda-sim-200.rds"
+ss <- "data-generated/halibut-index-3CD-outside-cda-sim-500.rds"
 if (!file.exists(ss)) {
   i_hal_noncda2 <- get_all_sims(m_halibut, newdata = noncda_grid)
   saveRDS(i_hal_noncda2, ss)
@@ -335,7 +335,7 @@ i_hal_5A <- get_index(p_hal_5A, bias_correct = T)
 saveRDS(i_hal_5A, f)
 }
 
-ss <- "data-generated/halibut-index-5A-sim-200.rds"
+ss <- "data-generated/halibut-index-5A-sim-500.rds"
 if (!file.exists(ss)) {
   i_hal_5A2 <- get_all_sims(m_halibut, newdata = s_5A_grid)
 saveRDS(i_hal_5A2, ss)
@@ -354,7 +354,7 @@ i_hal_S <- get_index(p_hal_S, bias_correct = T)
 saveRDS(i_hal_S, "data-generated/halibut-index-all-S.rds")
 }
 
-ss <- "data-generated/halibut-index-all-S-sim-200.rds"
+ss <- "data-generated/halibut-index-all-S-sim-500.rds"
 if (!file.exists(ss)) {
   i_hal_S2 <- get_all_sims(m_halibut, newdata = full_s_grid)
 saveRDS(i_hal_S2, ss)
@@ -381,10 +381,10 @@ i_hal_5A1 <- readRDS("data-generated/halibut-index-5A.rds")
 
 .dat1$Area <- ordered(.dat1$Area, levels = c("CDA", "non-CDA 3CD", "5A", "HBLL South"))
 
-i_hal <- readRDS("data-generated/halibut-index-all-S-sim-200.rds")[[1]]
-i_hal_cda <- readRDS("data-generated/halibut-index-cda-sim-200.rds")[[1]]
-i_hal_noncda <- readRDS("data-generated/halibut-index-3CD-outside-cda-sim-200.rds")[[1]]
-i_hal_5A <- readRDS("data-generated/halibut-index-5A-sim-200.rds")[[1]]
+i_hal <- readRDS("data-generated/halibut-index-all-S-sim-500.rds")[[1]]
+i_hal_cda <- readRDS("data-generated/halibut-index-cda-sim-500.rds")[[1]]
+i_hal_noncda <- readRDS("data-generated/halibut-index-3CD-outside-cda-sim-500.rds")[[1]]
+i_hal_5A <- readRDS("data-generated/halibut-index-5A-sim-500.rds")[[1]]
 
 .dat <- bind_rows(
   mutate(i_hal, Area = "HBLL South"),
@@ -414,8 +414,8 @@ Average predicted catch within the entire court defined area is in red, remainde
 ```{r message = F, echo= F}
 # i_hal_cda <- readRDS("data-generated/halibut-index-cda.rds")
 # i_hal_noncda <- readRDS("data-generated/halibut-index-3CD-outside-cda.rds")
-i_hal_cda <- readRDS("data-generated/halibut-index-cda-sim-200.rds")[[1]]
-i_hal_noncda <- readRDS("data-generated/halibut-index-3CD-outside-cda-sim-200.rds")[[1]]
+i_hal_cda <- readRDS("data-generated/halibut-index-cda-sim-500.rds")[[1]]
+i_hal_noncda <- readRDS("data-generated/halibut-index-3CD-outside-cda-sim-500.rds")[[1]]
 
 .dat <- bind_rows(
   mutate(i_hal_noncda, 
@@ -454,7 +454,7 @@ if (!file.exists(f)) {
   saveRDS(i_ye_cda, f)
 }
 
-ss <- "data-generated/yelloweye-spatial-index-cda-sim-200.rds"
+ss <- "data-generated/yelloweye-spatial-index-cda-sim-500.rds"
 if (!file.exists(ss)) {
   i_ye_cda2 <- get_all_sims(m_ye, newdata = cda_grid)
   saveRDS(i_ye_cda2, ss)
@@ -473,7 +473,7 @@ if (!file.exists(f)) {
   saveRDS(i_ye_noncda, f)
 }
 
-ss <- "data-generated/yelloweye-spatial-index-3CD-outside-cda-sim-200.rds"
+ss <- "data-generated/yelloweye-spatial-index-3CD-outside-cda-sim-500.rds"
 if (!file.exists(ss)) {
   i_ye_noncda2 <- get_all_sims(m_ye, newdata = noncda_grid)
   saveRDS(i_ye_noncda2, ss)
@@ -492,7 +492,7 @@ if (!file.exists(f)) {
   saveRDS(i_ye_5A, f)
 }
 
-ss <- "data-generated/yelloweye-spatial-index-5A-sim-200.rds"
+ss <- "data-generated/yelloweye-spatial-index-5A-sim-500.rds"
 if (!file.exists(ss)) {
   i_ye_5A2 <- get_all_sims(m_ye, newdata = s_5A_grid)
   saveRDS(i_ye_5A2, ss)
@@ -511,7 +511,7 @@ if (!file.exists(f)) {
   saveRDS(i_ye_S, f)
 }
 
-ss <- "data-generated/yelloweye-spatial-index-all-S-sim-200.rds"
+ss <- "data-generated/yelloweye-spatial-index-all-S-sim-500.rds"
 if (!file.exists(ss)) {
   i_ye_S2 <- get_all_sims(m_ye, newdata = full_s_grid)
   saveRDS(i_ye_S2, ss)
@@ -526,10 +526,10 @@ Total catch index for entire court defined area is in red, remainder of southern
 # i_ye_noncda <- readRDS("data-generated/yelloweye-spatial-index-3CD-outside-cda2.rds")
 # i_ye_5A <- readRDS("data-generated/yelloweye-spatial-index-5A2.rds")
 
-i_ye <- readRDS("data-generated/yelloweye-spatial-index-all-S-sim-200.rds")[[1]]
-i_ye_cda <- readRDS("data-generated/yelloweye-spatial-index-cda-sim-200.rds")[[1]]
-i_ye_noncda <- readRDS("data-generated/yelloweye-spatial-index-3CD-outside-cda-sim-200.rds")[[1]]
-i_ye_5A <- readRDS("data-generated/yelloweye-spatial-index-5A-sim-200.rds")[[1]]
+i_ye <- readRDS("data-generated/yelloweye-spatial-index-all-S-sim-500.rds")[[1]]
+i_ye_cda <- readRDS("data-generated/yelloweye-spatial-index-cda-sim-500.rds")[[1]]
+i_ye_noncda <- readRDS("data-generated/yelloweye-spatial-index-3CD-outside-cda-sim-500.rds")[[1]]
+i_ye_5A <- readRDS("data-generated/yelloweye-spatial-index-5A-sim-500.rds")[[1]]
 
 .dat <- bind_rows(
   mutate(i_ye, Area = "HBLL South"),
@@ -580,20 +580,13 @@ ggsave("figs/yelloweye-average-index-by-area-sim.png", width = 7, height = 4, dp
 ```
 
 
-# Calculate overall proportion of predicted catch in 3CD is inside vs outside CDA
+# Calculate predicted catch rates in different areas
 
-```{r echo=F}
-print("What proportion of grid is inside CDA?")
-round(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)), 2)
-```
-
-## Pacific Halibut
-
-```{r}
-i_hal_cda2 <- readRDS("data-generated/halibut-index-cda-sim-200.rds")[[2]]
-i_hal_noncda2 <- readRDS("data-generated/halibut-index-3CD-outside-cda-sim-200.rds")[[2]]
-i_hal_5A2 <- readRDS("data-generated/halibut-index-5A-sim-200.rds")[[2]]
-i_hal2 <- readRDS("data-generated/halibut-index-all-S-sim-200.rds")[[2]]
+```{r }
+i_hal_cda2 <- readRDS("data-generated/halibut-index-cda-sim-500.rds")[[2]]
+i_hal_noncda2 <- readRDS("data-generated/halibut-index-3CD-outside-cda-sim-500.rds")[[2]]
+i_hal_5A2 <- readRDS("data-generated/halibut-index-5A-sim-500.rds")[[2]]
+i_hal2 <- readRDS("data-generated/halibut-index-all-S-sim-500.rds")[[2]]
 
 .dat2 <- bind_rows(
   mutate(i_hal2, Area = "HBLL South", num_cells = nrow(full_s_grid)),
@@ -610,18 +603,66 @@ catch_per_cell <- i_hal_2020 %>% group_by(Area) %>% summarise(
   catch_lwr = quantile(.value/num_cells, 0.025), 
   catch_upr = quantile(.value/num_cells, 0.975))
 
-print("Average estimated catch per 100 hooks inside CDA:")
-
-ggplot(i_hal_2020) + geom_histogram(aes(.value/num_cells, fill = Area)) + 
-  geom_vline(data = catch_per_cell, aes(xintercept = catch), linetype = 2) +
-  facet_grid(rows=vars(Area)) + xlab("Mean catch per 100 hooks") + ylab("Number of simulations") + 
-  scale_fill_brewer(palette = "Set1") + theme(legend.position = "none")
-ggsave("figs/halibut-mean-catch-sim.png", width = 3, height = 4, dpi = 400)
+# ghal <- ggplot(i_hal_2020) + geom_histogram(aes(.value/num_cells, fill = Area)) + 
+#   geom_vline(data = catch_per_cell, aes(xintercept = catch), linetype = 2) +
+#   facet_grid(rows=vars(Area)) + xlab("Mean catch per 100 hooks") + ylab("Number of simulations") + 
+#   scale_fill_brewer(palette = "Set1") + theme(legend.position = "none") + 
+#   ggtitle("Pacific Halibut")
+# ggsave("figs/halibut-mean-catch-sim.png", width = 3, height = 4, dpi = 400)
 ```
 
-What proportion of estimated total catch is inside CDA in 2020?
+```{r }
+i_ye_cda2 <- readRDS("data-generated/yelloweye-spatial-index-cda-sim-500.rds")[[2]]
+i_ye_noncda2 <- readRDS("data-generated/yelloweye-spatial-index-3CD-outside-cda-sim-500.rds")[[2]]
+i_ye_5A2 <- readRDS("data-generated/yelloweye-spatial-index-5A-sim-500.rds")[[2]]
+i_ye2 <- readRDS("data-generated/yelloweye-spatial-index-all-S-sim-500.rds")[[2]]
+
+.dat2 <- bind_rows(
+  mutate(i_ye2, Area = "HBLL South", num_cells = nrow(full_s_grid)),
+  mutate(i_ye_5A2, Area = "5A", num_cells = nrow(s_5A_grid)),
+  mutate(i_ye_noncda2, Area = "non-CDA 3CD", num_cells = nrow(noncda_grid)),
+  mutate(i_ye_cda2, Area = "CDA", num_cells = nrow(cda_grid))
+) 
+.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 3CD", "5A", "HBLL South"))
+
+i_ye_2020 <- filter(.dat2, year == 2020) 
+
+ye_catch_per_cell <- i_ye_2020 %>% group_by(Area) %>% summarise(
+  catch = mean(.value/num_cells), 
+  catch_lwr = quantile(.value/num_cells, 0.025), 
+  catch_upr = quantile(.value/num_cells, 0.975))
+
+# gye <- ggplot(i_ye_2020) + geom_histogram(aes(.value/num_cells, fill = Area)) + 
+#   geom_vline(data = ye_catch_per_cell, aes(xintercept = catch), linetype = 2) +
+#   facet_grid(rows=vars(Area)) + xlab("Mean catch per 100 hooks") + ylab("Number of simulations") + 
+#   scale_fill_brewer(palette = "Set1") + theme(legend.position = "none")+
+#   ggtitle("Yelloweye Rockfish")
+# ggsave("figs/yelloweye-mean-catch-sim.png", width = 3, height = 4, dpi = 400)
+```
+
+
+```{r message=F, echo=F}
+ggplot(i_hal_2020) + geom_histogram(aes(.value/num_cells), alpha = 0.5, fill = "black") + 
+  geom_histogram(data = i_ye_2020, aes(.value/num_cells, fill = Area), alpha = 0.5) + 
+  geom_vline(data = catch_per_cell, aes(xintercept = catch), linetype = 2, alpha = 0.5, colour = "black") +
+  geom_vline(data = ye_catch_per_cell, aes(xintercept = catch, colour = Area), linetype = 2) +
+  facet_grid(rows=vars(Area)) + xlab("Mean catch per 100 hooks") + ylab("Number of simulations") + 
+  scale_fill_brewer(palette = "Set1") + scale_colour_brewer(palette = "Set1") + theme(legend.position = "none") +
+  ggtitle("Estimated catch rates (mean and distribution)", 
+    subtitle = "Yelloweye Rockfish (coloured bars) vs. Pacific Halibut (grey bars)")
+
+ggsave("figs/all-estimated-catch-rates-sim.png", width = 5, height = 5, dpi = 400)
+```
+
+
+# What proportion of estimated total catch is inside CDA in 2020?
 
 ```{r echo=F}
+print("What proportion of grid is inside CDA?")
+round(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)), 2)
+```
+
+```{r message=F, echo=F}
 hal_ratios <- i_hal_2020 %>% select(-num_cells) %>% pivot_wider(names_from = Area, values_from = .value) %>% 
   group_by(.iteration) %>% mutate(CDAto3CD = CDA/(CDA + `non-CDA 3CD`), CDAto3CD5A = CDA/(CDA + `non-CDA 3CD` + `5A`))
 
@@ -642,40 +683,7 @@ ggplot(hal_ratios) +
 ggsave("figs/halibut-relative-catch-sim.png", width = 7, height = 3, dpi = 400)
 ```
 
-
-## Yelloweye Rockfish
-```{r}
-i_ye_cda2 <- readRDS("data-generated/yelloweye-spatial-index-cda-sim-200.rds")[[2]]
-i_ye_noncda2 <- readRDS("data-generated/yelloweye-spatial-index-3CD-outside-cda-sim-200.rds")[[2]]
-i_ye_5A2 <- readRDS("data-generated/yelloweye-spatial-index-5A-sim-200.rds")[[2]]
-i_ye2 <- readRDS("data-generated/yelloweye-spatial-index-all-S-sim-200.rds")[[2]]
-
-.dat2 <- bind_rows(
-  mutate(i_ye2, Area = "HBLL South", num_cells = nrow(full_s_grid)),
-  mutate(i_ye_5A2, Area = "5A", num_cells = nrow(s_5A_grid)),
-  mutate(i_ye_noncda2, Area = "non-CDA 3CD", num_cells = nrow(noncda_grid)),
-  mutate(i_ye_cda2, Area = "CDA", num_cells = nrow(cda_grid))
-) 
-.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 3CD", "5A", "HBLL South"))
-
-i_ye_2020 <- filter(.dat2, year == 2020) 
-
-ye_catch_per_cell <- i_ye_2020 %>% group_by(Area) %>% summarise(
-  catch = mean(.value/num_cells), 
-  catch_lwr = quantile(.value/num_cells, 0.025), 
-  catch_upr = quantile(.value/num_cells, 0.975))
-
-ggplot(i_ye_2020) + geom_histogram(aes(.value/num_cells, fill = Area)) + 
-  geom_vline(data = ye_catch_per_cell, aes(xintercept = catch), linetype = 2) +
-  facet_grid(rows=vars(Area)) + xlab("Mean catch per 100 hooks") + ylab("Number of simulations") + 
-  scale_fill_brewer(palette = "Set1") + theme(legend.position = "none")
-ggsave("figs/yelloweye-mean-catch-sim.png", width = 3, height = 4, dpi = 400)
-```
-
-
-What proportion of estimated total catch is inside CDA in 2020?
-
-```{r echo=F}
+```{r message=F, echo=F}
 ye_ratios <- i_ye_2020 %>% select(-num_cells) %>% pivot_wider(names_from = Area, values_from = .value) %>% 
   group_by(.iteration) %>% mutate(CDAto3CD = CDA/(CDA + `non-CDA 3CD`), CDAto3CD5A = CDA/(CDA + `non-CDA 3CD` + `5A`))
 
@@ -787,11 +795,13 @@ phd <- p_hal$data %>%
   select(hal_est, X, Y, year)
 
 ratio_df <- left_join(pyd, phd) %>% mutate(halibut = exp(hal_est), yelloweye = exp(ye_est), ye_per_hal = yelloweye / halibut)
+ratio_2020 <- filter(ratio_df, year == 2020)
 
 g <- map_predictions(
-  pred_data = filter(ratio_df, year == 2020),
+  pred_data = ratio_2020,
   obs_data = filter(d_hal, year == 2020),
-  fill_aes = ye_per_hal, fill_lab = "Predicted\nYelloweye\nper Halibut",
+  fill_aes = ye_per_hal, 
+  fill_lab = "Predicted\nYelloweye\nper Halibut",
   size_aes = (catch_count / hook_count) * 100,
   size_lab = "Halibut caught\nper 100 hooks"
 )

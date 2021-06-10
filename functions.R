@@ -36,7 +36,7 @@ expand_prediction_grid <- function(grid, years) {
 }
 
 # sim predictions and index function
-get_all_sims <- function(fit_obj, newdata, sims = 200, level = 0.95,
+get_all_sims <- function(fit_obj, newdata, sims = 500, level = 0.95,
   return_sims = TRUE, return_full_obj = TRUE,
   est_function = stats::median,
   agg_function = function(x) sum(exp(x))){
@@ -169,8 +169,7 @@ map_predictions <- function(
   pred_data = NULL,
   obs_data,
   fill_aes = exp(est),
-  pred_min = min(exp(pred_data$est), na.rm = T),
-  pred_max = max(exp(pred_data$est), na.rm = T),
+  pred_min = NULL, pred_max = NULL,
   size_aes = (catch_count / hook_count) * 100,
   obs_col = "black",
   title = "",
@@ -220,11 +219,29 @@ map_predictions <- function(
   g <- ggplot(focal_area_proj)
 
   if (!is.null(pred_data)) {
+    if (is.null(pred_min)) {
+      g <- g + geom_tile(
+        data = pred_data,
+        aes(X * 100000, Y * 100000, fill = {{fill_aes}}),
+        width = 2000, height = 2000, colour = NA
+      ) + scale_fill_viridis_c(
+        # trans = ggsidekick::fourth_root_power_trans(),
+        trans = "sqrt",
+        option = "D"
+      )
+    } else {
     g <- g + geom_tile(
       data = pred_data,
       aes(X * 100000, Y * 100000, fill = {{fill_aes}}),
       width = 2000, height = 2000, colour = NA
+    ) + scale_fill_viridis_c(
+      # trans = ggsidekick::fourth_root_power_trans(),
+      trans = "sqrt",
+      limits = c(pred_min, pred_max),
+      na.value = "yellow",
+      option = "D"
     )
+    }
   }
   g <- g +
     geom_line( # add major management region boundaries
@@ -244,13 +261,6 @@ map_predictions <- function(
     ) +
     geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
     geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey75", col = "grey55") +
-    scale_fill_viridis_c(
-      # trans = ggsidekick::fourth_root_power_trans(),
-      trans = "sqrt",
-      limits = c(pred_min, pred_max),
-      na.value = "yellow",
-      option = "D"
-    ) +
     labs(fill = fill_lab, size = size_lab) +
     geom_point(
       data = obs_data,
