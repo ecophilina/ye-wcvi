@@ -85,8 +85,6 @@ model_data_prep <- function(trawldata, hblldata, hookdata, mean_weight) {
 
   d <- left_join(d, hook, by = c("survey_series_id", "year", "fishing_event_id"))
 
-  # browser()
-
   d <- d %>%
     mutate(
       density = expected_catch * mean_weight / (total_hooks * 0.0024384 * 0.009144 * 10000) # guessing that the area swept calc was for km2 so changing 1000 to 10000 should give it in hectares?
@@ -107,7 +105,6 @@ model_data_prep <- function(trawldata, hblldata, hookdata, mean_weight) {
     ) %>%
     mutate(lon = longitude, lat = latitude) %>%
     rename(survey = survey_abbrev)
-
 
   d <- bind_rows(d, dt) %>% filter(depth_m > 1)
 
@@ -211,7 +208,6 @@ grid_ll <- utm2ll(grid_xy) %>% rename(longitude = X, latitude = Y)
 grid_utm <- bind_cols(grid_utm, grid_ll)
 ```
 
-
 Trim prediction grid to cover full outside S HBLL
 
 ```{r}
@@ -292,7 +288,6 @@ if (!file.exists(f)) {
 }
 ```
 
-
 ```{r}
 m_halibut <- readRDS(file = "models/halibut-hybrid-model-hbllyrs-400kn-AR1.rds")
 m_halibut
@@ -340,9 +335,10 @@ m_ye
 get_diag(m_ye)
 ```
 
+
 # Halibut catch predictions and index
 
-For CDA only
+For CDA only (HBLL and trawl grids)
 
 ```{r eval = TRUE}
 f <- "data-generated/hybrid-halibut-hbllyrs-AR1-index-cda.rds"
@@ -360,7 +356,7 @@ if (!file.exists(ss)) {
 }
 ```
 
-For 3CD outside CDA
+For 3CD outside CDA (HBLL and trawl grids)
 
 ```{r eval = T}
 f <- "data-generated/hybrid-halibut-hbllyrs-AR1-index-3CD-outside-cda.rds"
@@ -379,23 +375,7 @@ if (!file.exists(ss)) {
 }
 ```
 
-# TRYING OUT NEW SIM VERSION
-```{r}
-
-sim_hal_cda <- readRDS("data-generated/hybrid-halibut-hbllyrs-AR1-index-cda-sim-200.rds")[[2]]
-sim_hal_noncda <- readRDS("data-generated/hybrid-halibut-hbllyrs-AR1-index-3CD-outside-cda-sim-200.rds")[[2]]
-
-ggplot(sim_hal_cda, aes(as.factor(year), .value)) + geom_violin(colour = "red") + geom_violin(data = sim_hal_noncda, aes(as.factor(year), .value), colour = "blue")
-
-# ## check that the problem is with the predictions... and it seems to be
-# sim_p_hal_cda1 <- readRDS("data-generated/halibut-index-cda-sim-200.rds")[[2]]
-# sim_p_hal_cda2 <- readRDS("data-generated/halibut-index-cda-sim-200.rds")[[3]]
-# sim_p_hal_cda <- bind_cols(sim_p_hal_cda1, as.data.frame(sim_p_hal_cda2)) %>% group_by(year) %>% summarise(V1 = sum(exp(V1)), V2 = sum(exp(V2)), V3 = sum(exp(V3)))
-# sim_p_hal_cda
-```
-
-
-For area 5A 
+For area 5A (HBLL and trawl grids)
 
 ```{r eval = T}
 f <- "data-generated/hybrid-halibut-hbllyrs-AR1-index-5A.rds"
@@ -414,7 +394,7 @@ if (!file.exists(ss)) {
 }
 ```
 
-For entire southern outside HBLL
+For entire southern outside HBLL grid including CDA plus the trawl survey area that falls within HBLL bounds.
 
 ```{r eval = T}
 f <- "data-generated/hybrid-halibut-hbllyrs-AR1-index-all-S.rds"
@@ -433,6 +413,28 @@ if (!file.exists(ss)) {
 }
 ```
 
+For just southern outside HBLL 
+
+```{r eval = T}
+f <- "data-generated/hybrid-halibut-hbllyrs-AR1-index-hbll-S.rds"
+if (!file.exists(f)) {
+  
+  hbll_s_grid <- filter(full_s_grid, survey == "HBLL OUT S")
+  
+  p_hal_Sb <- predict(m_halibut, newdata = hbll_s_grid, return_tmb_object = TRUE)
+  saveRDS(p_hal_Sb, "data-generated/hybrid-halibut-hbllyrs-AR1-predictions-hbll-S.rds")
+
+  i_hal_Sb <- get_index(p_hal_Sb, bias_correct = T) # bias_correction not working only for full grid
+  saveRDS(i_hal_Sb, f)
+}
+
+ss <- "data-generated/hybrid-halibut-hbllyrs-AR1-index-hbll-S-sim-200.rds"
+if (!file.exists(ss)) {
+  i_hal_S2b <- get_all_sims(m_halibut, newdata = hbll_s_grid)
+  saveRDS(i_hal_S2b, ss)
+}
+```
+
 
 ## Plot index of total halibut catch through time
 
@@ -447,14 +449,16 @@ i_hal <- readRDS("data-generated/hybrid-halibut-hbllyrs-AR1-index-all-S-sim-200.
 i_hal_cda <- readRDS("data-generated/hybrid-halibut-hbllyrs-AR1-index-cda-sim-200.rds")[[1]]
 i_hal_noncda <- readRDS("data-generated/hybrid-halibut-hbllyrs-AR1-index-3CD-outside-cda-sim-200.rds")[[1]]
 i_hal_5A <- readRDS("data-generated/hybrid-halibut-hbllyrs-AR1-index-5A-sim-200.rds")[[1]]
+i_hal_hbll <- readRDS("data-generated/hybrid-halibut-hbllyrs-AR1-index-hbll-S-sim-200.rds")[[1]]
 
 .dat <- bind_rows(
   mutate(i_hal, Area = "HBLL South"),
+  mutate(i_hal_hbll, Area = "HBLL grid only"),
   mutate(i_hal_5A, Area = "5A"),
   mutate(i_hal_noncda, Area = "non-CDA 3CD"),
   mutate(i_hal_cda, Area = "CDA")
 )
-.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD", "5A", "HBLL South"))
+.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD", "5A", "HBLL South", "HBLL grid only"))
 ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
@@ -465,7 +469,7 @@ ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
   scale_fill_brewer(palette = "Set1") +
   scale_colour_brewer(palette = "Set1")
-ggsave("figs/hybrid-halibut-hbllyrs-AR1-index-by-area-sim.png", width = 7, height = 4, dpi = 400)
+ggsave("figs/hybrid-halibut-hbllyrs-AR1-index-by-area-sim2.png", width = 7, height = 4, dpi = 400)
 ```
 
 ## Plot estimated halibut catch per 100 hooks through time
@@ -504,9 +508,24 @@ ggplot(.dat, aes(year, est)) +
 ggsave("figs/hybrid-halibut-average-index-by-area.png", width = 7, height = 4, dpi = 400)
 ```
 
+## Check distribution of simulations
+```{r message=F, echo=F, warning=F}
+sim_hal_cda <- readRDS("data-generated/hybrid-halibut-hbllyrs-AR1-index-cda-sim-200.rds")[[2]]
+sim_hal_noncda <- readRDS("data-generated/hybrid-halibut-hbllyrs-AR1-index-3CD-outside-cda-sim-200.rds")[[2]]
+
+ggplot(sim_hal_cda, aes(as.factor(year), .value)) + geom_violin(colour = "red") + geom_violin(data = sim_hal_noncda, aes(as.factor(year), .value), colour = "blue")
+
+# ## check that the problem is with the predictions... and it seems to be
+# sim_p_hal_cda1 <- readRDS("data-generated/halibut-index-cda-sim-200.rds")[[2]]
+# sim_p_hal_cda2 <- readRDS("data-generated/halibut-index-cda-sim-200.rds")[[3]]
+# sim_p_hal_cda <- bind_cols(sim_p_hal_cda1, as.data.frame(sim_p_hal_cda2)) %>% group_by(year) %>% summarise(V1 = sum(exp(V1)), V2 = sum(exp(V2)), V3 = sum(exp(V3)))
+# sim_p_hal_cda
+```
+
+
 # Yelloweye Rockfish catch predictions
 
-For CDA only
+For CDA only (HBLL and trawl grids)
 
 ```{r eval = TRUE}
 f <- "data-generated/hybrid-yelloweye-hbllyrs-spatial-index-cda.rds"
@@ -525,7 +544,7 @@ if (!file.exists(ss)) {
 }
 ```
 
-For 3CD outside CDA
+For 3CD outside CDA (HBLL and trawl grids)
 
 ```{r eval = T}
 f <- "data-generated/hybrid-yelloweye-hbllyrs-spatial-index-3CD-outside-cda.rds"
@@ -544,7 +563,7 @@ if (!file.exists(ss)) {
 }
 ```
 
-For area 5A 
+For area 5A (HBLL and trawl grids)
 
 ```{r eval = T}
 f <- "data-generated/hybrid-yelloweye-hbllyrs-spatial-index-5A.rds"
@@ -563,7 +582,8 @@ if (!file.exists(ss)) {
 }
 ```
 
-For entire southern outside yelloweye stock including CDA
+For entire southern outside HBLL grid including CDA plus the trawl survey area that falls within HBLL bounds.
+This is roughly equivilant to entire southern outside yelloweye stock.  
 
 ```{r eval = T}
 f <- "data-generated/hybrid-yelloweye-hbllyrs-spatial-index-all-S.rds"
@@ -582,6 +602,28 @@ if (!file.exists(ss)) {
 }
 ```
 
+For just southern outside HBLL 
+
+```{r eval = T}
+f <- "data-generated/hybrid-yelloweye-hbllyrs-spatial-index-hbll-S.rds"
+if (!file.exists(f)) {
+  
+  hbll_s_grid <- filter(full_s_grid, survey == "HBLL OUT S")
+  
+  p_ye_Sb <- predict(m_ye, newdata = hbll_s_grid, return_tmb_object = TRUE)
+  saveRDS(p_ye_Sb, "data-generated/hybrid-yelloweye-hbllyrs-spatial-predictions-hbll-S.rds")
+
+  i_ye_Sb <- get_index(p_ye_Sb, bias_correct = T) # bias_correction not working only for full grid
+  saveRDS(i_ye_Sb, f)
+}
+
+ss <- "data-generated/hybrid-yelloweye-hbllyrs-spatial-index-hbll-S-sim-200.rds"
+if (!file.exists(ss)) {
+  i_ye_S2b <- get_all_sims(m_ye, newdata = hbll_s_grid)
+  saveRDS(i_ye_S2b, ss)
+}
+```
+
 Total catch index for entire court defined area is in red, remainder of southern stock area is in black.
 
 ```{r message=F, echo=F}
@@ -590,13 +632,16 @@ i_ye_cda <- readRDS("data-generated/hybrid-yelloweye-hbllyrs-spatial-index-cda-s
 i_ye_noncda <- readRDS("data-generated/hybrid-yelloweye-hbllyrs-spatial-index-3CD-outside-cda-sim-200.rds")[[1]]
 i_ye_5A <- readRDS("data-generated/hybrid-yelloweye-hbllyrs-spatial-index-5A-sim-200.rds")[[1]]
 
+i_ye_hbll <- readRDS("data-generated/hybrid-yelloweye-hbllyrs-spatial-index-hbll-S-sim-200.rds")[[1]]
+
 .dat <- bind_rows(
   mutate(i_ye, Area = "HBLL South"),
+  mutate(i_ye_hbll, Area = "HBLL grid only"),
   mutate(i_ye_5A, Area = "5A"),
   mutate(i_ye_noncda, Area = "non-CDA 3CD"),
   mutate(i_ye_cda, Area = "CDA")
 )
-.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD", "5A", "HBLL South"))
+.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD", "5A", "HBLL South", "HBLL grid only"))
 ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
@@ -644,9 +689,6 @@ ggsave("figs/hybrid-yelloweye-hbllyrs-average-index-by-area.png", width = 7, hei
 ```
 
 
-
-
-
 # Calculate predicted catch rates in different areas
 
 ```{r}
@@ -669,9 +711,12 @@ catch_per_cell <- i_hal_2020 %>%
   group_by(Area) %>%
   summarise(
     catch = mean(.value / num_cells),
+    catch_med = median(.value / num_cells),
     catch_lwr = quantile(.value / num_cells, 0.025),
     catch_upr = quantile(.value / num_cells, 0.975)
   )
+
+saveRDS(catch_per_cell, "hal_catch_per_cell.rds")
 ```
 
 ```{r}
@@ -694,9 +739,12 @@ ye_catch_per_cell <- i_ye_2020 %>%
   group_by(Area) %>%
   summarise(
     catch = mean(.value / num_cells),
+    catch_med = median(.value / num_cells),
     catch_lwr = quantile(.value / num_cells, 0.025),
     catch_upr = quantile(.value / num_cells, 0.975)
   )
+
+saveRDS(ye_catch_per_cell, "ye_catch_per_cell.rds")
 ```
 
 
@@ -717,12 +765,12 @@ ggsave("figs/hybrid-estimated-biomass-densities-sim.png", width = 5, height = 5,
 
 # What proportion of estimated total catch is inside CDA in 2020?
 
+What proportion of 3CD HBLL + trawl survey grid is inside CDA?
 ```{r echo=F}
-print("What proportion of grid is inside CDA?")
 round(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)), 2)
 ```
 
-```{r echo=F}
+```{r echo=F, message=F, warning=F}
 hal_ratios <- i_hal_2020 %>%
   select(-num_cells) %>%
   pivot_wider(names_from = Area, values_from = .value) %>%
@@ -734,9 +782,11 @@ mean_hal_ratios <- hal_ratios %>%
   group_by(area) %>%
   summarise(
     ratio = mean(ratio),
+    ratio_med = median(ratio),
     ratio_lwr = quantile(ratio, 0.025),
     ratio_upr = quantile(ratio, 0.975)
   )
+saveRDS(mean_hal_ratios, "mean_hal_ratios.rds")
 
 ggplot(hal_ratios) +
   geom_histogram(aes(CDAto3CD), fill = "red", alpha = 0.75) +
@@ -748,7 +798,7 @@ ggplot(hal_ratios) +
 ggsave("figs/hybrid-halibut-relative-biomass-sim.png", width = 7, height = 3, dpi = 400)
 ```
 
-```{r echo=F}
+```{r echo=F, message=F, warning=F}
 ye_ratios <- i_ye_2020 %>%
   select(-num_cells) %>%
   pivot_wider(names_from = Area, values_from = .value) %>%
@@ -760,9 +810,11 @@ mean_ye_ratios <- ye_ratios %>%
   group_by(area) %>%
   summarise(
     ratio = mean(ratio),
+    ratio_med = median(ratio),
     ratio_lwr = quantile(ratio, 0.025),
     ratio_upr = quantile(ratio, 0.975)
   )
+saveRDS(mean_ye_ratios, "mean_ye_ratios.rds")
 
 ggplot(ye_ratios) +
   geom_histogram(aes(CDAto3CD), fill = "red", alpha = 0.75) +
@@ -776,7 +828,7 @@ ggsave("figs/hybrid-yelloweye-hbllyrs-relative-biomass-sim.png", width = 7, heig
 
 
 ### Plot ratio of yelloweye to halibut through time
-```{r message=F, echo=F}
+```{r message=F, echo=F, warning=F}
 .i_ye <- bind_rows(
   mutate(i_ye2, Area = "HBLL South", num_cells = nrow(full_s_grid)),
   mutate(i_ye_5A2, Area = "5A", num_cells = nrow(s_5A_grid)),
@@ -803,8 +855,11 @@ ggsave("figs/hybrid-yelloweye-hbllyrs-relative-biomass-sim.png", width = 7, heig
     ye_per_hal = mean(yelloweye / halibut),
     lwr = quantile(yelloweye / halibut, 0.025),
     upr = quantile(yelloweye / halibut, 0.975)
-  ) %>%
-  filter(Area %in% c("non-CDA 3CD", "CDA"))
+  ) 
+
+saveRDS(.dat, "ratio-yelloweye-to-halibut.rds")
+
+.dat <- .dat %>% filter(Area %in% c("non-CDA 3CD", "CDA"))
 
 ggplot(.dat, aes(year, ye_per_hal, fill = Area, colour = Area)) +
   geom_line() +
@@ -820,6 +875,42 @@ ggsave("figs/hybrid-ye-to-hal-index-by-area.png", width = 7, height = 4, dpi = 4
 ```
 
 
+# Check predictions against those from the HBLL only count model
+```{r}
+hybrid_pred <- readRDS("data-generated/hybrid-halibut-hbllyrs-AR1-predictions-hbll-S.rds")
+poisson_pred <- readRDS("data-generated/halibut-predictions-all-S.rds")
+
+hyb <- hybrid_pred$data %>% 
+  # mutate(est = exp(est)) %>%
+  select(X, Y, year, log_biomass = est)
+
+pois <- poisson_pred$data %>% 
+  # mutate(est_exp = exp(est)) %>%
+  mutate(X = round(X*100)/100, Y = round(Y*100)/100) %>% 
+  select(X, Y, year, log_count = est)
+
+d_test <- left_join(hyb, pois)
+
+ggplot(d_test, aes(log_count, log_biomass)) + geom_point(alpha = 0.1) + facet_wrap(~year)
+```
+
+```{r}
+hybrid_pred <- readRDS("data-generated/hybrid-yelloweye-hbllyrs-spatial-predictions-hbll-S.rds")
+poisson_pred <- readRDS("data-generated/yelloweye-spatial-predictions-all-S.rds")
+
+hyb <- hybrid_pred$data %>% 
+  # mutate(est = exp(est)) %>%
+  select(X, Y, year, log_biomass = est)
+
+pois <- poisson_pred$data %>% 
+  # mutate(est_exp = exp(est)) %>%
+  mutate(X = round(X*100)/100, Y = round(Y*100)/100) %>% 
+  select(X, Y, year, log_count = est)
+
+d_test <- left_join(hyb, pois)
+
+ggplot(d_test, aes(log_count, log_biomass)) + geom_point(alpha = 0.1) + facet_wrap(~year)
+```
 
 
 # Maps
@@ -841,7 +932,7 @@ dir.create("figs", showWarnings = FALSE)
 ggsave("figs/hybrid-halibut-hbllyrs-AR1-2020-predictions-S.png", width = 5.5, height = 6, dpi = 400)
 ```
 
-```{r map-predictions-all, message=F, echo=F, cache=TRUE}
+```{r map-predictions-all, message=F, echo=F, warning=F, cache=TRUE}
 p_hal <- readRDS("data-generated/hybrid-halibut-hbllyrs-AR1-predictions-all-S.rds")
 years <- unique(p_hal$data$year)
 p_hal_d <- p_hal$data %>%
@@ -909,7 +1000,7 @@ ggsave("figs/hybrid-ye-to-halibut-2020-w-hal-catch-S.png", width = 5.5, height =
 
 Raw data
 
-```{r ye-map-all, cache=TRUE, echo=F, message=F}
+```{r ye-map-all, cache=TRUE, echo=F, message=F, warning=F}
 g <- map_predictions(
   pred_data = p_ye$data,
   obs_data = d_ye,
@@ -989,7 +1080,7 @@ ggplot(filter(
 ### Experiment with accumulation curve
 Solid lines are cumulative halibut catch potential for each addition cell fished in decreasing order of predicted halibut abundance.
 Dashed lines are the cumulative yelloweye catch that might be anticipated for those same cells.
-```{r message=F, echo=F}
+```{r message=F, echo=F, warning=F}
 ggplot(
   data = ratio_cda,
   aes(x = ordered)
@@ -1035,7 +1126,7 @@ ggsave("annual_yelloweye_weights.png", width = 4, height = 4)
 
 ### Does the annual distribution of fish weights differ within the CDA?
 
-```{r message=F, echo=F}
+```{r message=F, echo=F, warning=F}
 # get the fishing events that occurred within CDA
 d_ye_sf <- st_as_sf(d_ye, coords = c("longitude", "latitude"))
 st_crs(d_ye_sf) <- 4326 # set the coordinate reference system
