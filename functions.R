@@ -71,7 +71,8 @@ load_boundaries <- function(utm_zone) {
 }
 
 # TODO: we probably want to purge many of these...
-get_diag <- function(m, response = "catch_count", variable = "depth_scaled", colour_var = "depth_m", start_year = 2007) {
+get_diag <- function(m, response = "density",
+  variable = "depth_scaled", colour_var = "depth_m", start_year = 2007) {
   predictions <- predict(m)
   predictions$residuals <- residuals(m)
 
@@ -92,9 +93,9 @@ get_diag <- function(m, response = "catch_count", variable = "depth_scaled", col
 
   plot_map <- function(dat, column = "est") {
     ggplot(dat, aes_string("X", "Y", colour = column)) +
-      geom_point(alpha = 0.5) +
+      geom_point(alpha = 1, size = 0.2) +
       coord_fixed()+
-      gfplot::theme_pbs()
+      theme_void()
   }
 
   g <- plot_map(predictions, "est") +
@@ -113,28 +114,29 @@ get_diag <- function(m, response = "catch_count", variable = "depth_scaled", col
   #   print(g)
 
   g <- plot_map(predictions, "omega_s") +
-    ggtitle("Spatial random effects only") +
+    ggtitle("Spatial random effects only", subtitle = " ") +
     scale_colour_gradient2()
   print(g)
 
   g <- plot_map(predictions, "epsilon_st") +
-    ggtitle("Spatiotemporal random effects only") +
+    ggtitle("Spatiotemporal random effects only", subtitle = " ") +
     facet_wrap(~year) +
     scale_colour_gradient2()
   print(g)
 
   g <- plot_map(predictions, "residuals") +
-    ggtitle("Residuals") +
+    ggtitle("Residuals", subtitle = " ") +
     facet_wrap(~year) +
     scale_colour_gradient2()
   print(g)
 
-  g <- ggplot(predictions, aes_string("est_exp", response)) +
-    geom_point(alpha = 0.2) +
+  g <- ggplot(predictions, aes_string(response,"est_exp")) +
+    geom_point(alpha = 0.2) + geom_abline()+
     facet_wrap(~year) +
+    scale_x_log10() + scale_y_log10() +
     coord_fixed() +
-    geom_abline()+
-    gfplot::theme_pbs()
+    xlab("Observed") + ylab("Predicted") +
+    gfplot::theme_pbs() + theme(axis.text = element_blank())
   print(g)
 
   g <- ggplot(predictions, aes(est, residuals)) +
@@ -143,16 +145,16 @@ get_diag <- function(m, response = "catch_count", variable = "depth_scaled", col
     gfplot::theme_pbs()
   print(g)
 
-  g <- ggplot(predictions, aes_string(variable, "residuals", colour = colour_var)) +
-    geom_point(alpha = 0.4, size = 1.2) +
-    geom_smooth(colour="grey", size = 1.2) +
-    scale_colour_viridis_c(option = "B", direction = -1, begin = 0, end = 0.7,
-      limits= c(min(predictions[colour_var]), max(predictions[colour_var]))) + #, trans= sqrt
-    # facet_wrap(~year, scales = "free_x")+
-    gfplot::theme_pbs() + theme(
-      axis.text.y = element_text(size = 14),
-      axis.text.x = element_blank(), axis.ticks.x = element_blank())
-  print(g)
+  # g <- ggplot(predictions, aes_string(variable, "residuals", colour = colour_var)) +
+  #   geom_point(alpha = 0.4, size = 1.2) +
+  #   geom_smooth(colour="grey", size = 1.2) +
+  #   scale_colour_viridis_c(option = "B", direction = -1, begin = 0, end = 0.7,
+  #     limits= c(min(predictions[colour_var]), max(predictions[colour_var]))) + #, trans= sqrt
+  #   # facet_wrap(~year, scales = "free_x")+
+  #   gfplot::theme_pbs() + theme(
+  #     axis.text.y = element_text(size = 14),
+  #     axis.text.x = element_blank(), axis.ticks.x = element_blank())
+  # print(g)
 
   g <- ggplot(predictions, aes_string(variable, "residuals", colour = colour_var)) +
     geom_point(alpha = 0.4, size = 0.7) +
@@ -167,11 +169,15 @@ get_diag <- function(m, response = "catch_count", variable = "depth_scaled", col
 
 map_predictions <- function(
   pred_data = NULL,
-  obs_data,
+  obs_data = NULL,
   fill_aes = exp(est),
-  pred_min = NULL, pred_max = NULL,
+  pred_min = NULL,
+  pred_max = NULL,
+  viridis_dir = 1,
+  viridis_option = "D",
+  viridis_na = "yellow",
   size_aes = (catch_count / hook_count) * 100,
-  obs_col = "black",
+  obs_col = "white",
   title = "",
   size_lab = "Observed fish\nper 100 hooks",
   fill_lab = "Predicted fish\nper 100 hooks",
@@ -227,7 +233,9 @@ map_predictions <- function(
       ) + scale_fill_viridis_c(
         # trans = ggsidekick::fourth_root_power_trans(),
         trans = "sqrt",
-        option = "D"
+        direction = viridis_dir,
+        na.value = viridis_na,
+        option = viridis_option
       )
     } else {
     g <- g + geom_tile(
@@ -238,8 +246,9 @@ map_predictions <- function(
       # trans = ggsidekick::fourth_root_power_trans(),
       trans = "sqrt",
       limits = c(pred_min, pred_max),
-      na.value = "yellow",
-      option = "D"
+      direction = viridis_dir,
+      na.value = viridis_na,
+      option = viridis_option
     )
     }
   }
@@ -262,49 +271,59 @@ map_predictions <- function(
     geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
     geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey75", col = "grey55") +
     labs(fill = fill_lab, size = size_lab) +
-    geom_point(
-      data = obs_data,
-      mapping = aes(
-        X * 1e5, Y * 1e5,
-        size = {{size_aes}}
-      ), pch = 21,
-      inherit.aes = FALSE, colour = obs_col, alpha = 0.9
-    ) +
-    scale_size_area(max_size = 3) +
     annotate("text",
-      x = convert2utm9(-128.8, 51.1)[1],
-      y = convert2utm9(-128.8, 51.1)[2], label = "5A") +
-    annotate("text", x = convert2utm9(-128.8, 50.3)[1],
-      y = convert2utm9(-128.8, 50.3)[2],
+      x = convert2utm9(-129.8, 50.7)[1],
+      y = convert2utm9(-129.8, 50.7)[2], label = "5A") +
+    annotate("text",
+      x = convert2utm9(-129.8, 50.3)[1],
+      y = convert2utm9(-129.8, 50.3)[2],
       label = "3D") +
-    annotate("text", x = convert2utm9(-128.8, 48.8)[1],
-      y = convert2utm9(-128.8, 48.8)[2],
+    annotate("text",
+      x = convert2utm9(-129.8, 48.8)[1],
+      y = convert2utm9(-129.8, 48.8)[2],
       label = "3C")
 
   if (title != "") {
     g <- g + ggtitle(title)
   }
 
+
   if (grey_waters){
     g <- g +
       geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey99", col = "grey55") +
-      geom_point(
-        data = obs_data,
-        mapping = aes(
-          X * 1e5, Y * 1e5,
-          size = {{size_aes}}
-        ), pch = 21,
-        inherit.aes = FALSE, colour = "white", alpha = 0.99
-      ) + theme(
+      theme(
       legend.key = element_rect(colour = NA, fill = "grey75"),
       panel.background = element_rect(color = NA, size = 1, fill = "grey75"))
+
+    # if (!is.null(obs_data)) {
+    #   g <- g + geom_point(
+    #     data = obs_data,
+    #     mapping = aes(
+    #       X * 1e5, Y * 1e5,
+    #       size = {{size_aes}}
+    #     ), pch = 21,
+    #     inherit.aes = FALSE, colour = "white", alpha = 0.99
+    #   ) + scale_size_area(max_size = 4, n.breaks = 4)
+    # }
+  }
+
+  if (!is.null(obs_data)) {
+    g <- g + geom_point(
+      data = obs_data,
+      mapping = aes(
+        X * 1e5, Y * 1e5,
+        size = {{size_aes}}
+      ), pch = 21,
+      inherit.aes = FALSE, colour = obs_col, alpha = 0.99
+    ) +
+      scale_size_area(max_size = 4, n.breaks = 5)
   }
 
   g <- g +
     theme(panel.grid.major = element_line(colour = "grey60", size = 0.3)) +
     coord_sf(
-      xlim = c(230957.7 + 200000, 1157991 - 350000),
-      ylim = c(5366427, 6353456 - 550000)
+      xlim = c(230957.7 + 205000, 1157991 - 385000),
+      ylim = c(5366427 + 25000, 6353456 - 590000)
     ) +
     guides(
       fill = guide_colorbar(order = 1),
