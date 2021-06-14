@@ -710,9 +710,44 @@ ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
 ggsave("figs/hybrid-halibut-trawlinhbllyrs-paired-index-by-area.png", width = 7, height = 4, dpi = 400)
 ```
 
-## Estimated halibut catch per 100 hooks through time
 
-Average predicted catch within the entire court defined area is in red, remainder of southern stock area is in black.
+## Index of total Yelloweye Rockfish catch through time
+
+```{r message=F, echo=F}
+i_ye <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-all-S-sim-500.rds")[[1]]
+i_ye_cda <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-cda-sim-500.rds")[[1]]
+i_ye_noncda <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-3CD-outside-cda-sim-500.rds")[[1]]
+i_ye_5A <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-5A-sim-500.rds")[[1]]
+
+i_ye_hbll <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-hbll-S-sim-500.rds")[[1]]
+
+.dat <- bind_rows(
+  mutate(i_ye, Area = "Full combined grid"),
+  # mutate(i_ye_hbll, Area = "HBLL grid only"),
+  # mutate(i_ye_5A, Area = "5A"),
+  mutate(i_ye_noncda, Area = "non-CDA 3CD"),
+  mutate(i_ye_cda, Area = "CDA")
+)
+.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD", "5A", "Full combined grid", "HBLL grid only"))
+ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
+  # geom_line(data = .dat1, linetype = 2) +
+  xlab("Year") +
+  ylab("Biomass index") +
+  coord_cartesian(expand = FALSE, ylim = c(0, max(i_ye$upr) * 1.04)) +
+  scale_x_continuous(breaks = seq(1950, 2050, 2)) +
+  theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_colour_brewer(palette = "Set1")
+ggsave("figs/hybrid-yelloweye-trawlinhbllyrs-paired-index-by-area.png", width = 7, height = 4, dpi = 400)
+```
+
+## Estimated catch per 100 hooks through time inside and outside CDA
+
+Average predicted catch within the entire court defined area is in red, remainder of the 3CD area is in blue.
+
+### Pacific Halibut
 
 ```{r message = F, echo= F}
 i_hal_cda <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-cda-sim-500.rds")[[1]]
@@ -746,41 +781,7 @@ ggplot(.dat, aes(year, est)) +
 ggsave("figs/hybrid-halibut-trawlinhbllyrs-paired-average-index.png", width = 7, height = 4, dpi = 400)
 ```
 
-
-```{r message=F, echo=F}
-i_ye <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-all-S-sim-500.rds")[[1]]
-i_ye_cda <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-cda-sim-500.rds")[[1]]
-i_ye_noncda <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-3CD-outside-cda-sim-500.rds")[[1]]
-i_ye_5A <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-5A-sim-500.rds")[[1]]
-
-i_ye_hbll <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-hbll-S-sim-500.rds")[[1]]
-
-.dat <- bind_rows(
-  mutate(i_ye, Area = "Full combined grid"),
-  # mutate(i_ye_hbll, Area = "HBLL grid only"),
-  # mutate(i_ye_5A, Area = "5A"),
-  mutate(i_ye_noncda, Area = "non-CDA 3CD"),
-  mutate(i_ye_cda, Area = "CDA")
-)
-.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD", "5A", "Full combined grid", "HBLL grid only"))
-ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
-  # geom_line(data = .dat1, linetype = 2) +
-  xlab("Year") +
-  ylab("Biomass index") +
-  coord_cartesian(expand = FALSE, ylim = c(0, max(i_ye$upr) * 1.04)) +
-  scale_x_continuous(breaks = seq(1950, 2050, 2)) +
-  theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
-  scale_fill_brewer(palette = "Set1") +
-  scale_colour_brewer(palette = "Set1")
-ggsave("figs/hybrid-yelloweye-trawlinhbllyrs-paired-index-by-area.png", width = 7, height = 4, dpi = 400)
-```
-
-
-## Plot estimated yelloweye catch per 100 hooks through time
-
-Average predicted catch within the entire court defined area is in red, remainder of southern stock area is in black.
+## Yelloweye Rockfish
 
 ```{r message = F, echo= F}
 .dat <- bind_rows(
@@ -878,7 +879,7 @@ ggplot(i_hal_2020) + geom_histogram(aes(.value / num_cells), alpha = 0.75, fill 
   geom_vline(data = ye_catch_per_cell, aes(xintercept = catch_med, colour = Area), linetype = 2) +
   facet_grid(rows = vars(Area)) + xlab("Mean kg/ha") + ylab("Number of simulations") +
   scale_fill_brewer(palette = "Set1") + scale_colour_brewer(palette = "Set1") + theme(legend.position = "none") +
-  ggtitle("Estimated relative biomass densities (median and distribution)",
+  ggtitle("Estimated relative biomass densities (dashed lines are median)",
     subtitle = "Yelloweye Rockfish (coloured bars) vs. Pacific Halibut (grey bars)"
   )
 
@@ -889,9 +890,9 @@ ggsave("figs/hybrid-trawlinhbllyrs-paired-estimated-biomass-densities.png", widt
 # What proportion of estimated total catch is inside CDA in 2020?
 
 What proportion of 3CD HBLL + trawl survey grid is inside CDA?
-```{r echo=F}
-round(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)), 2)
-```
+
+`r round(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)), 2)`
+
 
 ```{r echo=F, message=F, warning=F}
 hal_ratios <- i_hal_2020 %>%
