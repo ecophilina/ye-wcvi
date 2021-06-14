@@ -128,19 +128,34 @@ yehookdata <- readRDS("data/yelloweye-rockfish-hook-dat36.rds")
 
 d_ye <- model_data_prep(yesetdata, yehookdata)
 saveRDS(d_ye, "data-generated/yelloweye-surv-36-model-data.rds")
+```
 
+```{r}
 # calculate mean weight for all of SYN WCVI
+print("Mean Halibut weight from trawl")
 halsampledata <- readRDS("data/halibut-surv-samples-all.rds") %>% filter(survey_abbrev == c("SYN WCVI", "SYN QCS"))
-halmeanweight <- mean(halsampledata$weight / 1000, na.rm = T)
+halmeanweightSYN <- mean(halsampledata$weight / 1000, na.rm = T)
+halmeanweightSYN
 
-yesampledata <- readRDS("data/yelloweye-surv-samples-all.rds") %>% filter(survey_abbrev == c("HBLL OUT S"))
-yemeanweight <- mean(yesampledata$weight / 1000, na.rm = T)
-yemeanweight
+print("Mean Halibut weight from Adam")
+halmeanweight <- 9.5 # 21 lbs = 9.52 kg 
+halmeanweight
 
+print("Mean Yelloweye weight from trawl")
 yesampledata <- readRDS("data/yelloweye-surv-samples-all.rds") %>% filter(survey_abbrev == c("SYN WCVI", "SYN QCS"))
 yemeanweightSYN <- mean(yesampledata$weight / 1000, na.rm = T)
 yemeanweightSYN
+
+print("Mean Yelloweye weight from HBLL")
+yesampledata <- readRDS("data/yelloweye-surv-samples-all.rds") %>% filter(survey_abbrev == c("HBLL OUT S"))
+yemeanweightHBLL <- mean(yesampledata$weight / 1000, na.rm = T)
+yemeanweightHBLL
+
+print("Mean Yelloweye weight from Adam")
+yemeanweight <- 3.2 # 7 lbs =3.18 kg  
+yemeanweight
 ```
+
 
 # Make prediction grid
 
@@ -684,7 +699,9 @@ ggplot(i_hal_2020) + geom_histogram(aes(.value / num_cells ), alpha = 0.75, fill
 
 ggsave("figs/all-estimated-catch-rates-sim.png", width = 5, height = 5, dpi = 400)
 ```
+
 Converting to biomass separates distributions
+
 ```{r message=F, echo=F}
 ggplot(i_hal_2020) + geom_histogram(aes(.value / num_cells * halmeanweight), alpha = 0.75, fill = "black") +
   geom_histogram(data = i_ye_2020, aes(.value / num_cells * yemeanweight, fill = Area), alpha = 0.75) +
@@ -692,8 +709,8 @@ ggplot(i_hal_2020) + geom_histogram(aes(.value / num_cells * halmeanweight), alp
   geom_vline(data = ye_catch_per_cell, aes(xintercept = catch * yemeanweight, colour = Area), linetype = 2) +
   facet_grid(rows = vars(Area)) + xlab("Mean biomass per 100 hooks") + ylab("Number of simulations") +
   scale_fill_brewer(palette = "Set1") + scale_colour_brewer(palette = "Set1") + theme(legend.position = "none") +
-  ggtitle("Estimated biomass catch rates (mean and distribution)",
-    subtitle = "Yelloweye Rockfish (coloured bars) vs. Pacific Halibut (grey bars)"
+  ggtitle("Estimated biomass of catch (mean and distribution)",
+    subtitle = paste0("Yelloweye Rockfish (mean of ",yemeanweight,"kg per fish; coloured bars) vs. Pacific Halibut (mean of ",halmeanweight,"kg per fish; grey bars)")
   )
 
 ggsave("figs/all-estimated-biomass-catch-rates-sim.png", width = 5, height = 5, dpi = 400)
@@ -894,14 +911,19 @@ phd <- p_hal$data %>%
   rename(hal_est = est) %>%
   select(hal_est, X, Y, year)
 
-ratio_df <- left_join(pyd, phd) %>% mutate(halibut = exp(hal_est), yelloweye = exp(ye_est), ye_per_hal = yelloweye / halibut)
+ratio_df <- left_join(pyd, phd) %>% mutate(
+  halibut = exp(hal_est), 
+  yelloweye = exp(ye_est), 
+  ye_per_hal = yelloweye / halibut,
+  hal_per_ye = halibut / yelloweye
+  )
 ratio_2020 <- filter(ratio_df, year == 2020)
 
 g <- map_predictions(
   pred_data = ratio_2020,
   obs_data = filter(d_hal, year == 2020),
   fill_aes = ye_per_hal,
-  fill_lab = "Predicted\nYelloweye\nper Halibut",
+  fill_lab = "Predicted count\nof Yelloweye\nper Halibut",
   size_aes = (catch_count / hook_count) * 100,
   size_lab = "Halibut caught\nper 100 hooks"
 )
@@ -912,6 +934,22 @@ ggsave("figs/ye-per-halibut-2020-w-hal-catch-S.png", width = 5.5, height = 6, dp
 ```
 
 
+```{r message=F, echo=F}
+g <- map_predictions(
+  pred_data = ratio_2020,
+  obs_data = filter(d_hal, year == 2020),
+  pred_min = 0, 
+  pred_max = max(d_hal$catch_count, na.rm = T)/ mean(d_hal$hook_count, na.rm = T) * 100,
+  fill_aes = hal_per_ye,
+  fill_lab = "Predicted count\nof Halibut per Yelloweye",
+  size_aes = (catch_count / hook_count) * 100,
+  size_lab = "Halibut caught\nper 100 hooks"
+)
+g
+
+dir.create("figs", showWarnings = FALSE)
+ggsave("figs/halibut-per-yelloweye-2020-w-hal-catch-S.png", width = 5.5, height = 6, dpi = 400)
+```
 
 ```{r message=F, echo=F}
 # calculate ratio of yelloweye to halibut
@@ -932,7 +970,7 @@ g <- map_predictions(
   pred_data = ratio_2020,
   obs_data = filter(d_hal, year == 2020),
   fill_aes = ye_to_hal,
-  fill_lab = "Predicted\nYelloweye:Halibut\nbiomass ratio",
+  fill_lab = "Yelloweye to Halibut\nbiomass-converted\ncount ratio",
   size_aes = (catch_count / hook_count) * 100,
   size_lab = "Halibut caught\nper 100 hooks"
 )
@@ -940,6 +978,8 @@ g
 
 dir.create("figs", showWarnings = FALSE)
 ggsave("figs/ye-to-halibut-2020-w-hal-catch-S.png", width = 5.5, height = 6, dpi = 400)
+
+ggsave("figs/ye-to-halibut-2020-w-hal-catch-S.pdf", width = 5.5, height = 6, dpi = 400)
 ```
 
 Raw data
