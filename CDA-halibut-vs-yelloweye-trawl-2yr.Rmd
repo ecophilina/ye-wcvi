@@ -979,7 +979,7 @@ mean_hal_ratios <- hal_ratios %>%
   pivot_longer(cols = c(CDAto3CD, CDAtoFull), names_to = "area", values_to = "ratio") %>%
   group_by(area) %>%
   summarise(
-    ratio = mean(ratio),
+    ratio_mean = mean(ratio),
     ratio_med = median(ratio),
     ratio_lwr = quantile(ratio, 0.025),
     ratio_upr = quantile(ratio, 0.975)
@@ -1001,13 +1001,13 @@ ye_ratios <- i_ye_2020 %>%
   select(-num_cells) %>%
   pivot_wider(names_from = Area, values_from = .value) %>%
   group_by(.iteration) %>%
-  mutate(CDAto3CD = CDA / (CDA + `non-CDA 3CD`), CDAto3CD5A = CDA / (`Full combined`))
+  mutate(CDAto3CD = CDA / (CDA + `non-CDA 3CD`), CDAtoFull = CDA / (`Full combined`))
 
 mean_ye_ratios <- ye_ratios %>%
-  pivot_longer(cols = c(CDAto3CD, CDAto3CD5A), names_to = "area", values_to = "ratio") %>%
+  pivot_longer(cols = c(CDAto3CD, CDAtoFull), names_to = "area", values_to = "ratio") %>%
   group_by(area) %>%
-  summarise(
-    ratio = mean(ratio),
+  summarise(    
+    ratio_mean = mean(ratio),
     ratio_med = median(ratio),
     ratio_lwr = quantile(ratio, 0.025),
     ratio_upr = quantile(ratio, 0.975)
@@ -1016,7 +1016,7 @@ saveRDS(mean_ye_ratios, "data-generated/mean_ye_ratios.rds")
 
 ggplot(ye_ratios) +
   geom_histogram(aes(CDAto3CD), fill = "red", alpha = 0.75) +
-  geom_histogram(aes(CDAto3CD5A), fill = "black", alpha = 0.5) +
+  geom_histogram(aes(CDAtoFull), fill = "black", alpha = 0.5) +
   # geom_vline(data = mean_ye_ratios, aes(xintercept = ratio_med), linetype = 2) +
   xlim(0, max(hal_ratios$CDAto3CD)) +
   xlab("Proportion of total biomass inside CDA") + ylab("Number of simulations") +
@@ -1148,6 +1148,15 @@ p_hal_d <- p_hal$data #%>%
 d_hal_facet <- readRDS("data-generated/halibut-hybrid-model-data-paired.rds") %>%
   filter(latitude < 52.15507) %>% filter(year %in% years) %>% 
   mutate(
+      pair_name = case_when(
+        year %in% c(2007, 2008) ~ "2007-2008",
+        year %in% c(2009, 2010) ~ "2009-2010",
+        year %in% c(2011, 2012) ~ "2011-2012",
+        year %in% c(2013, 2014) ~ "2013-2014",
+        year %in% c(2015, 2016) ~ "2015-2016",
+        year %in% c(2017, 2018) ~ "2017-2018",
+        year %in% c(2019, 2020) ~ "2019-2020"
+      ),
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
     max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
@@ -1163,7 +1172,7 @@ g <- map_predictions(
   size_aes = catch_equiv,
   size_lab = "Observed catch\nper 100 hook\nequivalent",
   legend_position = "right"
-) + facet_wrap(~ as.factor(year))
+) + facet_wrap(~pair_name)
 
 # g <- g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0))
 
@@ -1210,6 +1219,15 @@ p_ye_d <- p_ye$data #%>%
 d_ye_facet <- readRDS("data-generated/yelloweye-hybrid-model-data-paired.rds") %>%
   filter(latitude < 52.15507) %>% filter(year %in% years) %>% 
   mutate(
+    pair_name = case_when(
+        year %in% c(2007, 2008) ~ "2007-2008",
+        year %in% c(2009, 2010) ~ "2009-2010",
+        year %in% c(2011, 2012) ~ "2011-2012",
+        year %in% c(2013, 2014) ~ "2013-2014",
+        year %in% c(2015, 2016) ~ "2015-2016",
+        year %in% c(2017, 2018) ~ "2017-2018",
+        year %in% c(2019, 2020) ~ "2019-2020"
+      ),
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight), 
     max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
@@ -1225,7 +1243,7 @@ g <- map_predictions(
   size_aes = catch_equiv,
   size_lab = "Observed catch\nper 100 hook\nequivalent",
   legend_position = "right"
-) + facet_wrap(~year) 
+) + facet_wrap(~pair_name) 
 # g <- g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0))
 ggsave("figs/hybrid-ye-predictions-trawlinhbllyrs-paired.png", width = 9, height = 10, dpi = 200)
 ```
