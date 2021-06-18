@@ -347,6 +347,7 @@ convert2utm9 <- function(lon, lat) {
 
 
 ### functions for editing scales on specific faceted plots
+### lifted from: https://fishandwhistle.net/post/2018/modifying-facet-scales-in-ggplot2/
 scale_override <- function(which, scale) {
   if(!is.numeric(which) || (length(which) != 1) || (which %% 1 != 0)) {
     stop("which must be an integer of length 1")
