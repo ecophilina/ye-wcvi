@@ -694,7 +694,8 @@ ggplot(sim_hal_cda, aes(as.factor(year), .value)) + geom_violin(colour = "red") 
 # sim_p_hal_cda
 ```
 
-## Compare indices between species and model types for full HBLL S grid only
+## Compare indices between species and model types 
+Uses only HBLL S grid and transforms predicted counts from HBLL model into biomass density using same formula as used on the observed densities before stitching the two survey types together.
 
 ```{r echo=F, message=F, warning=F}
 i_hal_hbll <- readRDS("data-generated/halibut-index-all-S-sim-500.rds")[[1]]
@@ -702,12 +703,12 @@ i_ye_hbll <- readRDS("data-generated/yelloweye-spatial-index-all-S-sim-500.rds")
 i_hal <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-hbll-S-sim-500.rds")[[1]]
 i_ye <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-hbll-S-sim-500.rds")[[1]]
 
-.dat <- bind_rows(mutate(i_hal, Model = "HBLL + trawl", Species = "Halibut"),
-  mutate(i_hal_hbll, Model = "HBLL", Species = "Halibut", 
-    est = est * halmeanweight, lwr = lwr * halmeanweight, upr = upr * halmeanweight),
-  mutate(i_ye, Model = "HBLL + trawl", Species = "Yelloweye"),
-  mutate(i_ye_hbll, Model = "HBLL",  Species = "Yelloweye", 
-    est = est * yemeanweight, lwr = lwr * yemeanweight, upr = upr * yemeanweight)
+.dat <- bind_rows(mutate(i_hal, Model = "HBLL + trawl (biomass)", Species = "Halibut"),
+  mutate(i_hal_hbll, Model = "HBLL (counts x mean weight)", Species = "Halibut", 
+    est = est * halmeanweight/ (100 * 0.0024384 * 0.009144 * 10000) , lwr = lwr * halmeanweight/ (100 * 0.0024384 * 0.009144 * 10000) , upr = upr * halmeanweight/ (100 * 0.0024384 * 0.009144 * 10000) ),
+  mutate(i_ye, Model = "HBLL + trawl (biomass)", Species = "Yelloweye"),
+  mutate(i_ye_hbll, Model = "HBLL (counts x mean weight)",  Species = "Yelloweye", 
+    est = est * yemeanweight/ (100 * 0.0024384 * 0.009144 * 10000) , lwr = lwr * yemeanweight/ (100 * 0.0024384 * 0.009144 * 10000) , upr = upr * yemeanweight/ (100 * 0.0024384 * 0.009144 * 10000) )
 )
 # .dat$Model <- ordered(.dat$Model, levels = c("Halibut HBLL", "Yelloweye HBLL", "Yelloweye hybrid", "Halibut hybrid" ))
 .dat$Species <- ordered(.dat$Species, levels = c("Halibut", "Yelloweye"))
@@ -719,13 +720,13 @@ ggplot(.dat, aes(year, est/1000, fill = Species, colour = Species)) +
   # facet_wrap(~Model, nrow = 2, scales = "free") +
   # geom_line(data = .dat1, linetype = 2) +
   xlab("Year") +
-  ylab("Index (HBLL S grid only)") +
+  ylab("Biomass Index (HBLL S grid only)") +
   # coord_cartesian(expand = FALSE, ylim = c(0, max(i_ye$upr) * 1.04)) +
   # scale_x_continuous() +
   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
   scale_fill_viridis_d(option = "D", begin = 0.5, end = 0.95) +
   scale_colour_viridis_d(option = "D", begin = 0.5, end = 0.95) +
-  facet_wrap_custom(~Model, nrow = 2, scales = "free", scale_overrides = list(
+  facet_wrap_custom(~Model, nrow = 2, scales = "free_x", scale_overrides = list(
     scale_override(1, scale_x_continuous(breaks = seq(1950, 2050, 2))),
     scale_override(2, scale_x_continuous(
     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
@@ -753,7 +754,7 @@ i_hal_hbll <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index
 .dat <- bind_rows(
   mutate(i_hal, Area = "Full combined"),
   # mutate(i_hal_hbll, Area = "HBLL grid only"),
-  # mutate(i_hal_5A, Area = "5A"),
+  mutate(i_hal_5A, Area = "5A"),
   mutate(i_hal_noncda, Area = "non-CDA 3CD"),
   mutate(i_hal_cda, Area = "CDA")
 )
@@ -788,7 +789,7 @@ i_ye_hbll <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-inde
 .dat <- bind_rows(
   mutate(i_ye, Area = "Full combined"),
   # mutate(i_ye_hbll, Area = "HBLL grid only"),
-  # mutate(i_ye_5A, Area = "5A"),
+  mutate(i_ye_5A, Area = "5A"),
   mutate(i_ye_noncda, Area = "non-CDA 3CD"),
   mutate(i_ye_cda, Area = "CDA")
 )
@@ -1107,10 +1108,12 @@ Predictions depicted for HBLL survey grid area that falls within region 3CD. "Co
 2020 predictions with all survey catches post-2016
 
 ```{r message=F, echo=F}
-p_hal2020 <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-all-S.rds")[[1]] %>% filter(year == 2020)
+p_hal2020 <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-all-S.rds")[[1]] %>% 
+  filter(year == 2020)
 d_hal_plots <- readRDS("data-generated/halibut-hybrid-model-data.rds") %>%
   # plot observations for last 3 years to ensure sampling in all regions
-  filter(latitude < 52.15507) %>% filter(year %in% c(2017,2018,2019,2020)) %>%  
+  filter(latitude < 52.15507) %>% filter(year %in% c(#2017,2018,
+    2019,2020)) %>%  
   mutate(
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
@@ -1124,7 +1127,7 @@ g <- map_predictions(
   # pred_max = quantile(exp(p_hal2020$est), 0.9999, na.rm = T),
   obs_data = d_hal_plots,
   fill_lab = "Predicted kg/ha",
-  size_lab = "Observed catch\nper 100 hook\nequivelent",
+  size_lab = "Observed catch\nper 100 hook\nequivalent",
   # pred_min = min(exp(p_hal2020$est), na.rm = T),
   # pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
   size_aes = catch_equiv 
@@ -1158,7 +1161,7 @@ g <- map_predictions(
   obs_data = d_hal_facet,
   fill_lab = "Predicted kg/ha",
   size_aes = catch_equiv,
-  size_lab = "Observed catch\nper 100 hook\nequivelent",
+  size_lab = "Observed catch\nper 100 hook\nequivalent",
   legend_position = "right"
 ) + facet_wrap(~ as.factor(year))
 
@@ -1173,9 +1176,11 @@ ggsave("figs/hybrid-halibut-predictions-trawlinhbllyrs-paired.png", width = 9, h
 2020 predictions with all survey catches post-2016
 
 ```{r message=F, echo=F}
-p_ye <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-predictions-all-S.rds")
+p_ye <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-predictions-all-S.rds")[[1]] %>% 
+  filter(year == 2020)
 d_ye_plots <- readRDS("data-generated/yelloweye-hybrid-model-data.rds") %>%
-  filter(latitude < 52.15507)  %>% filter(year %in% c(2017,2018,2019,2020)) %>% 
+  filter(latitude < 52.15507)  %>% filter(year %in% c(#2017,2018,
+    2019,2020)) %>% 
   mutate(
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight), 
@@ -1183,11 +1188,11 @@ d_ye_plots <- readRDS("data-generated/yelloweye-hybrid-model-data.rds") %>%
     catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
     )
 g <- map_predictions(
-  pred_data = filter(p_ye$data, year == 2020),
+  pred_data = p_ye,
   fill_lab = "Predicted kg/ha",
   obs_data = d_ye_plots,  
   size_aes = catch_equiv,
-  size_lab = "Observed catch\nper 100 hook\nequivelent",
+  size_lab = "Observed catch\nper 100 hook\nequivalent",
 )
 g
 dir.create("figs", showWarnings = FALSE)
@@ -1218,7 +1223,7 @@ g <- map_predictions(
   pred_min = min(exp(p_ye$data$est), na.rm = T),
   pred_max = quantile(exp(p_ye$data$est), 0.99, na.rm = T),
   size_aes = catch_equiv,
-  size_lab = "Observed catch\nper 100 hook\nequivelent",
+  size_lab = "Observed catch\nper 100 hook\nequivalent",
   legend_position = "right"
 ) + facet_wrap(~year) 
 # g <- g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0))
