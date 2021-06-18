@@ -48,7 +48,7 @@ saveRDS(halsampledata, "data/halibut-surv-samples-all.rds")
 
 Load custom functions including one that takes all the set data and hook data retrieved for each species and produces a dataframe for use in sdmTMB model. 
 
-These models will be of estimated biomass density, so HBLL catch counts are converted to biomass using the mean weight of all fish sampled on the relevant survey (HBLL for yelloweye and WCVI trawl for halibut). 
+These models will be of estimated biomass density, so HBLL catch counts are converted to biomass using the mean weight of all fish sampled on the trawl surveys. 
 The HBLL biomass estimate is further divided by the "area swept" calculation I found in a hook competition script (total_hooks * 0.0024384 * 0.009144 * 1000) except that I am using density estimates in kg/ha from the trawl instead of kg/km2, so I am multiplying by 10000 instead of 1000. 
 This results in similar, but not identical, value ranges for both surveys, as would be expected given the different habitats they sample. 
 
@@ -124,28 +124,56 @@ model_data_prep <- function(trawldata, hblldata, mean_weight) {
 
   d_utm
 }
+```
+
+For this conversion which mean weight should we use?
+
+```{r}
+# calculate mean weight for all of SYN WCVI
+print("Mean Halibut weight from trawl")
+halsampledata <- readRDS("data/halibut-surv-samples-all.rds") %>% filter(survey_abbrev == c("SYN WCVI", "SYN QCS"))
+# halmeanlength <- mean(halsampledata$length, na.rm = T) # 74 cm seems reasonable
+halmeanweightSYN <- mean(halsampledata$weight / 1000, na.rm = T)
+round(halmeanweightSYN, 2)
+
+print("Mean Halibut weight from Adam")
+halmeanweight <- 9.5 # 21 lbs = 9.52 kg 
+halmeanweight
+
+print("Mean Yelloweye weight from trawl")
+yesampledata <- readRDS("data/yelloweye-surv-samples-all.rds") %>% filter(survey_abbrev == c("SYN WCVI", "SYN QCS"))
+yemeanweightSYN <- mean(yesampledata$weight / 1000, na.rm = T)
+round(yemeanweightSYN, 2)
+
+print("Mean Yelloweye weight from HBLL")
+yesampledata <- readRDS("data/yelloweye-surv-samples-all.rds") %>% filter(survey_abbrev == c("HBLL OUT S"))
+yemeanweightHBLL <- mean(yesampledata$weight / 1000, na.rm = T)
+round(yemeanweightHBLL, 2)
+
+print("Mean Yelloweye weight from Adam")
+yemeanweight <- 3.2 # 7 lbs =3.18 kg  
+yemeanweight
+```
+
+Prep data using one of these (currently using trawl means for both species)
+
+```{r}
+# currently using trawl means for both species, but may want to update that to Adam's suggestion... 
+halmeanweight <- halmeanweightSYN 
+yemeanweight <- yemeanweightSYN 
 
 # prep halibut
 haltrawldata <- readRDS("data/halibut-surv-sets-all.rds") %>% filter(survey_abbrev %in% c("SYN WCVI", "SYN QCS"))
 halhblldata <- readRDS("data/halibut-surv-sets-all.rds") %>% filter(survey_abbrev == "HBLL OUT S")
-halsampledata <- readRDS("data/halibut-surv-samples-all.rds") %>% filter(survey_abbrev == c("SYN WCVI", "SYN QCS"))
 
-# calculate mean weight for all of SYN WCVI
-halmeanweight <- mean(halsampledata$weight / 1000, na.rm = T)
-# halmeanlength <- mean(halsampledata$length, na.rm = T) # 74 cm seems reasonable
 d_hal <- model_data_prep(haltrawldata, halhblldata, mean_weight = halmeanweight) %>%
     mutate(year = year_pair)
     # mutate(year = year_true)
 saveRDS(d_hal, "data-generated/halibut-hybrid-model-data-paired.rds")
 
 # prep yelloweye
-
 yetrawldata <- readRDS("data/yelloweye-surv-sets-all.rds") %>% filter(survey_abbrev %in% c("SYN WCVI", "SYN QCS"))
 yehblldata <- readRDS("data/yelloweye-surv-sets-all.rds") %>% filter(survey_abbrev == "HBLL OUT S")
-yesampledata <- readRDS("data/yelloweye-surv-samples-all.rds") %>% filter(survey_abbrev %in% c("SYN WCVI", "SYN QCS"))
-
-# calculate mean weight for all of HBLL S
-yemeanweight <- mean(yesampledata$weight / 1000, na.rm = T)
 
 d_ye <- model_data_prep(yetrawldata, yehblldata, mean_weight = yemeanweight)%>%
     mutate(year = year_pair)
