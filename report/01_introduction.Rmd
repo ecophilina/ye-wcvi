@@ -37,20 +37,20 @@ here::dr_here()
 # Results {#sec:results}
 
 ```{r}
-i_ye <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-all-S-sim-500.rds")[[1]]
-i_ye_cda <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-cda-sim-500.rds")[[1]]
-i_ye_noncda <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-3CD-outside-cda-sim-500.rds")[[1]]
-i_ye_5A <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-5A-sim-500.rds")[[1]]
+i_ye <- readRDS(here("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-all-S-sim-500.rds"))[[1]]
+i_ye_cda <- readRDS(here("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-cda-sim-500.rds"))[[1]]
+i_ye_noncda <- readRDS(here("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-3CD-outside-cda-sim-500.rds"))[[1]]
+i_ye_5A <- readRDS(here("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-5A-sim-500.rds"))[[1]]
 
-i_hal <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-all-S-sim-500.rds")[[1]]
-i_hal_cda <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-cda-sim-500.rds")[[1]]
-i_hal_noncda <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-3CD-outside-cda-sim-500.rds")[[1]]
-i_hal_5A <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-5A-sim-500.rds")[[1]]
+i_hal <- readRDS(here("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-all-S-sim-500.rds"))[[1]]
+i_hal_cda <- readRDS(here("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-cda-sim-500.rds"))[[1]]
+i_hal_noncda <- readRDS(here("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-3CD-outside-cda-sim-500.rds"))[[1]]
+i_hal_5A <- readRDS(here("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-5A-sim-500.rds"))[[1]]
 
 cda_grid <- readRDS(here("data-generated/hybrid_cda_grid_paired.rds"))
 noncda_grid <- readRDS(here("data-generated/hybrid_noncda_grid_paired.rds"))
 s_5A_grid <- readRDS(here("data-generated/hybrid_5A_grid_paired.rds"))
-full_s_grid <- readRDS(here("data-generated/full_s_grid_paired.rds"))
+full_s_grid <- readRDS(here("data-generated/full_hybrid_grid_paired.rds"))
 ```
 
 ```{r r2-func}
@@ -59,45 +59,50 @@ r2 <- function(x) {
 }
 ```
 
-```{r halibut-preds-all, fig.cap="Observed (circle area) and predicted (colour) Halibut in the HBLL survey per 100 hooks across all years. The CDA is outlined in red. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="\\textwidth"}
+```{r halibut-preds-all, fig.cap="Observed Pacific Halibut counts per 100 hooks from HBLL and converted equivalent from trawl survey (circle area) and predicted biomass densities (colour). The CDA is outlined in red. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="\\textwidth"}
 include_graphics(here("figs/hybrid-halibut-predictions-trawlinhbllyrs-paired.png"))
 ```
 
-```{r ye-preds-all, fig.cap="Observed (circle area) and predicted (colour) Yelloweye Rockfish in the HBLL survey per 100 hooks across all years. The CDA is outlined in red. Note that the colour axis is square root transformed to improve visual interpretation. The spatial distribution is assumed constant across years right now, but the mean is allowed to change through time.", out.width="\\textwidth"}
+```{r ye-preds-all, fig.cap="Observed Yelloweye Rockfish counts per 100 hooks from HBLL and converted equivalent from trawl survey (circle area) and predicted biomass densities (colour). The CDA is outlined in red. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="\\textwidth"}
 include_graphics(here("figs/hybrid-ye-predictions-trawlinhbllyrs-paired.png"))
 ```
 
-```{r halibut-preds-2020, fig.cap="Halibut in 2020. This is a zoomed-in version of just 2020.", out.width="5.5in"}
+```{r halibut-preds-2020, fig.cap="Predicted Halibut densities and observed counts/count equivalents for 2019-2020. This is a zoomed-in version of just 2020.", out.width="5.5in"}
 include_graphics(here("figs/hybrid-halibut-2020-predictions-trawlinhbllyrs-paired.png"))
 ```
 
-```{r ye-preds-2020, fig.cap="Yelloweye Rockfish in 2020. Legend otherwise the same.", out.width="5.5in"}
+```{r ye-preds-2020, fig.cap="Predicted Yelloweye Rockfish densities and observed counts/count equivalents for 2019-2020. Legend otherwise the same.", out.width="5.5in"}
 include_graphics(here("figs/hybrid-yelloweye-2020-predictions-trawlinhbllyrs-paired.png"))
 ```
 
-```{r ye-per-hal-preds-2020, fig.cap="Ratio of Yelloweye Rockfish biomass to Halibut biomass in 2020. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="5.5in"}
+```{r ye-per-hal-preds-2020, fig.cap="Ratio of Yelloweye Rockfish biomass to Halibut biomass in 2019-2020. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="5.5in"}
 include_graphics(here("figs/hybrid-ye-to-halibut-2020-w-hal-catch-trawlinhbllyrs-paired.png"))
 ```
 
-```{r hal-per-ye-preds-2020, fig.cap="Ratio of Halibut biomass to Yelloweye Rockfish biomass in 2020. Because yelloweye are always lower density than Halibut this calculation requires first truncating their biomass density to a minimum of 1 kg per km2. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="5.5in"}
+```{r hal-per-ye-preds-2020, fig.cap="Ratio of Halibut biomass to Yelloweye Rockfish biomass in 2019-2020. Because yelloweye often occur at much lower densities than Halibut, this calculation requires first truncating their biomass density to a minimum of 1 kg per km2. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="5.5in"}
 include_graphics(here("figs/hybrid-halibut-to-ye-2020-w-hal-catch-trawlinhbllyrs-paired.png"))
 ```
 
-```{r halibut-indexes, fig.cap="Halibut index of relative abundance in HBLL grid cells within various regions. Lines are means and ribbons are 95\\% confidence intervals (CIs).", out.width="6in"}
+```{r halibut-indexes, fig.cap="Halibut index of relative abundance in combined HBLL and trawl survey grid within various regions. The full combined grid includes all of the trawl survey grid cells that fall within the latitudinal limits of the South outside HBLL. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 simulations.", out.width="6in"}
 include_graphics(here("figs/hybrid-halibut-trawlinhbllyrs-paired-index-by-area.png"))
 ```
 
-```{r yelloweye-indexes, fig.cap="Yelloweye Rockfish index of relative abundance in HBLL grid cells within various regions. Lines are means and ribbons are 95\\% confidence intervals (CIs). We could do the same for YE/Halibut if needed.", out.width="6in"}
+```{r yelloweye-indexes, fig.cap="Yelloweye Rockfish index of relative abundance in combined HBLL and trawl survey grid within various regions. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 simulations.", out.width="6in"}
 include_graphics(here("figs/hybrid-yelloweye-trawlinhbllyrs-paired-index-by-area.png"))
 ```
 
-```{r halibut-indexes-avg, fig.cap="Average Halibut relative abundance \\textbf{per HBLL grid cell} in CDA vs. in area 3CD but outside CDA. Again, could be done for YE/Halibut.", out.width="6in"}
+```{r halibut-indexes-avg, fig.cap="Average Halibut relative abundance \\textbf{per HBLL and trawl survey grid cell} in CDA vs. in area 3CD but outside CDA.", out.width="6in"}
 include_graphics(here("figs/hybrid-halibut-trawlinhbllyrs-paired-average-index.png"))
 ```
 
-```{r yelloweye-indexes-avg, fig.cap="Average Yelloweye Rockfish relative abundance per HBLL grid cell in CDA vs. in area 3CD but outside CDA. Again, could be done for YE/Halibut.", out.width="6in"}
+```{r yelloweye-indexes-avg, fig.cap="Average Yelloweye Rockfish relative abundance per HBLL and trawl survey grid grid cell in CDA vs. in area 3CD but outside CDA.", out.width="6in"}
 include_graphics(here("figs/hybrid-yelloweye-trawlinhbllyrs-paired-average-index.png"))
 ```
+
+```{r ye-ratio-through-time, fig.cap="Estimated ratio of Yelloweye Rockfish biomass to Halibut biomass for combined HBLL and trawl survey grid in CDA vs. in area 3CD but outside CDA.", out.width="6in"}
+include_graphics(here("figs/hybrid-ye-to-hal-index-trawlinhbllyrs-paired.png"))
+```
+
 \clearpage
 
 ```{r filter-indices}
