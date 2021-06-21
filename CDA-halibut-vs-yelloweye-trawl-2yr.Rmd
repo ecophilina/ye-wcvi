@@ -1377,8 +1377,8 @@ ratio_noncda <- left_join(py_noncda, ph_noncda) %>% mutate(
   ye_per_hal = yelloweye / halibut, hal_per_ye = halibut / yelloweye
 )
 
-ratio_cda <- ratio_cda[order(ratio_cda$halibut, decreasing = T), ] %>% mutate(ordered = row_number())
-ratio_noncda <- ratio_noncda[order(ratio_noncda$halibut, decreasing = T), ] %>% mutate(ordered = row_number())
+ratio_cda <- ratio_cda[order(ratio_cda$halibut, decreasing = T), ] %>% group_by(year) %>% mutate(ordered = 1:n()) %>% ungroup()
+ratio_noncda <- ratio_noncda[order(ratio_noncda$halibut, decreasing = T), ] %>% group_by(year) %>% mutate(ordered = 1:n()) %>% ungroup()
 
 # ggplot(ratio_noncda) +
 #   geom_point(aes(yelloweye, halibut), alpha = 0.5) +
@@ -1424,13 +1424,33 @@ ggplot(
   data = ratio_cda,
   aes(x = ordered)
 ) +
-  geom_line(data = ratio_noncda, aes(x = ordered, y = cumsum((halibut))), inherit.aes = FALSE) +
-  geom_line(data = ratio_cda, aes(x = ordered, y = cumsum((halibut))), colour = "red", inherit.aes = FALSE) +
-  geom_line(data = ratio_noncda, aes(x = ordered, y = cumsum((yelloweye))), lty = 2, inherit.aes = FALSE) +
-  geom_line(data = ratio_cda, aes(x = ordered, y = cumsum((yelloweye))), lty = 2, colour = "red", inherit.aes = FALSE) +
-  coord_cartesian(expand = F, xlim = c(0, 2500), ylim = c(0, 2500)) +
+  geom_line(data = ratio_noncda, 
+    aes(x = ordered, y = cumsum((halibut)), lty = "dotted", colour = "black"), size = 1,
+    inherit.aes = FALSE) +
+  geom_line(data = ratio_cda, 
+    aes(x = ordered, y = cumsum((halibut)), lty = "dotted", colour = "red"), size = 1, 
+    inherit.aes = FALSE) +
+  geom_line(data = ratio_noncda, 
+    aes(x = ordered, y = cumsum((yelloweye)), lty = "solid", colour = "black"), size = 1,
+    inherit.aes = FALSE) +
+  geom_line(data = ratio_cda, 
+    aes(x = ordered, y = cumsum((yelloweye)), lty = "solid", colour = "red"), size = 1, 
+    inherit.aes = FALSE) +
+  coord_cartesian(expand = F, xlim = c(0, 300), ylim = c(0, 4500)) +
+  scale_color_identity(name = "Area",
+                          breaks = c("black", "red"),
+                          labels = c("3CD (non-CDA)", "CDA"),
+                          guide = "legend") +
+  scale_linetype_identity(name = "Species",
+                          breaks = c("solid", "dotted"),
+                          labels = c("YE","Halibut"),
+                          guide = "legend") +
+  facet_wrap(~year, ncol = 2)+
   ylab("Fish biomass") +
-  xlab("Number of cells fished (in order of decreasing Halibut abundance)")
+  xlab("Number of cells fished (in order of decreasing Halibut abundance)") + 
+  theme(legend.position = c(0.65, 0.1))
+
+ggsave("cummulative-catch-rates.png", width = 5.5, height = 9)
 ```
 
 
