@@ -125,6 +125,10 @@ include_graphics(here("figs/hybrid-yelloweye-trawlinhbllyrs-paired-average-index
 include_graphics(here("figs/hybrid-ye-to-hal-index-trawlinhbllyrs-paired.png"))
 ```
 
+```{r hal-ratio-through-time, fig.cap="Estimated ratio of Halibut biomass to YE biomass for combined HBLL and trawl survey grid in CDA vs. in area 3CD but outside CDA.", out.width="6in"}
+include_graphics(here("figs/hybrid-hal-to-ye-index-trawlinhbllyrs-paired.png"))
+```
+
 \clearpage
 
 ```{r filter-indices}
@@ -147,6 +151,9 @@ rel_hal_full <- filter(rel_hal, area == "CDAtoFull")
 rel_ye_full <- filter(rel_ye, area == "CDAtoFull")
 
 spp_ratios2020 <- filter(spp_ratios, year == 2020)
+
+# i_hal[i_hal$year==2014,]$est
+
 ```
 
 ## Some calculated statistics for 2019-2020:
@@ -198,11 +205,13 @@ Average estimated YE biomass density overall for **full combinded grid**:
 
 # Discussion
 
-* Currently, these calculations are based on only the HBLL survey grid within the various boundaries. 
+* Over the roughly 14-year timespan of this index (2007-2019 for QCS trawl survey area; 2008-2018 for WCVI trawl survey area; 2007-2020 for HBLL), overall Halibut biomass has fluctuated from a high of `r round(i_hal[i_hal$year==2014,]$est)` in 2013-2014 to low of `r round(i_hal[i_hal$year==2018,]$est)`in 2017-2018 (Fig. \@ref(fig:halibut-indexes)), while YE biomass fluctuated from a high of `r round(i_ye[i_ye$year==2008,]$est)` kg/ha in 2013-2014 to low of `r round(i_ye[i_ye$year==2020,]$est)`in 2017-2018 (Fig. \@ref(fig:yelloweye-indexes)).
 
-* Adding static covariates like bottom type would create more fine-scale spatial resolution to the predictions. While this is unlikely to change these calculations qualitatively within the HBLL grids, it might allow extrapolation beyond the survey grid. However, extrapolation to inadequately sampled habitat types is still problematic.
+* While trajectories for both species are similar inside versus outside the CDA (Figs. \@ref(fig:halibut-indexes-avg) and \@ref(fig:yelloweye-indexes-avg)), the differences between species have led to increasing overlap in the expected ratios of YE to halibut biomass inside versus outside the CDA (Fig. \@ref(fig:ye-ratio-through-time)) and much more pronounced fluctuations in the amount of halibut relative to YE within the CDA (Fig. \@ref(fig:hal-ratio-through-time)). 
 
-* We have not presented uncertainty on the inside vs. outside CDA ratios; this is possible but would require additional work.
+* Currently, these calculations are based on only the HBLL and trawl survey grids within the various boundaries. Missing areas includes pretected areas, and cells within the trawl grid but with substrate unsuitable for trawling (presence of rocks, coral, or sponges). While our predictions cover the majority of most of the fishing areas in question **(is this accurate?)**, adding substrate layers (at least something like proportion rocky) to these models could allow us to predict for the missing cells. 
 
-* Building similar models from International Pacific Halibut Commission (IPHC) survey data could provide alternate estimates of catch ratios, but the local resolution would be coarser. 
+* Adding static covariates like bottom type would also create more fine-scale spatial resolution to the predictions. While this is unlikely to change these calculations qualitatively, it would be likely to enhance our confidence in our predictions.
+
+* Building similar models from **(or including ?)** International Pacific Halibut Commission (IPHC) survey data could provide alternate estimates of catch ratios, but the local resolution would be coarser. 
 
