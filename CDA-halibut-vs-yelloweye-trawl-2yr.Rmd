@@ -1423,12 +1423,12 @@ ph_noncda <- p_hal_noncda$data %>%
   select(hal_est, X, Y, year)
 # round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight)
 ratio_cda <- left_join(py_cda, ph_cda) %>% mutate(
-  halibut = exp(hal_est) * (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
+  halibut = exp(hal_est) * (100 * 0.0024384 * 0.009144 * 10000)*1.33 , # convert kg/ha to kg/100 hooks
   yelloweye = exp(ye_est) * (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
   ye_per_hal = yelloweye / halibut, hal_per_ye = halibut / yelloweye
 )
 ratio_noncda <- left_join(py_noncda, ph_noncda) %>% mutate(
-  halibut = exp(hal_est)* (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
+  halibut = exp(hal_est)* (100 * 0.0024384 * 0.009144 * 10000)*1.33 , # convert kg/ha to kg/100 hooks
   yelloweye = exp(ye_est)* (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
   ye_per_hal = yelloweye / halibut, hal_per_ye = halibut / yelloweye
 )
@@ -1516,7 +1516,7 @@ ggplot() +
     aes(yintercept = ye_total, lty = "solid", colour = "red"), size = 0.5,
     inherit.aes = FALSE) +
   
-  coord_cartesian(expand = F, xlim = c(0, 300), ylim = c(0, target_catch )) +
+  coord_cartesian(expand = F, xlim = c(0, 350), ylim = c(0, target_catch )) +
   scale_color_identity(name = "Area",
                           breaks = c("darkblue", "red"),
                           labels = c("3CD (non-CDA)", "CDA"),
@@ -1530,7 +1530,7 @@ ggplot() +
   xlab("Number of cells fished (in order of decreasing Halibut abundance)") + 
   theme(legend.position = c(0.65, 0.1))
 
-ggsave("cummulative-catch-rates.png", width = 7, height = 9)
+ggsave("cummulative-catch-rates-x.png", width = 7, height = 9)
 ```
 
 ```{r}
@@ -1544,15 +1544,24 @@ target_noncda
 ```
 
 ```{r}
-ggplot(target_noncda,  aes(year, ye_total)) + geom_line(colour = "darkblue") + 
-  geom_line(data = target_cda,  aes(year, ye_total), colour = "red") +
+ggplot(target_noncda,  aes(year, ye_total)) + 
+  geom_line(colour = "darkblue") + 
+  geom_point(aes(size = cells_for_target, colour = "darkblue")) +
+  geom_line(data = target_cda,  aes(year, ye_total, colour = "red")) +
+  geom_point(data = target_cda, aes(size = cells_for_target, colour = "red")) +
   scale_x_continuous(
     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
     breaks = seq(2008, 2020, 2)) + 
+  scale_size_continuous("Number of\ncells fished") +
+  scale_color_identity(name = "Area",
+                          breaks = c("darkblue", "red"),
+                          labels = c("3CD (non-CDA)", "CDA"),
+                          guide = "legend") +
   xlab("Year") +
-  ylab("Expected catch of YE if 1500 kg of halibut targeted")
+  ylab("Expected catch of YE") + 
+  ggtitle("If 1500 kg of Halibut were targeted using 100 hooks per cell")
 
-
+ggsave("expected_YE.png", width = 6.5, height = 4)
 ```
 
 # Investigate weights of yelloweye caught
