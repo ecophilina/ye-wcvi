@@ -1421,19 +1421,27 @@ ph_cda <- p_hal_cda$data %>%
 ph_noncda <- p_hal_noncda$data %>%
   rename(hal_est = est) %>%
   select(hal_est, X, Y, year)
-
-
+# round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight)
 ratio_cda <- left_join(py_cda, ph_cda) %>% mutate(
-  halibut = exp(hal_est), yelloweye = exp(ye_est),
+  halibut = exp(hal_est) * (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
+  yelloweye = exp(ye_est) * (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
   ye_per_hal = yelloweye / halibut, hal_per_ye = halibut / yelloweye
 )
 ratio_noncda <- left_join(py_noncda, ph_noncda) %>% mutate(
-  halibut = exp(hal_est), yelloweye = exp(ye_est),
+  halibut = exp(hal_est)* (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
+  yelloweye = exp(ye_est)* (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
   ye_per_hal = yelloweye / halibut, hal_per_ye = halibut / yelloweye
 )
 
-ratio_cda <- ratio_cda[order(ratio_cda$halibut, decreasing = T), ] %>% group_by(year) %>% mutate(ordered = 1:n()) %>% ungroup()
-ratio_noncda <- ratio_noncda[order(ratio_noncda$halibut, decreasing = T), ] %>% group_by(year) %>% mutate(ordered = 1:n()) %>% ungroup()
+ratio_cda <- ratio_cda[order(ratio_cda$halibut, decreasing = T), ] %>% group_by(year) %>% 
+  mutate(ordered = 1:n(), 
+    hal_cumsum = cumsum(halibut), 
+    ye_cumsum = cumsum(yelloweye)
+    ) %>% ungroup()
+ratio_noncda <- ratio_noncda[order(ratio_noncda$halibut, decreasing = T), ] %>% group_by(year) %>% 
+  mutate(ordered = 1:n(),
+    hal_cumsum = cumsum(halibut), 
+    ye_cumsum = cumsum(yelloweye)) %>% ungroup()
 
 # ggplot(ratio_noncda) +
 #   geom_point(aes(yelloweye, halibut), alpha = 0.5) +
@@ -1459,13 +1467,13 @@ ggplot(ratio_noncda) +
 #   geom_histogram(data = filter(ratio_cda, halibut > 5),aes(ye_per_hal), inherit.aes = F, fill = "red") +
 #   ylab("Grid cell with estimate of > 5 halibut per 100 hooks") +
 #   xlab("Predicted numder of yelloweye per halibut caught")
-
+# 
 ggplot(filter(
-  ratio_noncda, halibut > 0.1 # & yelloweye > 0.1
+  ratio_noncda, halibut > 0.1 * 22 # & yelloweye > 0.1
 )) +
   geom_histogram(aes(hal_per_ye), fill = "black") +
   geom_histogram(data = filter(
-    ratio_cda, halibut > 0.1 # & yelloweye > 0.1
+    ratio_cda, halibut >  0.1 * 22# & yelloweye > 0.1
   ), aes(hal_per_ye), inherit.aes = F, fill = "red") +
   ylab("Cells with > 0.1 kg/ha of halibut") +
   xlab("Estimated ratio of kg halibut per kg yelloweye")
@@ -1475,25 +1483,42 @@ ggplot(filter(
 Solid lines are cumulative halibut catch potential for each addition cell fished in decreasing order of predicted halibut abundance.
 Dashed lines are the cumulative yelloweye catch that might be anticipated for those same cells.
 ```{r message=F, echo=F, warning=F}
-ggplot(
-  # data = ratio_cda,
-  # aes(x = ordered)
-) +
+target_catch <- 1500
+
+target_noncda <- ratio_noncda %>% filter (hal_cumsum > target_catch) %>% group_by(year) %>% mutate(cells_for_target = min(ordered), ye_total = min(ye_cumsum)) %>% select(year, cells_for_target, ye_total) %>% distinct()
+
+target_cda <- ratio_cda %>% filter (hal_cumsum > target_catch) %>% group_by(year) %>% mutate(cells_for_target = min(ordered), ye_total = min(ye_cumsum)) %>% select(year, cells_for_target, ye_total) %>% distinct()
+
+ggplot() +
   geom_line(data = ratio_noncda, 
-    aes(x = ordered, y = cumsum((halibut)), lty = "dotted", colour = "black"), size = 1,
+    aes(x = ordered, y = hal_cumsum, lty = "dotted", colour = "darkblue"), size = 1,
+    inherit.aes = FALSE) +
+  geom_line(data = ratio_noncda, 
+    aes(x = ordered, y = ye_cumsum, lty = "solid", colour = "darkblue"), size = 1,
+    inherit.aes = FALSE) +
+  geom_segment(data = target_noncda, 
+    aes(x = cells_for_target, xend = cells_for_target, y = ye_total, yend= target_catch, 
+      lty = "dotted", colour = "darkblue"), size = 0.5, inherit.aes = FALSE) +
+  geom_hline(data = target_noncda, 
+    aes(yintercept = ye_total, lty = "solid", colour = "darkblue"), size = 0.5,
+    inherit.aes = FALSE) +
+  
+  geom_line(data = ratio_cda, 
+    aes(x = ordered, y = hal_cumsum, lty = "dotted", colour = "red"), size = 1, 
     inherit.aes = FALSE) +
   geom_line(data = ratio_cda, 
-    aes(x = ordered, y = cumsum((halibut)), lty = "dotted", colour = "red"), size = 1, 
+    aes(x = ordered, y = ye_cumsum, lty = "solid", colour = "red"), size = 1, 
     inherit.aes = FALSE) +
-  geom_line(data = ratio_noncda, 
-    aes(x = ordered, y = cumsum((yelloweye)), lty = "solid", colour = "black"), size = 1,
+  geom_segment(data = target_cda, 
+    aes(x = cells_for_target, xend = cells_for_target, y = ye_total, yend= target_catch, 
+      lty = "dotted", colour = "red"), size = 0.5, inherit.aes = FALSE) +
+  geom_hline(data = target_cda, 
+    aes(yintercept = ye_total, lty = "solid", colour = "red"), size = 0.5,
     inherit.aes = FALSE) +
-  geom_line(data = ratio_cda, 
-    aes(x = ordered, y = cumsum((yelloweye)), lty = "solid", colour = "red"), size = 1, 
-    inherit.aes = FALSE) +
-  coord_cartesian(expand = F, xlim = c(0, 300), ylim = c(0, 4500)) +
+  
+  coord_cartesian(expand = F, xlim = c(0, 300), ylim = c(0, target_catch )) +
   scale_color_identity(name = "Area",
-                          breaks = c("black", "red"),
+                          breaks = c("darkblue", "red"),
                           labels = c("3CD (non-CDA)", "CDA"),
                           guide = "legend") +
   scale_linetype_identity(name = "Species",
@@ -1501,13 +1526,34 @@ ggplot(
                           labels = c("YE","Halibut"),
                           guide = "legend") +
   facet_wrap(~year, ncol = 2)+
-  ylab("Fish biomass") +
+  ylab("Fish biomass (kg per 100 hooks per cell") +
   xlab("Number of cells fished (in order of decreasing Halibut abundance)") + 
   theme(legend.position = c(0.65, 0.1))
 
-ggsave("cummulative-catch-rates.png", width = 5.5, height = 9)
+ggsave("cummulative-catch-rates.png", width = 7, height = 9)
 ```
 
+```{r}
+target_cda 
+```
+
+
+
+```{r}
+target_noncda 
+```
+
+```{r}
+ggplot(target_noncda,  aes(year, ye_total)) + geom_line(colour = "darkblue") + 
+  geom_line(data = target_cda,  aes(year, ye_total), colour = "red") +
+  scale_x_continuous(
+    labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
+    breaks = seq(2008, 2020, 2)) + 
+  xlab("Year") +
+  ylab("Expected catch of YE if 1500 kg of halibut targeted")
+
+
+```
 
 # Investigate weights of yelloweye caught
 
