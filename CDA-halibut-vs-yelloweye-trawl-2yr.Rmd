@@ -1075,8 +1075,8 @@ ggsave("figs/hybrid-yelloweye-trawlinhbllyrs-paired-relative-biomass.png", width
 .i_hal$Area <- ordered(.i_hal$Area, levels = c("CDA", "non-CDA 3CD", "5A", "Full combined"))
 
 .dat <- left_join(.i_ye, .i_hal) %>% mutate(
-    ye_per_hal = (yelloweye / halibut),
-    hal_per_ye = (halibut / yelloweye)
+    ye_per_hal = yelloweye / (halibut),
+    hal_per_ye = (halibut) / yelloweye
   ) %>% 
   group_by(Area, year) %>%
   summarise(
@@ -1126,6 +1126,61 @@ ggsave("figs/hybrid-hal-to-ye-index-trawlinhbllyrs-paired.png", width = 7, heigh
 
 ```
 
+```{r message=F, echo=F, warning=F}
+# checking what happens if we use different weights... 1.33x larger for halibut
+hbll_s_grid <- filter(full_s_grid, survey == "HBLL")
+hbll_noncda_grid <- filter(noncda_grid, survey == "HBLL")
+hbll_cda_grid <- filter(cda_grid, survey == "HBLL")
+
+hbll_in_cda <- nrow(hbll_cda_grid)/nrow(cda_grid)
+hbll_in_noncda <- nrow(hbll_noncda_grid)/nrow(noncda_grid)
+
+.dat <- left_join(.i_ye, .i_hal) %>% mutate(
+    ye_per_hal = yelloweye / ifelse(Area =="CDA", halibut *1.33 *hbll_in_cda, halibut *1.33 *hbll_in_noncda),
+    hal_per_ye = ifelse(Area =="CDA", halibut *1.33 *hbll_in_cda, halibut *1.33 *hbll_in_noncda) / yelloweye
+  ) %>% 
+  group_by(Area, year) %>%
+  summarise(
+    lwr = quantile(ye_per_hal, 0.025),
+    upr = quantile(ye_per_hal, 0.975),
+    ye_per_hal = mean(ye_per_hal),
+    lwr_hal = quantile(hal_per_ye, 0.025),
+    upr_hal = quantile(hal_per_ye, 0.975),
+    hal_per_ye = mean(hal_per_ye)
+  ) 
+.dat <- .dat %>% filter(Area %in% c("non-CDA 3CD", "CDA"))
+saveRDS(.dat, "data-generated/ratios-yelloweye-to-halibutx.rds")
+
+
+ggplot(.dat, aes(year, ye_per_hal, fill = Area, colour = Area)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
+  xlab("Year") +
+  ylab("Estimated yelloweye to halibut biomass ratio") +
+  coord_cartesian(expand = T, ylim = c(0.03, max(.dat$upr) * 1.04)) +
+  # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
+  scale_x_continuous(
+    labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
+    breaks = seq(2008, 2020, 2)) + 
+  theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_colour_brewer(palette = "Set1")
+ggsave("figs/hybrid-ye-to-halx-index-trawlinhbllyrs-paired.png", width = 7, height = 4, dpi = 400)
+
+ggplot(.dat, aes(year, hal_per_ye, fill = Area, colour = Area)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr_hal, ymax = upr_hal), alpha = 0.4, colour = NA) +
+  xlab("Year") +
+  ylab("Estimated halibut to yelloweye biomass ratio") +
+  coord_cartesian(expand = T, ylim = c(2, max(.dat$upr_hal) * 1.04)) +
+  scale_x_continuous(
+    labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
+    breaks = seq(2008, 2020, 2)) + 
+  theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_colour_brewer(palette = "Set1")
+ggsave("figs/hybrid-halx-to-ye-index-trawlinhbllyrs-paired.png", width = 7, height = 4, dpi = 400)
+```
 
 # Maps
 
@@ -1421,8 +1476,8 @@ Solid lines are cumulative halibut catch potential for each addition cell fished
 Dashed lines are the cumulative yelloweye catch that might be anticipated for those same cells.
 ```{r message=F, echo=F, warning=F}
 ggplot(
-  data = ratio_cda,
-  aes(x = ordered)
+  # data = ratio_cda,
+  # aes(x = ordered)
 ) +
   geom_line(data = ratio_noncda, 
     aes(x = ordered, y = cumsum((halibut)), lty = "dotted", colour = "black"), size = 1,
