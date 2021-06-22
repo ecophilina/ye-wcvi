@@ -488,11 +488,11 @@ if (!file.exists(ss)) {
 For area 5A (HBLL and trawl grids)
 
 ```{r eval = T, echo=F}
+p_hal_5A <- predict(m_halibut, newdata = s_5A_grid, return_tmb_object = TRUE)
+  saveRDS(p_hal_5A, "data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-5A.rds")
+
 f <- "data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-5A.rds"
 if (!file.exists(f)) {
-  p_hal_5A <- predict(m_halibut, newdata = s_5A_grid, return_tmb_object = TRUE)
-  saveRDS(p_hal_noncda, "data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-5A.rds")
-
   i_hal_5A <- get_index(p_hal_5A, bias_correct = F)
   saveRDS(i_hal_5A, f)
 }
