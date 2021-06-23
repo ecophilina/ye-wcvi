@@ -1237,6 +1237,9 @@ p_hal_d <- p_hal$data #%>%
 #   mutate(year = as.factor(year))
 # p_hal_d$year <- droplevels(p_hal_d$year)
 
+f <- "figs/hybrid-halibut-predictions-trawlinhbllyrs-paired.png"
+if (!file.exists(f)) {
+  
 d_hal_facet <- readRDS("data-generated/halibut-hybrid-model-data-paired.rds") %>%
   filter(latitude < 52.15507) %>% filter(year %in% years) %>% 
   mutate(
@@ -1269,6 +1272,7 @@ g <- map_predictions(
 # g <- g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0))
 
 ggsave("figs/hybrid-halibut-predictions-trawlinhbllyrs-paired.png", width = 9, height = 10, dpi = 200)
+}
 ```
 
 
@@ -1308,6 +1312,8 @@ p_ye_d <- p_ye$data #%>%
 #   mutate(year = as.factor(year))
 # p_ye_d$year <- droplevels(p_ye_d$year)
 
+f <- "figs/hybrid-ye-predictions-trawlinhbllyrs-paired.png"
+if (!file.exists(f)) {
 d_ye_facet <- readRDS("data-generated/yelloweye-hybrid-model-data-paired.rds") %>%
   filter(latitude < 52.15507) %>% filter(year %in% years) %>% 
   mutate(
@@ -1338,6 +1344,7 @@ g <- map_predictions(
 ) + facet_wrap(~pair_name) 
 # g <- g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0))
 ggsave("figs/hybrid-ye-predictions-trawlinhbllyrs-paired.png", width = 9, height = 10, dpi = 200)
+}
 ```
 
 
@@ -1419,6 +1426,75 @@ ggsave("figs/hybrid-halibut-to-ye-2020-w-hal-catch-trawlinhbllyrs-paired.png", w
 Solid lines are cumulative halibut catch potential for each addition cell fished in decreasing order of predicted halibut abundance.
 Dashed lines are the cumulative yelloweye catch that might be anticipated for those same cells.
 ```{r message=F, echo=F, warning=F}
+p_hal_cda <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-cda.rds")
+p_ye_cda <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-predictions-cda.rds")
+
+p_hal_noncda <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-3CD-outside-cda.rds")
+p_ye_noncda <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-predictions-3CD-outside-cda.rds")
+
+p_hal_5A <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-5A.rds")
+p_ye_5A <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-predictions-5A.rds")
+
+py_cda <- p_ye_cda$data %>% rename(ye_est = est)
+py_noncda <- p_ye_noncda$data %>% rename(ye_est = est)
+py_5A <- p_ye_5A$data %>% rename(ye_est = est)
+
+ph_cda <- p_hal_cda$data %>%
+  rename(hal_est = est) %>%
+  select(hal_est, X, Y, year)
+ph_noncda <- p_hal_noncda$data %>%
+  rename(hal_est = est) %>%
+  select(hal_est, X, Y, year)
+ph_5A <- p_hal_5A$data %>% #View()
+  rename(hal_est = est) %>%
+  select(hal_est, X, Y, year)
+
+
+# round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight)
+ratio_cda <- left_join(py_cda, ph_cda) %>% mutate(
+  halibut = exp(hal_est) * (100 * 0.0024384 * 0.009144 * 10000)*1.33 , # convert kg/ha to kg/100 hooks
+  yelloweye = exp(ye_est) * (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
+  ye_per_hal = yelloweye / halibut, hal_per_ye = halibut / yelloweye,
+  pair_name = case_when(
+        year %in% c(2007, 2008) ~ "2007-2008",
+        year %in% c(2009, 2010) ~ "2009-2010",
+        year %in% c(2011, 2012) ~ "2011-2012",
+        year %in% c(2013, 2014) ~ "2013-2014",
+        year %in% c(2015, 2016) ~ "2015-2016",
+        year %in% c(2017, 2018) ~ "2017-2018",
+        year %in% c(2019, 2020) ~ "2019-2020"
+      )
+)
+ratio_noncda <- left_join(py_noncda, ph_noncda) %>% mutate(
+  halibut = exp(hal_est)* (100 * 0.0024384 * 0.009144 * 10000)*1.33 , # convert kg/ha to kg/100 hooks
+  yelloweye = exp(ye_est)* (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
+  ye_per_hal = yelloweye / halibut, hal_per_ye = halibut / yelloweye,
+  pair_name = case_when(
+        year %in% c(2007, 2008) ~ "2007-2008",
+        year %in% c(2009, 2010) ~ "2009-2010",
+        year %in% c(2011, 2012) ~ "2011-2012",
+        year %in% c(2013, 2014) ~ "2013-2014",
+        year %in% c(2015, 2016) ~ "2015-2016",
+        year %in% c(2017, 2018) ~ "2017-2018",
+        year %in% c(2019, 2020) ~ "2019-2020"
+      )
+)
+
+ratio_cda <- ratio_cda[order(ratio_cda$halibut, decreasing = T), ] %>% group_by(year) %>% 
+  mutate(ordered = 1:n(), 
+    hal_cumsum = cumsum(halibut), 
+    ye_cumsum = cumsum(yelloweye),
+    cumsum_ye_hal = ye_cumsum/hal_cumsum
+    ) %>% ungroup()
+
+ratio_noncda <- ratio_noncda[order(ratio_noncda$halibut, decreasing = T), ] %>% group_by(year) %>% 
+  mutate(ordered = 1:n(),
+    hal_cumsum = cumsum(halibut), 
+    ye_cumsum = cumsum(yelloweye),
+    cumsum_ye_hal = ye_cumsum/hal_cumsum
+    ) %>% ungroup()
+
+
 target_catch <- 1500
 
 target_noncda <- ratio_noncda %>% filter (hal_cumsum > target_catch) %>% group_by(year) %>% mutate(cells_for_target = min(ordered), ye_total = min(ye_cumsum)) %>% select(year, cells_for_target, ye_total) %>% distinct()
