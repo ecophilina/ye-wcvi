@@ -60,12 +60,15 @@ s_ye_5A4 <- bind_cols(g_5A, as.data.frame(s_ye_5A4))
 avoiding_ye <- .dat[order(.dat$yelloweye, decreasing = F), ] %>% group_by(Area, year, .iteration) %>%
   mutate(ordered = 1:n(),
     hal_cumsum = cumsum(halibut),
+    hal_cumsum2 = ifelse(cumsum(halibut) < 0.01, 0.01, cumsum(halibut)),
     ye_cumsum = cumsum(yelloweye),
     ye_cumsum2 = ifelse(cumsum(yelloweye) < 0.01, 0.01, cumsum(yelloweye)),
-    cumsum_ye_hal = (ye_cumsum*100)/(hal_cumsum*100),
+    cumsum_ye_hal = (ye_cumsum*100)/(hal_cumsum2*100),
     cumsum_hal_ye = (hal_cumsum*100)/(ye_cumsum2*100),
-    mean_ratio = (ye_cumsum*100/ordered)/((hal_cumsum*100)/ordered),
-    mean_hal_ratio = (hal_cumsum*100/ordered)/((ye_cumsum2*100)/ordered),
+    hal_mean2 = ifelse((hal_cumsum*100)/ordered < 1, 1, (hal_cumsum*100)/ordered),
+    mean_ratio = (ye_cumsum*100/ordered)/hal_mean2,
+    ye_mean2 = ifelse((ye_cumsum*100)/ordered < 1, 1, (ye_cumsum*100)/ordered),
+    mean_hal_ratio = (hal_cumsum*100/ordered)/ye_mean2,
     proportion = ordered/nrow(cda_2020),
     pair_name = case_when(
       year %in% c(2007, 2008) ~ "2007-2008",
@@ -77,6 +80,15 @@ avoiding_ye <- .dat[order(.dat$yelloweye, decreasing = F), ] %>% group_by(Area, 
       year %in% c(2019, 2020) ~ "2019-2020"
     )) %>% ungroup()
 
+# check that denominator was successfully truncated to 1
+# before
+range(avoiding_ye$ye_cumsum*100/avoiding_ye$ordered)
+# after
+range(avoiding_ye$ye_mean2)
+# before
+range(avoiding_ye$hal_cumsum*100/avoiding_ye$ordered)
+# after
+range(avoiding_ye$hal_mean2)
 
 avoiding_ye_sum <- avoiding_ye %>% ungroup() %>% group_by(ordered, year, pair_name, Area) %>%
   summarise(
@@ -99,12 +111,15 @@ avoiding_ye_sum <- avoiding_ye %>% ungroup() %>% group_by(ordered, year, pair_na
 maximize_hal <- .dat[order(.dat$halibut, decreasing = T), ] %>% group_by(Area, year, .iteration) %>%
   mutate(ordered = 1:n(),
     hal_cumsum = cumsum(halibut),
+    hal_cumsum2 = ifelse(cumsum(halibut) < 0.01, 0.01, cumsum(halibut)),
     ye_cumsum = cumsum(yelloweye),
     ye_cumsum2 = ifelse(cumsum(yelloweye) < 0.01, 0.01, cumsum(yelloweye)),
-    cumsum_ye_hal = (ye_cumsum*100)/(hal_cumsum*100),
+    cumsum_ye_hal = (ye_cumsum*100)/(hal_cumsum2*100),
     cumsum_hal_ye = (hal_cumsum*100)/(ye_cumsum2*100),
-    mean_ratio = (ye_cumsum*100/ordered)/((hal_cumsum*100)/ordered),
-    mean_hal_ratio = (hal_cumsum*100/ordered)/((ye_cumsum2*100)/ordered),
+    hal_mean2 = ifelse((hal_cumsum*100)/ordered < 1, 1, (hal_cumsum*100)/ordered),
+    mean_ratio = (ye_cumsum*100/ordered)/hal_mean2,
+    ye_mean2 = ifelse((ye_cumsum*100)/ordered < 1, 1, (ye_cumsum*100)/ordered),
+    mean_hal_ratio = (hal_cumsum*100/ordered)/ye_mean2,
     proportion = ordered/nrow(cda_2020),
     pair_name = case_when(
       year %in% c(2007, 2008) ~ "2007-2008",
@@ -115,7 +130,13 @@ maximize_hal <- .dat[order(.dat$halibut, decreasing = T), ] %>% group_by(Area, y
       year %in% c(2017, 2018) ~ "2017-2018",
       year %in% c(2019, 2020) ~ "2019-2020"
     )) %>% ungroup()
-
+# check that denominator was successfully truncated to 1
+# before
+range(maximize_hal$ye_cumsum*100/maximize_hal$ordered)
+# after
+range(maximize_hal$ye_mean2)
+# before -- not needed
+range(maximize_hal$hal_cumsum*100/maximize_hal$ordered)
 
 maximize_hal_sum <- maximize_hal %>% ungroup() %>% group_by(ordered, year, pair_name, Area) %>%
   summarise(
@@ -144,9 +165,10 @@ ggplot(avoiding_ye_sum %>%
       round((nrow(cda_2020))*.01),
       round((nrow(cda_2020))*.02),
       round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-      round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1)
+      round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1), round((nrow(cda_2020))*.15)
       , round((nrow(cda_2020))*.2)
-      # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5)
+      , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4)
+      # , round((nrow(cda_2020))*.5)
       # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
     ))) +
   geom_line(
@@ -160,7 +182,7 @@ ggplot(avoiding_ye_sum %>%
   coord_cartesian(
     # expand = F,
     # xlim = c(0, nrow(cda_2020)/2),
-    ylim = c(0, 0.005)
+    ylim = c(0, 0.05)
   ) +
   # scale_color_identity(name = "Area",
   #   breaks = c("darkgreen","darkblue", "red"),
@@ -183,11 +205,12 @@ ggplot(avoiding_ye_sum %>%
       round((nrow(cda_2020))*.01),
       round((nrow(cda_2020))*.02),
       round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-      round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1)
+      round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1), round((nrow(cda_2020))*.15)
       , round((nrow(cda_2020))*.2)
-      # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4)
+      , round((nrow(cda_2020))*.3)
+      , round((nrow(cda_2020))*.4)
       # , round((nrow(cda_2020))*.5)
-      # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
+      # # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
     ))) +
   geom_line(
     aes(x = ordered*4,
@@ -200,7 +223,7 @@ ggplot(avoiding_ye_sum %>%
   coord_cartesian(
     # expand = F,
     # xlim = c(0, nrow(cda_2020)/2),
-    ylim = c(0,15000)
+    ylim = c(0,2000)
   ) +
   # scale_color_identity(name = "Area",
   #   breaks = c("darkgreen","darkblue", "red"),
@@ -220,9 +243,11 @@ ggplot(maximize_hal_sum %>%
       # round((nrow(cda_2020))*.001), round((nrow(cda_2020))*.005),
       round((nrow(cda_2020))*.01),
       round((nrow(cda_2020))*.02), round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-      round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1)
+      round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1), round((nrow(cda_2020))*.15)
       , round((nrow(cda_2020))*.2)
-      # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5)
+      , round((nrow(cda_2020))*.3)
+      , round((nrow(cda_2020))*.4)
+      # , round((nrow(cda_2020))*.5)
       # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
     ))) +
   geom_line(
@@ -256,9 +281,11 @@ ggplot(maximize_hal_sum %>%
       # round((nrow(cda_2020))*.001), round((nrow(cda_2020))*.005),
       round((nrow(cda_2020))*.01),
       round((nrow(cda_2020))*.02), round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-      round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1)
+      round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1), round((nrow(cda_2020))*.15)
       , round((nrow(cda_2020))*.2)
-      # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5)
+      , round((nrow(cda_2020))*.3)
+      , round((nrow(cda_2020))*.4)
+      # , round((nrow(cda_2020))*.5)
       # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
     ))) +
   geom_line(
@@ -270,7 +297,7 @@ ggplot(maximize_hal_sum %>%
     ymax = upr_mean_hal_ye,
     fill = Area), alpha=0.2) +
   coord_cartesian(# expand = F, # xlim = c(0, nrow(cda_2020)/2),
-    ylim = c(0, 1000)
+    ylim = c(0, 2000)
   ) +
   # scale_color_identity(name = "Area",
   #   breaks = c("darkgreen","darkblue", "red"),
