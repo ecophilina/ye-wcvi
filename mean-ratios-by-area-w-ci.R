@@ -94,81 +94,6 @@ avoiding_ye_sum <- avoiding_ye %>% ungroup() %>% group_by(ordered, year, pair_na
     mean_hal_per_ye = mean(mean_hal_ratio)
   ) %>% ungroup()
 
-# mean_ye_hal
-ggplot(avoiding_ye_sum %>%
-    filter(ordered %in% c(
-      round((nrow(cda_2020))*.001), round((nrow(cda_2020))*.005),
-      round((nrow(cda_2020))*.01),
-      round((nrow(cda_2020))*.02),
-      round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-      round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1)
-      # , round((nrow(cda_2020))*.2)
-      # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5)
-      # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
-    ))) +
-  geom_line(
-    aes(x = ordered*4,
-      y = mean_ye_per_hal, #lty = "solid",
-      colour = Area), size = 1) +
-  geom_ribbon(aes(x = ordered*4,
-      ymin = lwr_mean_ye_hal,
-      ymax = upr_mean_ye_hal,
-      fill = Area), alpha=0.2) +
-  coord_cartesian(
-    # expand = F,
-    # xlim = c(0, nrow(cda_2020)/2),
-    ylim = c(0, 0.003)
-  ) +
-  # scale_color_identity(name = "Area",
-  #   breaks = c("darkgreen","darkblue", "red"),
-  #   labels = c("5A", "3CD (non-CDA)", "CDA"),
-  #   guide = "legend") +
-  scale_fill_brewer(palette = "Set1") + scale_colour_brewer(palette = "Set1") +
-  facet_wrap(~pair_name, ncol = 2)+
-  ylab("Mean ratio of YE to halibut") +
-  xlab("Total area of cells selected to minimize yelloweye (km2)") +
-  theme(legend.position = c(0.65, 0.1))
-
-ggsave("figs/expected_YE_when_avoiding_YE_CI.png", width = 7, height = 6)
-
-
-# flipped ratio
-ggplot(avoiding_ye_sum %>%
-    filter(ordered %in% c(
-      round((nrow(cda_2020))*.001), round((nrow(cda_2020))*.005),
-      round((nrow(cda_2020))*.01),
-      round((nrow(cda_2020))*.02),
-      round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-      round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1)
-      # , round((nrow(cda_2020))*.2)
-      # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4)
-      # , round((nrow(cda_2020))*.5)
-      # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
-    ))) +
-  geom_line(
-    aes(x = ordered*4,
-      y = mean_hal_per_ye, #lty = "solid",
-      colour = Area), size = 1) +
-  geom_ribbon(aes(x = ordered*4,
-    ymin = lwr_mean_hal_ye,
-    ymax = upr_mean_hal_ye,
-    fill = Area), alpha=0.2) +
-  coord_cartesian(
-    # expand = F,
-    # xlim = c(0, nrow(cda_2020)/2),
-    ylim = c(0,10000)
-  ) +
-  # scale_color_identity(name = "Area",
-  #   breaks = c("darkgreen","darkblue", "red"),
-  #   labels = c("5A", "3CD (non-CDA)", "CDA"),
-  #   guide = "legend") +
-  scale_fill_brewer(palette = "Set1") + scale_colour_brewer(palette = "Set1") +
-  facet_wrap(~pair_name, ncol = 2)+
-  ylab("Mean ratio of halibut to YE") +
-  xlab("Total area of cells selected to minimize yelloweye (km2)") +
-  theme(legend.position = c(0.65, 0.1))
-
-ggsave("figs/expected_hal_when_avoiding_YE_CI.png", width = 7, height = 6)
 
 #### maximizing halibut strategy ###
 maximize_hal <- .dat[order(.dat$halibut, decreasing = T), ] %>% group_by(Area, year, .iteration) %>%
@@ -208,14 +133,19 @@ maximize_hal_sum <- maximize_hal %>% ungroup() %>% group_by(ordered, year, pair_
     mean_hal_per_ye = mean(mean_hal_ratio)
   ) %>% ungroup()
 
+avoiding_ye_sum$Area <- ordered(avoiding_ye_sum$Area, levels = c("5A", "non-CDA 3CD", "CDA", "Full combined"))
+maximize_hal_sum$Area <- ordered(maximize_hal_sum$Area, levels = c("5A", "non-CDA 3CD", "CDA", "Full combined"))
+#### make plots ####
 
-ggplot(maximize_hal_sum %>%
+# mean_ye_hal
+ggplot(avoiding_ye_sum %>%
     filter(ordered %in% c(
-      round((nrow(cda_2020))*.001), round((nrow(cda_2020))*.005),
+      # round((nrow(cda_2020))*.001), round((nrow(cda_2020))*.005),
       round((nrow(cda_2020))*.01),
-      round((nrow(cda_2020))*.02), round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
+      round((nrow(cda_2020))*.02),
+      round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
       round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1)
-      # , round((nrow(cda_2020))*.2)
+      , round((nrow(cda_2020))*.2)
       # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5)
       # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
     ))) +
@@ -227,14 +157,91 @@ ggplot(maximize_hal_sum %>%
     ymin = lwr_mean_ye_hal,
     ymax = upr_mean_ye_hal,
     fill = Area), alpha=0.2) +
-  # coord_cartesian(# expand = F,
-  #   ylim = c(0, 0.5)
-  # ) +
+  coord_cartesian(
+    # expand = F,
+    # xlim = c(0, nrow(cda_2020)/2),
+    ylim = c(0, 0.005)
+  ) +
   # scale_color_identity(name = "Area",
   #   breaks = c("darkgreen","darkblue", "red"),
   #   labels = c("5A", "3CD (non-CDA)", "CDA"),
   #   guide = "legend") +
-  scale_fill_brewer(palette = "Set1") + scale_colour_brewer(palette = "Set1") +
+  scale_fill_brewer(palette = "Set1", direction = -1) +
+  scale_colour_brewer(palette = "Set1", direction = -1) +
+  facet_wrap(~pair_name, ncol = 2)+
+  ylab("Mean ratio of YE to halibut") +
+  xlab("Total area of cells selected to minimize yelloweye (km2)") +
+  theme(legend.position = c(0.65, 0.1))
+
+ggsave("figs/expected_YE_when_avoiding_YE_CI.png", width = 7, height = 6)
+
+
+# flipped ratio
+ggplot(avoiding_ye_sum %>%
+    filter(ordered %in% c(
+      # round((nrow(cda_2020))*.001), round((nrow(cda_2020))*.005),
+      round((nrow(cda_2020))*.01),
+      round((nrow(cda_2020))*.02),
+      round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
+      round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1)
+      , round((nrow(cda_2020))*.2)
+      # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4)
+      # , round((nrow(cda_2020))*.5)
+      # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
+    ))) +
+  geom_line(
+    aes(x = ordered*4,
+      y = mean_hal_per_ye, #lty = "solid",
+      colour = Area), size = 1) +
+  geom_ribbon(aes(x = ordered*4,
+    ymin = lwr_mean_hal_ye,
+    ymax = upr_mean_hal_ye,
+    fill = Area), alpha=0.2) +
+  coord_cartesian(
+    # expand = F,
+    # xlim = c(0, nrow(cda_2020)/2),
+    ylim = c(0,15000)
+  ) +
+  # scale_color_identity(name = "Area",
+  #   breaks = c("darkgreen","darkblue", "red"),
+  #   labels = c("5A", "3CD (non-CDA)", "CDA"),
+  #   guide = "legend") +
+  scale_fill_brewer(palette = "Set1", direction = -1) +
+  scale_colour_brewer(palette = "Set1", direction = -1) +
+  facet_wrap(~pair_name, ncol = 2)+
+  ylab("Mean ratio of halibut to YE") +
+  xlab("Total area of cells selected to minimize yelloweye (km2)") +
+  theme(legend.position = c(0.65, 0.1))
+
+ggsave("figs/expected_hal_when_avoiding_YE_CI.png", width = 7, height = 6)
+
+ggplot(maximize_hal_sum %>%
+    filter(ordered %in% c(
+      # round((nrow(cda_2020))*.001), round((nrow(cda_2020))*.005),
+      round((nrow(cda_2020))*.01),
+      round((nrow(cda_2020))*.02), round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
+      round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1)
+      , round((nrow(cda_2020))*.2)
+      # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5)
+      # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
+    ))) +
+  geom_line(
+    aes(x = ordered*4,
+      y = mean_ye_per_hal, #lty = "solid",
+      colour = Area), size = 1) +
+  geom_ribbon(aes(x = ordered*4,
+    ymin = lwr_mean_ye_hal,
+    ymax = upr_mean_ye_hal,
+    fill = Area), alpha=0.2) +
+  coord_cartesian(# expand = F,
+    ylim = c(0, 0.5)
+  ) +
+  # scale_color_identity(name = "Area",
+  #   breaks = c("darkgreen","darkblue", "red"),
+  #   labels = c("5A", "3CD (non-CDA)", "CDA"),
+  #   guide = "legend") +
+  scale_fill_brewer(palette = "Set1", direction = -1) +
+  scale_colour_brewer(palette = "Set1", direction = -1) +
   facet_wrap(~pair_name, ncol = 2, scales = "free_y")+
   ylab("Mean ratio of YE to halibut") +
   xlab("Total area of cells selected to maximize halibut (km2)") +
@@ -246,11 +253,11 @@ ggsave("figs/expected_YE_when_maximize_hal_CI.png", width = 7, height = 6)
 # mean_ye_hal
 ggplot(maximize_hal_sum %>%
     filter(ordered %in% c(
-      round((nrow(cda_2020))*.001), round((nrow(cda_2020))*.005),
+      # round((nrow(cda_2020))*.001), round((nrow(cda_2020))*.005),
       round((nrow(cda_2020))*.01),
       round((nrow(cda_2020))*.02), round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
       round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1)
-      # , round((nrow(cda_2020))*.2)
+      , round((nrow(cda_2020))*.2)
       # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5)
       # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
     ))) +
@@ -269,7 +276,8 @@ ggplot(maximize_hal_sum %>%
   #   breaks = c("darkgreen","darkblue", "red"),
   #   labels = c("5A", "3CD (non-CDA)", "CDA"),
   #   guide = "legend") +
-  scale_fill_brewer(palette = "Set1") + scale_colour_brewer(palette = "Set1") +
+  scale_fill_brewer(palette = "Set1", direction = -1) +
+  scale_colour_brewer(palette = "Set1", direction = -1) +
   facet_wrap(~pair_name, ncol = 2)+
   ylab("Mean ratio of halibut to YE") +
   xlab("Total area of cells selected to maximize halibut (km2)") +
