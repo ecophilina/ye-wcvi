@@ -1,5 +1,11 @@
 # attempt at uncertainty...
-
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+# Do we need instructions for installing other dependencies like "pbsmapping"?
+# devtools::install_github("seananderson/ggsidekick")
+library(ggsidekick) # for fourth_root_power_trans and theme_sleek
+theme_set(ggsidekick::theme_sleek())
 # i_hal2 <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-all-S-sim-500.rds")[[3]]
 g_cda <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-cda-sim-500.rds")[[3]] %>% select(X, Y, year)
 g_noncda <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-3CD-outside-cda-sim-500.rds")[[3]] %>% select(X, Y, year)
@@ -55,10 +61,11 @@ avoiding_ye <- .dat[order(.dat$yelloweye, decreasing = F), ] %>% group_by(Area, 
   mutate(ordered = 1:n(),
     hal_cumsum = cumsum(halibut),
     ye_cumsum = cumsum(yelloweye),
-    cumsum_ye_hal = ye_cumsum/(hal_cumsum),
-    cumsum_hal_ye = hal_cumsum/(ye_cumsum+1),
-    mean_ratio = (ye_cumsum/ordered)/((hal_cumsum)/ordered),
-    mean_hal_ratio = (hal_cumsum/ordered)/((ye_cumsum+1)/ordered),
+    ye_cumsum2 = ifelse(cumsum(yelloweye) < 0.01, 0.01, cumsum(yelloweye)),
+    cumsum_ye_hal = (ye_cumsum*100)/(hal_cumsum*100),
+    cumsum_hal_ye = (hal_cumsum*100)/(ye_cumsum2*100),
+    mean_ratio = (ye_cumsum*100/ordered)/((hal_cumsum*100)/ordered),
+    mean_hal_ratio = (hal_cumsum*100/ordered)/((ye_cumsum2*100)/ordered),
     proportion = ordered/nrow(cda_2020),
     pair_name = case_when(
       year %in% c(2007, 2008) ~ "2007-2008",
@@ -149,7 +156,7 @@ ggplot(avoiding_ye_sum %>%
   coord_cartesian(
     # expand = F,
     # xlim = c(0, nrow(cda_2020)/2),
-    ylim = c(0, 50000)
+    ylim = c(0,10000)
   ) +
   # scale_color_identity(name = "Area",
   #   breaks = c("darkgreen","darkblue", "red"),
@@ -161,7 +168,6 @@ ggplot(avoiding_ye_sum %>%
   xlab("Total area of cells selected to minimize yelloweye (km2)") +
   theme(legend.position = c(0.65, 0.1))
 
-
 ggsave("figs/expected_hal_when_avoiding_YE_CI.png", width = 7, height = 6)
 
 #### maximizing halibut strategy ###
@@ -169,10 +175,11 @@ maximize_hal <- .dat[order(.dat$halibut, decreasing = T), ] %>% group_by(Area, y
   mutate(ordered = 1:n(),
     hal_cumsum = cumsum(halibut),
     ye_cumsum = cumsum(yelloweye),
-    cumsum_ye_hal = ye_cumsum/hal_cumsum,
-    cumsum_hal_ye = hal_cumsum/(ye_cumsum+1),
-    mean_ratio = (ye_cumsum/ordered)/(hal_cumsum/ordered),
-    mean_hal_ratio = (hal_cumsum/ordered)/((ye_cumsum+1)/ordered),
+    ye_cumsum2 = ifelse(cumsum(yelloweye) < 0.01, 0.01, cumsum(yelloweye)),
+    cumsum_ye_hal = (ye_cumsum*100)/(hal_cumsum*100),
+    cumsum_hal_ye = (hal_cumsum*100)/(ye_cumsum2*100),
+    mean_ratio = (ye_cumsum*100/ordered)/((hal_cumsum*100)/ordered),
+    mean_hal_ratio = (hal_cumsum*100/ordered)/((ye_cumsum2*100)/ordered),
     proportion = ordered/nrow(cda_2020),
     pair_name = case_when(
       year %in% c(2007, 2008) ~ "2007-2008",
@@ -220,9 +227,9 @@ ggplot(maximize_hal_sum %>%
     ymin = lwr_mean_ye_hal,
     ymax = upr_mean_ye_hal,
     fill = Area), alpha=0.2) +
-  coord_cartesian(# expand = F,
-    ylim = c(0, 0.5)
-  ) +
+  # coord_cartesian(# expand = F,
+  #   ylim = c(0, 0.5)
+  # ) +
   # scale_color_identity(name = "Area",
   #   breaks = c("darkgreen","darkblue", "red"),
   #   labels = c("5A", "3CD (non-CDA)", "CDA"),
@@ -232,7 +239,6 @@ ggplot(maximize_hal_sum %>%
   ylab("Mean ratio of YE to halibut") +
   xlab("Total area of cells selected to maximize halibut (km2)") +
   theme(legend.position = c(0.65, 0.1))
-
 
 ggsave("figs/expected_YE_when_maximize_hal_CI.png", width = 7, height = 6)
 
