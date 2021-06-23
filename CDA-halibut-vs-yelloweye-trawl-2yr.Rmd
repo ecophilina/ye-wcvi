@@ -312,7 +312,6 @@ if (!file.exists(f)) {
   m_halibut <- sdmTMB(
     formula = density ~ 0 + as.factor(year) + as.factor(survey) +
       depth_scaled + I(depth_scaled^2),
-    time_varying = 
     data = d_hal,
     spde = mesh400kn,
     ar1_fields = F,
@@ -488,8 +487,18 @@ if (!file.exists(ss)) {
 For area 5A (HBLL and trawl grids)
 
 ```{r eval = T, echo=F}
+f <- "data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-5A.rds"
+
+if (!file.exists(f)) {
 p_hal_5A <- predict(m_halibut, newdata = s_5A_grid, return_tmb_object = TRUE)
-  saveRDS(p_hal_5A, "data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-5A.rds")
+saveRDS(p_hal_5A, "data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-5A.rds")
+} else{
+.pred <- readRDS(f)
+ if(!nrow(.pred$data) == nrow(s_5A_grid)){
+   p_hal_5A <- predict(m_halibut, newdata = s_5A_grid, return_tmb_object = TRUE)
+   saveRDS(p_hal_5A, "data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-5A.rds")
+ }
+}
 
 f <- "data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-5A.rds"
 if (!file.exists(f)) {
@@ -996,7 +1005,6 @@ What proportion of 3CD HBLL + trawl survey grid is inside CDA?
 
 `r round(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)), 2)`
 
-
 ```{r echo=F, message=F, warning=F}
 hal_ratios <- i_hal_2020 %>%
   select(-num_cells) %>%
@@ -1137,8 +1145,8 @@ hbll_in_cda <- nrow(hbll_cda_grid)/nrow(cda_grid)
 hbll_in_noncda <- nrow(hbll_noncda_grid)/nrow(noncda_grid)
 
 .dat <- left_join(.i_ye, .i_hal) %>% mutate(
-    ye_per_hal = yelloweye / ifelse(Area =="CDA", halibut *1.33 *hbll_in_cda, halibut *1.33 *hbll_in_noncda),
-    hal_per_ye = ifelse(Area =="CDA", halibut *1.33 *hbll_in_cda, halibut *1.33 *hbll_in_noncda) / yelloweye
+    ye_per_hal = yelloweye / ifelse(Area =="CDA", halibut * 1.33 * hbll_in_cda, halibut * 1.33 * hbll_in_noncda),
+    hal_per_ye = ifelse(Area =="CDA", halibut * 1.33 * hbll_in_cda, halibut * 1.33 * hbll_in_noncda) / yelloweye
   ) %>% 
   group_by(Area, year) %>%
   summarise(
@@ -1346,9 +1354,9 @@ phd <- p_hal$data %>%
 
 ratio_df <- left_join(pyd, phd) %>% mutate(
   halibut = exp(hal_est), 
-  halibut2 = ifelse(exp(hal_est)< 0.01, 0.01, exp(hal_est)), 
+  halibut2 = ifelse(exp(hal_est) < 0.01, 0.01, exp(hal_est)), 
   yelloweye = exp(ye_est), 
-  yelloweye2 = ifelse(exp(ye_est)< 0.01, 0.01, exp(ye_est)), # make min for yelloweye of 1 per km2
+  yelloweye2 = ifelse(exp(ye_est) < 0.01, 0.01, exp(ye_est)), # make min for yelloweye of 1 per km2
   ye_per_hal = (yelloweye*100) / (halibut*100), # using halibut 2 doesn't change anything.
   hal_per_ye = (halibut*100) / (yelloweye2*100)
   )
@@ -1405,434 +1413,6 @@ ggsave("figs/hybrid-halibut-to-ye-2020-w-hal-catch-trawlinhbllyrs-paired.png", w
 
 
 # Other exploratory plots
-
-red = CDA
-black = 3CD outside CDA
-
-```{r message=F, echo=F}
-p_hal_cda <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-cda.rds")
-p_hal_noncda <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-3CD-outside-cda.rds")
-p_ye_cda <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-predictions-cda.rds")
-p_ye_noncda <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-predictions-3CD-outside-cda.rds")
-py_cda <- p_ye_cda$data %>% rename(ye_est = est)
-py_noncda <- p_ye_noncda$data %>% rename(ye_est = est)
-ph_cda <- p_hal_cda$data %>%
-  rename(hal_est = est) %>%
-  select(hal_est, X, Y, year)
-ph_noncda <- p_hal_noncda$data %>%
-  rename(hal_est = est) %>%
-  select(hal_est, X, Y, year)
-
-# round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight)
-ratio_cda <- left_join(py_cda, ph_cda) %>% mutate(
-  halibut = exp(hal_est) * (100 * 0.0024384 * 0.009144 * 10000)*1.33 , # convert kg/ha to kg/100 hooks
-  yelloweye = exp(ye_est) * (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
-  ye_per_hal = yelloweye / halibut, hal_per_ye = halibut / yelloweye,
-  pair_name = case_when(
-        year %in% c(2007, 2008) ~ "2007-2008",
-        year %in% c(2009, 2010) ~ "2009-2010",
-        year %in% c(2011, 2012) ~ "2011-2012",
-        year %in% c(2013, 2014) ~ "2013-2014",
-        year %in% c(2015, 2016) ~ "2015-2016",
-        year %in% c(2017, 2018) ~ "2017-2018",
-        year %in% c(2019, 2020) ~ "2019-2020"
-      )
-)
-ratio_noncda <- left_join(py_noncda, ph_noncda) %>% mutate(
-  halibut = exp(hal_est)* (100 * 0.0024384 * 0.009144 * 10000)*1.33 , # convert kg/ha to kg/100 hooks
-  yelloweye = exp(ye_est)* (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
-  ye_per_hal = yelloweye / halibut, hal_per_ye = halibut / yelloweye,
-  pair_name = case_when(
-        year %in% c(2007, 2008) ~ "2007-2008",
-        year %in% c(2009, 2010) ~ "2009-2010",
-        year %in% c(2011, 2012) ~ "2011-2012",
-        year %in% c(2013, 2014) ~ "2013-2014",
-        year %in% c(2015, 2016) ~ "2015-2016",
-        year %in% c(2017, 2018) ~ "2017-2018",
-        year %in% c(2019, 2020) ~ "2019-2020"
-      )
-)
-
-ratio_cda <- ratio_cda[order(ratio_cda$halibut, decreasing = T), ] %>% group_by(year) %>% 
-  mutate(ordered = 1:n(), 
-    hal_cumsum = cumsum(halibut), 
-    ye_cumsum = cumsum(yelloweye),
-    cumsum_ye_hal = ye_cumsum/hal_cumsum
-    ) %>% ungroup()
-
-ratio_noncda <- ratio_noncda[order(ratio_noncda$halibut, decreasing = T), ] %>% group_by(year) %>% 
-  mutate(ordered = 1:n(),
-    hal_cumsum = cumsum(halibut), 
-    ye_cumsum = cumsum(yelloweye),
-    cumsum_ye_hal = ye_cumsum/hal_cumsum
-    ) %>% ungroup()
-
-
-
-
-# ggplot(ratio_noncda) +
-#   geom_point(aes(yelloweye, halibut), alpha = 0.5) +
-#   geom_point(data = ratio_cda, aes(yelloweye, halibut),
-#     inherit.aes = F, colour = "red", alpha = 0.5) +
-#   coord_cartesian(expand = F) +
-#   ylab("Halibut per per 100 hooks") +
-#   xlab("Yelloweye per per 100 hooks")
-
-ggplot(ratio_noncda) +
-  geom_point(aes(halibut, yelloweye), alpha = 0.25) +
-  geom_point(
-    data = ratio_cda, aes(halibut, yelloweye),
-    inherit.aes = F, colour = "red", alpha = 0.25
-  ) +
-  # coord_fixed(expand = F) + 
-  facet_wrap(~year) +
-  xlab("Halibut biomass") +
-  ylab("Yelloweye biomass")
-
-# ggplot(filter(ratio_noncda, halibut > 5)) +
-#   geom_histogram(aes(ye_per_hal)) +
-#   geom_histogram(data = filter(ratio_cda, halibut > 5),aes(ye_per_hal), inherit.aes = F, fill = "red") +
-#   ylab("Grid cell with estimate of > 5 halibut per 100 hooks") +
-#   xlab("Predicted numder of yelloweye per halibut caught")
-# 
-ggplot(filter(
-  ratio_noncda, halibut > 0.1 * 22 # & yelloweye > 0.1
-)) +
-  geom_histogram(aes(hal_per_ye), fill = "black") +
-  geom_histogram(data = filter(
-    ratio_cda, halibut >  0.1 * 22# & yelloweye > 0.1
-  ), aes(hal_per_ye), inherit.aes = F, fill = "red") +
-  ylab("Cells with > 0.1 kg/ha of halibut") +
-  xlab("Estimated ratio of kg halibut per kg yelloweye")
-```
-
-
-
-```{r}
-
-ggplot() + 
-  geom_line(data = ratio_noncda, 
-    aes(x = ordered, y = cumsum_ye_hal, lty = "solid", colour = "darkblue"), size = 1) +
-  
-  geom_line(data = ratio_cda, 
-    aes(x = ordered, y = cumsum_ye_hal, lty = "solid", colour = "red"), size = 1,
-    inherit.aes = FALSE) +
-   coord_cartesian(expand = F, xlim = c(0, 200), ylim = c(0, 0.25)) +
-  scale_color_identity(name = "Area",
-                          breaks = c("darkblue", "red"),
-                          labels = c("3CD (non-CDA)", "CDA"),
-                          guide = "legend") +
-  # scale_linetype_identity(name = "Species",
-  #                         breaks = c("solid", "dotted"),
-  #                         labels = c("YE","Halibut"),
-  #                         guide = "legend") +
-  facet_wrap(~year, ncol = 2)+
-  # ylab("Cummulative fish biomass (kg if 100 hooks set in each cell)") +
-  xlab("Number of cells fished (in order of decreasing Halibut abundance)") + 
-  theme(legend.position = c(0.65, 0.1))
-
-cda_2020 <- filter(cda_grid, year == 2020)
-
-
-(nrow(cda_2020))*.01
-(nrow(cda_2020))*.05
-(nrow(cda_2020))*.1
-
-top_cell_increments <- ratio_cda  %>% group_by(year) %>% 
-  filter(ordered %in% c( 
-    round((nrow(cda_2020))*.01), 
-    round((nrow(cda_2020))*.02),
-    round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-    round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1), round((nrow(cda_2020))*.2)
-    # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5), round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
-    )) %>% 
-  mutate(
-    mean_ratio = (ye_cumsum/ordered)/(hal_cumsum/ordered),
-    mean_hal_ratio = (hal_cumsum/ordered)/(ye_cumsum/ordered),
-    proportion = ordered/nrow(cda_2020))
-
-noncda_cell_increments <- ratio_noncda  %>% group_by(year) %>% 
-  filter(ordered %in% c( 
-    round((nrow(cda_2020))*.01), 
-    round((nrow(cda_2020))*.02),
-    round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-    round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1), round((nrow(cda_2020))*.2)
-    # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5), round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
-    )) %>% 
-  mutate(
-    mean_ratio = (ye_cumsum/ordered)/(hal_cumsum/ordered),
-    mean_hal_ratio = (hal_cumsum/ordered)/(ye_cumsum/ordered),
-    proportion = ordered/nrow(cda_2020)
-    )
-
-
-ggplot() + 
-  geom_line(data = noncda_cell_increments,
-    aes(x = ordered, y = mean_ratio, #lty = "solid", 
-      colour = "darkblue"), size = 1) +
-  geom_line(data = top_cell_increments, 
-    aes(x = ordered, y = mean_ratio, #lty = "solid", 
-      colour = "red"), size = 1,
-    inherit.aes = FALSE) +
-   # coord_cartesian(expand = F, xlim = c(0, 0.2),# ylim = c(0, 0.25)) +
-  scale_color_identity(name = "Area",
-                          breaks = c("darkblue", "red"),
-                          labels = c("3CD (non-CDA)", "CDA"),
-                          guide = "legend") +
-  facet_wrap(~year, ncol = 2)+
-  ylab("Mean ratio of YE to halibut within cells") +
-  xlab("Number of cells in average (selected in order of decreasing halibut abundance)") + 
-  # xlab("Proportion of cells with highest Halibut abundance ()") + 
-  theme(legend.position = c(0.65, 0.1))
-
-ggsave("figs/expected_YE_when_maximizing_hal.png", width = 7, height = 9)
-
-ggplot() + 
-  geom_line(data = noncda_cell_increments,
-    aes(
-      x = ordered, 
-      # x = proportion, 
-      y = mean_hal_ratio, #lty = "solid", 
-      colour = "darkblue"), size = 1) +
-  geom_line(data = top_cell_increments, 
-    aes(      
-      x = ordered, 
-      # x = proportion, 
-      y = mean_hal_ratio, #lty = "solid", 
-      colour = "red"), size = 1,
-    inherit.aes = FALSE) +
-  coord_cartesian(expand = F,  #xlim = c(0, 0.5), 
-    ylim = c(0, 70)) +
-  scale_color_identity(name = "Area",
-                          breaks = c("darkblue", "red"),
-                          labels = c("3CD (non-CDA)", "CDA"),
-                          guide = "legend") +
-  facet_wrap(~year, ncol = 2)+
-  ylab("Mean ratio of halibut to YE") +
-  xlab("Number of cells in average (selected in order of decreasing halibut abundance)") + #(proportion of total CDA cells)
-  theme(legend.position = c(0.65, 0.1))
-
-ggsave("figs/expected_halibut_when_maximizing_hal.png", width = 7, height = 9)
-```
-
-
-### What about ordered to minimize yelloweye?
-```{r}
-p_hal_cda <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-cda.rds")
-p_ye_cda <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-predictions-cda.rds")
-
-p_hal_noncda <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-3CD-outside-cda.rds")
-p_ye_noncda <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-predictions-3CD-outside-cda.rds")
-
-p_hal_5A <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-predictions-5A.rds")
-p_ye_5A <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-predictions-5A.rds")
-
-py_cda <- p_ye_cda$data %>% rename(ye_est = est)
-py_noncda <- p_ye_noncda$data %>% rename(ye_est = est)
-py_5A <- p_ye_5A$data %>% rename(ye_est = est)
-
-ph_cda <- p_hal_cda$data %>%
-  rename(hal_est = est) %>%
-  select(hal_est, X, Y, year)
-ph_noncda <- p_hal_noncda$data %>%
-  rename(hal_est = est) %>%
-  select(hal_est, X, Y, year)
-ph_5A <- p_hal_5A$data %>% #View()
-  rename(hal_est = est) %>%
-  select(hal_est, X, Y, year)
-
-# round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight)
-ratio_cda <- left_join(py_cda, ph_cda) %>% mutate(
-  halibut = exp(hal_est) * (100 * 0.0024384 * 0.009144 * 10000)*1.33 , # convert kg/ha to kg/100 hooks
-  yelloweye = exp(ye_est) * (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
-  ye_per_hal = yelloweye / halibut, hal_per_ye = halibut / yelloweye
-)
-ratio_noncda <- left_join(py_noncda, ph_noncda) %>% mutate(
-  halibut = exp(hal_est)* (100 * 0.0024384 * 0.009144 * 10000)*1.33 , # convert kg/ha to kg/100 hooks
-  yelloweye = exp(ye_est)* (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
-  ye_per_hal = yelloweye / halibut, hal_per_ye = halibut / yelloweye
-)
-
-ratio_5A <- left_join(py_5A, ph_5A) %>% mutate(
-  halibut = exp(hal_est)* (100 * 0.0024384 * 0.009144 * 10000)*1.33 , # convert kg/ha to kg/100 hooks
-  yelloweye = exp(ye_est)* (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
-  ye_per_hal = yelloweye / halibut, hal_per_ye = halibut / yelloweye
-)
-
-
-
-avoiding_cda <- ratio_cda[order(ratio_cda$yelloweye, decreasing = F), ] %>% group_by(year) %>% 
-  mutate(ordered = 1:n(), 
-    hal_cumsum = cumsum(halibut), 
-    ye_cumsum = cumsum(yelloweye),
-    cumsum_ye_hal = ye_cumsum/hal_cumsum,
-    cumsum_hal_ye = hal_cumsum/ye_cumsum,
-    mean_ratio = (ye_cumsum/ordered)/(hal_cumsum/ordered),
-    mean_hal_ratio = (hal_cumsum/ordered)/(ye_cumsum/ordered),
-    proportion = ordered/nrow(cda_2020),
-  pair_name = case_when(
-        year %in% c(2007, 2008) ~ "2007-2008",
-        year %in% c(2009, 2010) ~ "2009-2010",
-        year %in% c(2011, 2012) ~ "2011-2012",
-        year %in% c(2013, 2014) ~ "2013-2014",
-        year %in% c(2015, 2016) ~ "2015-2016",
-        year %in% c(2017, 2018) ~ "2017-2018",
-        year %in% c(2019, 2020) ~ "2019-2020"
-      )
-    ) %>% ungroup()
-
-avoiding_noncda <- ratio_noncda[order(ratio_noncda$yelloweye, decreasing = F), ] %>% group_by(year) %>% 
-  mutate(ordered = 1:n(),
-    hal_cumsum = cumsum(halibut), 
-    ye_cumsum = cumsum(yelloweye),
-    cumsum_ye_hal = ye_cumsum/hal_cumsum,
-    cumsum_hal_ye = hal_cumsum/ye_cumsum,
-    mean_ratio = (ye_cumsum/ordered)/(hal_cumsum/ordered),
-    mean_hal_ratio = (hal_cumsum/ordered)/(ye_cumsum/ordered),
-    proportion = ordered/nrow(cda_2020),
-  pair_name = case_when(
-        year %in% c(2007, 2008) ~ "2007-2008",
-        year %in% c(2009, 2010) ~ "2009-2010",
-        year %in% c(2011, 2012) ~ "2011-2012",
-        year %in% c(2013, 2014) ~ "2013-2014",
-        year %in% c(2015, 2016) ~ "2015-2016",
-        year %in% c(2017, 2018) ~ "2017-2018",
-        year %in% c(2019, 2020) ~ "2019-2020"
-      )
-    ) %>% ungroup()
-
-avoiding_5A <- ratio_5A[order(ratio_5A$yelloweye, decreasing = F), ] %>% group_by(year) %>% 
-  mutate(ordered = 1:n(), 
-    hal_cumsum = cumsum(halibut), 
-    ye_cumsum = cumsum(yelloweye),
-    cumsum_ye_hal = ye_cumsum/hal_cumsum,
-    cumsum_hal_ye = hal_cumsum/ye_cumsum,
-    mean_ratio = (ye_cumsum/ordered)/(hal_cumsum/ordered),
-    mean_hal_ratio = (hal_cumsum/ordered)/(ye_cumsum/ordered),
-    proportion = ordered/nrow(cda_2020),
-  pair_name = case_when(
-        year %in% c(2007, 2008) ~ "2007-2008",
-        year %in% c(2009, 2010) ~ "2009-2010",
-        year %in% c(2011, 2012) ~ "2011-2012",
-        year %in% c(2013, 2014) ~ "2013-2014",
-        year %in% c(2015, 2016) ~ "2015-2016",
-        year %in% c(2017, 2018) ~ "2017-2018",
-        year %in% c(2019, 2020) ~ "2019-2020"
-      )
-    ) %>% ungroup()
-
-
-ggplot() + 
-  geom_line(data = avoiding_noncda %>% 
-  filter(ordered %in% c( 
-    round((nrow(cda_2020))*.01), 
-    round((nrow(cda_2020))*.02), round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-    round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1), round((nrow(cda_2020))*.2)
-    # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5)
-    # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
-    )),
-    aes(
-      x = ordered, # x = proportion, 
-      y = mean_hal_ratio, #lty = "solid", 
-      colour = "darkblue"), size = 1) +
-  geom_line(data = avoiding_cda %>% 
-  filter(ordered %in% c( 
-    round((nrow(cda_2020))*.01), 
-    round((nrow(cda_2020))*.02), round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-    round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1), round((nrow(cda_2020))*.2)
-    # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5)
-    # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
-    )),
-    aes(x = ordered, # x = proportion, 
-      y = mean_hal_ratio, #lty = "solid", 
-      colour = "red"), size = 1,
-    inherit.aes = FALSE) +
-  geom_line(data = avoiding_5A %>% 
-  filter(ordered %in% c( 
-    round((nrow(cda_2020))*.01), 
-    round((nrow(cda_2020))*.02), round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-    round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1), round((nrow(cda_2020))*.2)
-    # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5)
-    # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
-    )),
-    aes(x = ordered, # x = proportion, 
-      y = mean_hal_ratio, #lty = "solid", 
-      colour = "darkgreen"), size = 1,
-    inherit.aes = FALSE) +
-  coord_cartesian(
-    # expand = F,
-    # xlim = c(0, nrow(cda_2020)/2),
-    ylim = c(0, 30000)
-) +
-  scale_color_identity(name = "Area",
-                          breaks = c("darkgreen","darkblue", "red"),
-                          labels = c("5A", "3CD (non-CDA)", "CDA"),
-                          guide = "legend") +
-  facet_wrap(~pair_name, ncol = 2)+
-  ylab("Mean ratio of halibut to YE") +
-  xlab("Number of cells in average (selected to minimize YE)") +
-  theme(legend.position = c(0.65, 0.1))
-
-
-ggsave("figs/expected_halibut_when_avoiding_YE.png", width = 7, height = 6)
-```
-
-
-```{r}
-ggplot() + 
-  geom_line(data = avoiding_noncda %>% 
-  filter(ordered %in% c( 
-    round((nrow(cda_2020))*.01), 
-    round((nrow(cda_2020))*.02), round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-    round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1), round((nrow(cda_2020))*.2)
-    # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5)
-    # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
-    )),
-    aes(
-      x = ordered, # x = proportion, 
-      y = mean_ratio, #lty = "solid", 
-      colour = "darkblue"), size = 1) +
-  geom_line(data = avoiding_cda %>% 
-  filter(ordered %in% c( 
-    round((nrow(cda_2020))*.01), 
-    round((nrow(cda_2020))*.02), round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-    round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1), round((nrow(cda_2020))*.2)
-    # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5)
-    # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
-    )),
-    aes(      
-      x = ordered, # x = proportion, 
-      y = mean_ratio, #lty = "solid", 
-      colour = "red"), size = 1,
-    inherit.aes = FALSE) +
-  geom_line(data = avoiding_5A %>% 
-  filter(ordered %in% c( 
-    round((nrow(cda_2020))*.01), 
-    round((nrow(cda_2020))*.02), round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-    round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1), round((nrow(cda_2020))*.2)
-    # , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4), round((nrow(cda_2020))*.5)
-    # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
-    )),
-    aes(x = ordered, # x = proportion, 
-      y = mean_ratio, #lty = "solid", 
-      colour = "darkgreen"), size = 1,
-    inherit.aes = FALSE) +
-  coord_cartesian(
-    expand = F,
-#     # xlim = c(0, nrow(cda_2020)/2),
-    ylim = c(-0, 0.004)
-) +
-  scale_color_identity(name = "Area",
-                          breaks = c("darkgreen","darkblue", "red"),
-                          labels = c("5A", "3CD (non-CDA)", "CDA"),
-                          guide = "legend") +
-  facet_wrap(~pair_name, ncol = 2)+
-  ylab("Mean ratio of YE to halibut") +
-  xlab("Number of cells in average (selected to minimize YE)") + #in order of increasing YE abundance
-  theme(legend.position = c(0.65, 0.1))
-
-ggsave("figs/expected_YE_when_avoiding_YE.png", width = 7, height = 6)
-```
 
 
 ### Experiment with accumulation curve
@@ -1892,8 +1472,6 @@ ggsave("cummulative-catch-rates-x.png", width = 7, height = 9)
 ```{r}
 target_cda 
 ```
-
-
 
 ```{r}
 target_noncda 
