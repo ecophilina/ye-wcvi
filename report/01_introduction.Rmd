@@ -137,20 +137,20 @@ include_graphics(here("figs/hybrid-ye-to-hal-index-trawlinhbllyrs-paired.png"))
 include_graphics(here("figs/hybrid-hal-to-ye-index-trawlinhbllyrs-paired.png"))
 ```
 
-```{r hal-ratio-by-hal-max-area, fig.cap="Mean biomass ratio of halibut to YE for cells with the highest halibut densities. Areas with mean YE densities of less than 1 kg per km2 have been truncated to that value. The cumulative area occupied by these cells cover a range from 1 to 40% of the survey grid within the CDA. Ratios are calculated for the same number of cells, also with the highest halibut densities, in the other areas. Lines and 95% CI are calculated from 500 simulations of the biomass distribution for each species.", include = F, out.width="6in"}
+```{r hal-ratio-by-hal-max-area, fig.cap="Mean biomass ratio of halibut to YE for cells with the highest halibut densities. Areas with mean YE densities of less than 1 kg per km2 have been truncated to that value. The cumulative area occupied by these cells cover a range from 1 to 40 percent of the survey grid within the CDA. Ratios are calculated for the same number of cells, also with the highest halibut densities, in the other areas. Lines and 95 percent CI are calculated from 500 simulations of the biomass distribution for each species.", include = F, out.width="6in"}
 # this is an utterly predictable relationship, if halibut and ye are concentrated in different places... very high levels of halibut found in certain restricted area. Might be interesting to zoom in to smaller portion of axes?
 include_graphics(here("figs/expected_hal_when_maximize_hal_CI.png"))
 ```
 
-```{r hal-ratio-by-ye-min-area, fig.cap="Mean biomass ratio of halibut to YE for cells with the lowest YE densities. Areas with mean YE densities of less than 1 kg per km2 have been truncated to that value. Otherwise these values are derived in a similar way to the previous figure.", out.width="6in"}
+```{r hal-ratio-by-ye-min-area, fig.cap="Mean biomass ratio of halibut to YE for cells with the lowest YE densities. Areas with mean YE densities of less than 1 kg per km2 have been truncated to that value. Areas with mean YE densities of less than 1 kg per km2 have been truncated to that value. The cumulative area occupied by these cells cover a range from 1 to 40 percent of the survey grid within the CDA. Ratios are calculated for the same number of cells, also with the highest halibut densities, in the other areas. Lines and 95 percent CI are calculated from 500 simulations of the biomass distribution for each species.", out.width="6in"}
 include_graphics(here("figs/expected_hal_when_avoiding_ye_CI.png"))
 ```
 
-```{r ye-ratio-by-hal-max-area, fig.cap="Mean biomass ratio of halibut to YE for cells with the highest halibut densities. Areas with mean halibut densities of less than 1 kg per km2 have been truncated to that value. Otherwise these values are derived in a similar way to the previous figure.", out.width="6in"}
+```{r ye-ratio-by-hal-max-area, fig.cap="Mean biomass ratio of YE to halibut for cells with the highest halibut densities. Areas with mean halibut densities of less than 1 kg per km2 have been truncated to that value. Otherwise these values are derived in a similar way to the previous figure.", out.width="6in"}
 include_graphics(here("figs/expected_ye_when_maximize_hal_CI.png"))
 ```
 
-```{r ye-ratio-by-ye-min-area, fig.cap="Mean biomass ratio of halibut to YE for cells with the highest halibut densities. Areas with mean halibut densities of less than 1 kg per km2 have been truncated to that value. Otherwise these values are derived in a similar way to the previous figure.", out.width="6in"}
+```{r ye-ratio-by-ye-min-area, fig.cap="Mean biomass ratio of YE to halibut for cells with the highest halibut densities. Areas with mean halibut densities of less than 1 kg per km2 have been truncated to that value. Otherwise these values are derived in a similar way to the previous figure.", out.width="6in"}
 include_graphics(here("figs/expected_ye_when_avoiding_ye_CI.png"))
 ```
 
