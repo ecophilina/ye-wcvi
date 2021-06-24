@@ -113,31 +113,49 @@ include_graphics(here("figs/hybrid-ye-to-halibut-2020-w-hal-catch-trawlinhbllyrs
 include_graphics(here("figs/hybrid-halibut-to-ye-2020-w-hal-catch-trawlinhbllyrs-paired.png"))
 ```
 
-```{r halibut-indexes, fig.cap="Halibut index of relative abundance in combined HBLL and trawl survey grid within various regions. The full combined grid includes all of the trawl survey grid cells that fall within the latitudinal limits of the South outside HBLL. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 simulations.", out.width="6in"}
+```{r halibut-indexes, fig.cap="Halibut index of relative abundance through time in combined HBLL and trawl survey grid within various regions. The full combined grid includes all of the trawl survey grid cells that fall within the latitudinal limits of the South outside HBLL. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 simulations.", out.width="6in"}
 include_graphics(here("figs/hybrid-halibut-trawlinhbllyrs-paired-index-by-area.png"))
 ```
 
-```{r yelloweye-indexes, fig.cap="Yelloweye Rockfish index of relative abundance in combined HBLL and trawl survey grid within various regions. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 simulations.", out.width="6in"}
+```{r yelloweye-indexes, fig.cap="Yelloweye Rockfish index of relative abundance through time in combined HBLL and trawl survey grid within various regions. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 simulations.", out.width="6in"}
 include_graphics(here("figs/hybrid-yelloweye-trawlinhbllyrs-paired-index-by-area.png"))
 ```
 
-```{r halibut-indexes-avg, fig.cap="Average Halibut relative abundance \\textbf{per HBLL and trawl survey grid cell} in CDA vs. in area 3CD but outside CDA.", out.width="6in"}
+```{r halibut-indexes-avg, fig.cap="Average Halibut relative abundance through time \\textbf{per HBLL and trawl survey grid cell} in CDA vs. in area 3CD but outside CDA.", out.width="6in"}
 include_graphics(here("figs/hybrid-halibut-trawlinhbllyrs-paired-average-index.png"))
 ```
 
-```{r yelloweye-indexes-avg, fig.cap="Average Yelloweye Rockfish relative abundance per HBLL and trawl survey grid grid cell in CDA vs. in area 3CD but outside CDA.", out.width="6in"}
+```{r yelloweye-indexes-avg, fig.cap="Average Yelloweye Rockfish relative abundance through time per HBLL and trawl survey grid grid cell in CDA vs. in area 3CD but outside CDA.", out.width="6in"}
 include_graphics(here("figs/hybrid-yelloweye-trawlinhbllyrs-paired-average-index.png"))
 ```
 
-```{r ye-ratio-through-time, fig.cap="Estimated ratio of Yelloweye Rockfish biomass to Halibut biomass for combined HBLL and trawl survey grid in CDA vs. in area 3CD but outside CDA.", out.width="6in"}
+```{r ye-ratio-through-time, fig.cap="Estimated ratio of Yelloweye Rockfish biomass to Halibut biomass through time for combined HBLL and trawl survey grid in CDA vs. in area 3CD but outside CDA.", out.width="6in"}
 include_graphics(here("figs/hybrid-ye-to-hal-index-trawlinhbllyrs-paired.png"))
 ```
 
-```{r hal-ratio-through-time, fig.cap="Estimated ratio of Halibut biomass to YE biomass for combined HBLL and trawl survey grid in CDA vs. in area 3CD but outside CDA.", out.width="6in"}
+```{r hal-ratio-through-time, fig.cap="Estimated ratio of Halibut biomass to YE biomass through time for combined HBLL and trawl survey grid in CDA vs. in area 3CD but outside CDA.", out.width="6in"}
 include_graphics(here("figs/hybrid-hal-to-ye-index-trawlinhbllyrs-paired.png"))
 ```
 
+```{r hal-ratio-by-hal-max-area, fig.cap="Mean biomass ratio of halibut to YE for cells with the highest halibut densities. Areas with mean YE densities of less than 1 kg per km2 have been truncated to that value. The cumulative area occupied by these cells cover a range from 1 to 40% of the survey grid within the CDA. Ratios are calculated for the same number of cells, also with the highest halibut densities, in the other areas. Lines and 95% CI are calculated from 500 simulations of the biomass distribution for each species.", include = F, out.width="6in"}
+# this is an utterly predictable relationship, if halibut and ye are concentrated in different places... very high levels of halibut found in certain restricted area. Might be interesting to zoom in to smaller portion of axes?
+include_graphics(here("figs/expected_hal_when_maximize_hal_CI.png"))
+```
+
+```{r hal-ratio-by-ye-min-area, fig.cap="Mean biomass ratio of halibut to YE for cells with the lowest YE densities. Areas with mean YE densities of less than 1 kg per km2 have been truncated to that value. Otherwise these values are derived in a similar way to the previous figure.", out.width="6in"}
+include_graphics(here("figs/expected_hal_when_avoiding_ye_CI.png"))
+```
+
+```{r ye-ratio-by-hal-max-area, fig.cap="Mean biomass ratio of halibut to YE for cells with the highest halibut densities. Areas with mean halibut densities of less than 1 kg per km2 have been truncated to that value. Otherwise these values are derived in a similar way to the previous figure.", out.width="6in"}
+include_graphics(here("figs/expected_ye_when_maximize_hal_CI.png"))
+```
+
+```{r ye-ratio-by-ye-min-area, fig.cap="Mean biomass ratio of halibut to YE for cells with the highest halibut densities. Areas with mean halibut densities of less than 1 kg per km2 have been truncated to that value. Otherwise these values are derived in a similar way to the previous figure.", out.width="6in"}
+include_graphics(here("figs/expected_ye_when_avoiding_ye_CI.png"))
+```
+
 \clearpage
+
 
 ```{r filter-indices}
 i_hal_cda2020 <- filter(i_hal_cda, year == 2020)
