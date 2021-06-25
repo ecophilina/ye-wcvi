@@ -137,21 +137,22 @@ include_graphics(here("figs/hybrid-ye-to-hal-index-trawlinhbllyrs-paired.png"))
 include_graphics(here("figs/hybrid-hal-to-ye-index-trawlinhbllyrs-paired.png"))
 ```
 
-```{r hal-ratio-by-hal-max-area, fig.cap="Mean biomass ratio of halibut to YE for cells with the highest halibut densities. Areas with mean YE densities of less than 1 kg per km2 have been truncated to that value. The cumulative area occupied by these cells cover a range from 1 to 40 percent of the survey grid within the CDA. Ratios are calculated for the same number of cells, also with the highest halibut densities, in the other areas. Lines and 95 percent CI are calculated from 500 simulations of the biomass distribution for each species.", include = F, out.width="6in"}
-# this is an utterly predictable relationship, if halibut and ye are concentrated in different places... very high levels of halibut found in certain restricted area. Might be interesting to zoom in to smaller portion of axes?
-include_graphics(here("figs/expected_hal_when_maximize_hal_CI.png"))
-```
 
-```{r hal-ratio-by-ye-min-area, fig.cap="Mean biomass ratio of halibut to YE for cells with the lowest YE densities. Areas with mean YE densities of less than 1 kg per km2 have been truncated to that value. Areas with mean YE densities of less than 1 kg per km2 have been truncated to that value. The cumulative area occupied by these cells cover a range from 1 to 40 percent of the survey grid within the CDA. Ratios are calculated for the same number of cells, also with the highest halibut densities, in the other areas. Lines and 95 percent CI are calculated from 500 simulations of the biomass distribution for each species.", out.width="6in"}
-include_graphics(here("figs/expected_hal_when_avoiding_ye_CI.png"))
-```
-
-```{r ye-ratio-by-hal-max-area, fig.cap="Mean biomass ratio of YE to halibut for cells with the highest halibut densities. Areas with mean halibut densities of less than 1 kg per km2 have been truncated to that value. Otherwise these values are derived in a similar way to the previous figure.", out.width="6in"}
+```{r ye-ratio-by-hal-max-area, fig.cap="Spatial and temporal variation in the mean biomass of \\textbf{YE to halibut} for cells with the \\textbf{highest halibut densities}. Mean halibut densities of less than 1 g per 100 hooks have been truncated to this value. The spatial areas underlying mean ratios range from a single 2x2 km grid cell to a max of 50 percent of the cells within the CDA. In the other regions the ratios are calculated across the same number of cells selected to maximize halibut densities. Lines and 95 percent CI are calculated from 500 simulations of the biomass distribution for each species.", out.width="5.5in"}
 include_graphics(here("figs/expected_ye_when_maximize_hal_CI.png"))
 ```
 
-```{r ye-ratio-by-ye-min-area, fig.cap="Mean biomass ratio of YE to halibut for cells with the highest halibut densities. Areas with mean halibut densities of less than 1 kg per km2 have been truncated to that value. Otherwise these values are derived in a similar way to the previous figure.", out.width="6in"}
+```{r ye-ratio-by-ye-min-area, fig.cap="Variation in the mean biomass of \\textbf{YE to halibut} for cells with the \\textbf{lowest YE densities}. Mean YE densities of less than 1 g per 100 hooks have been truncated to this value and the ratios are then calculated for the combinations of cells with the lowest YE densities. Otherwise these ratios are derived in a similar way to the previous figure.", out.width="5.5in"}
 include_graphics(here("figs/expected_ye_when_avoiding_ye_CI.png"))
+```
+
+```{r hal-ratio-by-hal-max-area, fig.cap="Variation in the mean biomass of \\textbf{halibut to YE} for cells with the \\textbf{highest halibut densities}. Mean halibut densities of less than 1 g per 100 hooks and ratios less than 1 to 1 have been truncated to these values. Note the y-axis now has a log scale to accomodate the very large biomass ratios. Otherwise these ratios are derived in a similar way to the previous figures.", out.width="5.5in"}
+# this is an utterly predictable relationship, if halibut and ye are concentrated in different places... very high ratios of halibut found in those area richest few cells.
+include_graphics(here("figs/expected_hal_when_maximize_hal_CI.png"))
+```
+
+```{r hal-ratio-by-ye-min-area, fig.cap="Variation in the mean biomass of \\textbf{halibut to YE} for cells with the \\textbf{lowest YE densities}. Mean YE densities of less than 1 g per 100 hooks have been truncated to this value. The spatial areas underlying mean ratios in this plot range from a single 2x2 km grid cell to 100 percent of the cells within the CDA. Otherwise these ratios are derived in a similar way to the previous figure.", out.width="5.5in"}
+include_graphics(here("figs/expected_hal_when_avoiding_ye_CI2.png"))
 ```
 
 \clearpage
@@ -228,6 +229,7 @@ Average estimated YE biomass density overall for **full combinded grid**:
 `r r2(i_ye2020$est / nrow(full_s_grid))` (95% CI: `r r2(i_ye2020$lwr / nrow(full_s_grid))` to `r r2(i_ye2020$upr / nrow(full_s_grid))`) 
 
 ```{r}
+# mean weight data
 # print("Mean Halibut weight from trawl")
 halsampledata <- readRDS(here("data/halibut-surv-samples-all.rds")) %>% filter(survey_abbrev == c("SYN WCVI", "SYN QCS"))
 # halmeanlength <- mean(halsampledata$length, na.rm = T) # 74 cm seems reasonable
@@ -252,10 +254,36 @@ yemeanweight <- 3.2 # 7 lbs =3.18 kg
 ```
 
 
+```{r}
+# ratio data
+cda_2020 <- cda_grid %>% filter(year ==2020)
+maximize_hal_sum <- readRDS(here("data-generated/maximize_hal_sum.rds"))
+avoiding_ye_sum <- readRDS(here("data-generated/avoiding_ye_sum.rds"))
+
+maximize_hal_sum_cda <- maximize_hal_sum %>% filter(Area == "CDA" & ordered < round(nrow(cda_2020)*0.4)) 
+ye_per_hal_cda <- range(maximize_hal_sum_cda$mean_ye_per_hal)
+# ye_per_hal_cda[1]
+# ye_per_hal_cda[2]
+
+avoiding_ye_sum_cda <- avoiding_ye_sum %>% 
+  filter(Area == "CDA" & ordered < round(nrow(cda_2020)*0.5)) 
+ye_per_hal_cda_min <- range(avoiding_ye_sum_cda$mean_ye_per_hal)
+# ye_per_hal_cda_min[2]
+
+avoiding_ye_sum_noncda <- avoiding_ye_sum %>% 
+  filter(Area == "non-CDA 3CD" & ordered < round(nrow(cda_2020)*0.5)) 
+ye_per_hal_noncda_min <- range(avoiding_ye_sum_noncda$mean_ye_per_hal)
+# ye_per_hal_noncda_min[2]
+
+hal_per_ye_cda <- range(maximize_hal_sum_cda$mean_hal_per_ye)
+# hal_per_ye_cda[1]
+
+```
+
+
 # Discussion
 
 Over the roughly 14-year timespan of this index (2007-2019 for QCS trawl survey area; 2008-2018 for WCVI trawl survey area; 2007-2020 for HBLL), overall Halibut biomass has fluctuated from a high of `r round(i_hal[i_hal$year==2014,]$est)` in 2013-2014 to low of `r round(i_hal[i_hal$year==2018,]$est)`in 2017-2018 (Fig. \@ref(fig:halibut-indexes)), while YE biomass fluctuated from a high of `r round(i_ye[i_ye$year==2008,]$est)` kg/ha in 2013-2014 to low of `r round(i_ye[i_ye$year==2020,]$est)`in 2017-2018 (Fig. \@ref(fig:yelloweye-indexes)).
-
 
 Current results are based on average trawl survey catch weight per fish for both species. 
 YE mean weights in trawl (`r round(yemeanweightSYN, 2)` kg) are nearly identical to that from hook and line surveys (`r round(yemeanweightHBLL, 2)` kg) and the similar to placeholder value from IFMP that represents mean of landed commercial catch (`r round(yemeanweight, 2)` kg). 
@@ -266,15 +294,20 @@ Changing this value would increase the biomass of halibut expected in HBLL grid 
 This would be expected to result less overlap in expected ratios of the two species in these areas, but no change in the qualitative patterns.  
 
 
-While trajectories for both species are similar inside versus outside the CDA (Figs. \@ref(fig:halibut-indexes-avg) and \@ref(fig:yelloweye-indexes-avg)), the differences between species have led to increasing overlap in the expected ratios of YE to halibut biomass inside versus outside the CDA (Fig. \@ref(fig:ye-ratio-through-time)) and much more pronounced fluctuations in the amount of halibut relative to YE within the CDA (Fig. \@ref(fig:hal-ratio-through-time)). 
+While index trajectories for both species are similar inside versus outside the CDA (Figs. \@ref(fig:halibut-indexes-avg) and \@ref(fig:yelloweye-indexes-avg)), the differences between species have led to increasing overlap in the expected ratios of YE to halibut biomass inside versus outside the CDA (Fig. \@ref(fig:ye-ratio-through-time)) and much more pronounced fluctuations in the amount of halibut relative to YE within the CDA (Fig. \@ref(fig:hal-ratio-through-time)). The ratio of yellow to halibut within the CDA averages lower overall, but the CI intervals overlap with that for the rest of region 3CD (Fig. \@ref(fig:ye-ratio-through-time)). 
 
+If the biomass densities are rescaled to estimates in grams per 100 hooks **and halibut mean weights are assumed to be 1.33 times larger in the commercial catch than in the trawl survey--this step won't be needed once the model biomass estimates are more appropriately scaled but for now I think it gets us closer to the what the ultimate patterns will be** and fishing only focuses on cells with the highest halibut densities, the estimated mean ratios of YE to halibut range from `r round(ye_per_hal_cda[1],2)` to `r round(ye_per_hal_cda[2],2)` within the CDA. 
+Overall, this ratio varies more between years than with total proportion of the CDA targeted for halibut (Fig. \@ref(fig:ye-ratio-by-hal-max-area)). 
+However, if a similar number of cells the highest halibut density cells were targeted in region 5A the relative YE catch would be expected to be higher, than in than in 3CD.
+In contrast, if fishing is focused slowly on avoiding YE and limited to 50% of the CDA grid area, this ratio is expected to stay below `r round(ye_per_hal_cda_min[2],2)`. 
+While outside the CDA, a similar approach used to fish a same size of area could be expected to keep the ratio of YE to halibut below `r round(ye_per_hal_noncda_min[2],3)` (Fig. \@ref(fig:ye-ratio-by-ye-min-area)).
+
+The ratio of halibut to YE reaches similar asymptotes for CDA and non-CDA 3CD with increasing area fished when targeting cells with the most halibut (Fig. \@ref(fig:hal-ratio-by-hal-max-area)). However, when attempt to avoid YE within the CDA the ratio of halibut biomass to YE begins declining once fishing occurs in more than 10% of the CDA (or above ~250 km2), while higher halibut ratios can be maintained while fishing an area equivelent to the entire CDA in the other regions (Fig. \@ref(fig:hal-ratio-by-ye-min-area)).
 
 Currently, these calculations are based on only the HBLL and trawl survey grids within the various boundaries. Missing areas includes pretected areas, and cells within the trawl grid but with substrate unsuitable for trawling (presence of rocks, coral, or sponges). 
 While our predictions cover the majority of most of the fishing areas in question **(is this accurate?)**, adding substrate layers (at least something like proportion rocky) to these models could allow us to predict for the missing cells. 
 
-
 Adding static covariates like bottom type would also create more fine-scale spatial resolution to the predictions. While this is unlikely to change these calculations qualitatively, it would be likely to enhance our confidence in our predictions.
-
 
 Building similar models from **(or including in this model using it's own conversion for hook area swept?)** International Pacific Halibut Commission (IPHC) survey data could provide alternate estimates of catch ratios, but the local resolution would be coarser. 
 
