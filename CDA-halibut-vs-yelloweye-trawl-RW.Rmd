@@ -184,26 +184,24 @@ saveRDS(d_ye, "data-generated/yelloweye-hybrid-model-data-paired.rds")
 years <- sort(unique(d_ye$year))
 ```
 
-# Make prediction grids
-
-```{r message=F}
+# Make prediction grid
+First chunk should only need running once, unless changes to overall prediction area are desired.
+```{r eval = F, message=F}
 # shouldn't matter which species this is based on since the offsets are currently the same for both
 
 ## trim trawl data to hbll_s_grid area
-load("data/hbll_s_grid.rda")
+hbll_s_grid <- readRDS(here::here("grids/hbll_s_grid.rds"))
 # max(hbll_s_grid$grid$Y)
+# hbll_sf <- st_as_sf(hbll_s_grid$grid, coords = c("longitude", "latitude"), crs = 4326)
+# plot(st_geometry(hbll_sf))
 
-d_utm <- readRDS("data-generated/yelloweye-hybrid-model-data-paired.rds") %>%
-  filter(latitude < 52.15507) %>%
-  filter(year %in% years)
-# d_utm2 <- readRDS("data-generated/halibut-hybrid-model-data.rds") %>% filter(latitude < 52.15507)
-
-s_grid_utm <- convert2utm(hbll_s_grid$grid, coords = c("X", "Y")) %>%
+# s_grid_utm <- convert2utm(hbll_s_grid$grid, coords = c("X", "Y")) %>%
+s_grid_utm <- hbll_s_grid$grid %>% select(-x, -y, -old_lat, -old_lon) %>%
   mutate(X = round(X * 100), Y = round(Y * 100)) %>%
   mutate(X = (X / 100), Y = (Y / 100)) # %>% rename(depth_m = depth)
 
-s_grid_utm$longitude <- hbll_s_grid$grid$X
-s_grid_utm$latitude <- hbll_s_grid$grid$Y
+# s_grid_utm$longitude <- hbll_s_grid$grid$X
+# s_grid_utm$latitude <- hbll_s_grid$grid$Y
 s_grid_utm$survey <- "HBLL"
 min(s_grid_utm$X)
 max(s_grid_utm$X)
@@ -211,7 +209,7 @@ max(s_grid_utm$X)
 # grid <- readRDS("grids/overall-grid.rds") %>% mutate(X = X/100, Y = Y/100)
 load("grids/synoptic_grid.rda")
 grid <- synoptic_grid %>%
-  mutate(
+  mutate(X = round(X), Y = round(Y),
     X = X / 100, Y = Y / 100,
     depth_m = depth
   ) %>%
@@ -222,6 +220,9 @@ grid <- synoptic_grid %>%
       Y > min(s_grid_utm$Y) & Y < max(s_grid_utm$Y)
   )
 
+min(grid$X)
+max(grid$X)
+
 grid_utm <- full_join(grid, s_grid_utm, by = c("X", "Y")) %>%
   mutate(depth = ifelse(is.na(depth_m), depth, depth_m), 
     survey = ifelse(is.na(survey), "TRAWL" #survey2
@@ -229,21 +230,47 @@ grid_utm <- full_join(grid, s_grid_utm, by = c("X", "Y")) %>%
   select(-depth_m, #-survey2, 
     -latitude, -longitude)
 
-# plot(grid2$X, grid2$Y)
-
-grid_utm <- expand_prediction_grid(grid_utm, years = years) %>%
-  mutate(depth_centred = log(depth) - mean(d_utm$depth_log)) %>%
-  mutate(depth_scaled = depth_centred / sd(d_utm$depth_centred))
-# grid_utm <- mutate(grid_utm, Y_cent = Y - mean(d_utm$Y))
-# grid_utm <- mutate(grid_utm, X_cent = X - mean(d_utm$X))
-
 grid_xy <- grid_utm %>%
   select(X, Y) %>%
   mutate(X = X * 100, Y = Y * 100)
 grid_ll <- utm2ll(grid_xy) %>% rename(longitude = X, latitude = Y)
 
 grid_utm <- bind_cols(grid_utm, grid_ll)
+
+grid_sf <- st_as_sf(grid_utm, coords = c("longitude", "latitude"))
+st_crs(grid_sf) <- 4326 # set the coordinate reference system
+grid <- sfc_as_cols(grid_sf, c("longitude", "latitude"))
+st_geometry(grid) <- NULL
+
+saveRDS(grid, file = "data-generated/hybrid_grid.rds") 
 ```
+
+Scale covariates for models
+```{r}
+if(!file.exists("data-generated/full_hybrid_grid_w_rocky.rds")) {
+  stop("Need to run get-substrate.R script.")
+} else {
+grid <- readRDS(file = "data-generated/full_hybrid_grid_w_rocky.rds")
+substrate <- readRDS(file = "data-generated/events_w_substrate.rds") %>% select(X, Y, fishing_event_id, any_rock, rocky, mixed)
+}
+
+
+d_utm <- readRDS("data-generated/yelloweye-hybrid-model-data-paired.rds") %>% 
+  filter(latitude < 52.15507) %>%
+  filter(year %in% years) %>% left_join(substrate) # looks like no missing data to worry about
+
+if(sum(is.na(d_utm$any_rock))) { stop("Check for missing substrate data before running models.")}
+
+grid_utm <- expand_prediction_grid(grid, years = years) %>%
+  # mutate(any_rock_scaled = (any_rock - mean(substrate$any_rock)/ sd(substrate$any_rock)) %>%
+  mutate(depth_centred = log(depth) - mean(d_utm$depth_log)) %>%
+  mutate(depth_scaled = depth_centred / sd(d_utm$depth_centred)) 
+
+# grid_utm <- mutate(grid_utm, Y_cent = Y - mean(d_utm$Y))
+# grid_utm <- mutate(grid_utm, X_cent = X - mean(d_utm$X))
+```
+
+
 
 Trim prediction grid to cover full outside S HBLL
 
@@ -306,11 +333,11 @@ plot(mesh400kn)
 ```{r eval = TRUE}
 d_hal <- readRDS("data-generated/halibut-hybrid-model-data-paired.rds") %>%
   filter(latitude < 52.15507) %>%
-  filter(year %in% years)
-f <- paste0("models/halibut-hybrid-model-RW-400kn.rds")
+  filter(year %in% years) %>% left_join(substrate)
+f <- paste0("models/halibut-hybrid-model-RW-no-yr-400kn.rds")
 if (!file.exists(f)) {
   m_halibut <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
+    formula = density ~ as.factor(survey) + s(any_rock, k = 3) +
       depth_scaled + I(depth_scaled^2),
     data = d_hal,
     spde = mesh400kn,
@@ -329,7 +356,7 @@ if (!file.exists(f)) {
 ```
 
 ```{r echo = F}
-m_halibut <- readRDS(file = "models/halibut-hybrid-model-RW-400kn.rds")
+m_halibut <- readRDS(file = "models/halibut-hybrid-model-RW-no-yr-400kn.rds")
 m_halibut
 # tidy(m_halibut, "ran_pars", conf.int = TRUE)
 ```
@@ -337,10 +364,10 @@ m_halibut
 ### Does adding a fixed spatial field help?
 
 ```{r eval = TRUE}
-f <- paste0("models/halibut-hybrid-model-RW-wfixed-400kn.rds")
+f <- paste0("models/halibut-hybrid-model-RW-no-yr-wfixed-400kn.rds")
 if (!file.exists(f)) {
   m_halibut2 <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
+    formula = density ~ as.factor(survey) + s(any_rock, k = 3) +
       depth_scaled + I(depth_scaled^2),
     data = d_hal,
     spde = mesh400kn,
@@ -358,7 +385,7 @@ if (!file.exists(f)) {
 ```
 
 ```{r echo = F}
-m_halibut2 <- readRDS(file = "models/halibut-hybrid-model-RW-wfixed-400kn.rds")
+m_halibut2 <- readRDS(file = "models/halibut-hybrid-model-RW-no-yr-wfixed-400kn.rds")
 # m_halibut2
 AIC(m_halibut2) 
 ```
@@ -383,12 +410,12 @@ Much less temporal variation.
 ```{r eval=TRUE}
 d_ye <- readRDS("data-generated/yelloweye-hybrid-model-data-paired.rds") %>%
   filter(latitude < 52.15507) %>%
-  filter(year %in% years)
+  filter(year %in% years) %>% left_join(substrate)
 
-f <- "models/yelloweye-hybrid-RW-400kn.rds"
+f <- "models/yelloweye-hybrid-RW-no-yr-400kn.rds"
 if (!file.exists(f)) {
   m_ye <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
+    formula = density ~ as.factor(survey) + s(any_rock, k = 3) +
       depth_scaled + I(depth_scaled^2),
     data = d_ye,
     spde = mesh400kn,
@@ -409,7 +436,7 @@ if (!file.exists(f)) {
 Without fixed spatial field:
 
 ```{r echo = F}
-m_ye <- readRDS(file = "models/yelloweye-hybrid-RW-400kn.rds")
+m_ye <- readRDS(file = "models/yelloweye-hybrid-RW-no-yr-400kn.rds")
 m_ye
 # tidy(m_ye, "ran_pars", conf.int = TRUE)
 ```
@@ -419,10 +446,10 @@ m_ye
 With fixed spatial field:
  
 ```{r eval = TRUE, echo = F}
-f <- "models/yelloweye-hybrid-RW-wfixedsp-400kn.rds"
+f <- "models/yelloweye-hybrid-RW-no-yr-wfixedsp-400kn.rds"
 if (!file.exists(f)) {
   m_ye2 <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
+    formula = density ~ as.factor(survey) + s(any_rock, k = 3) +
       depth_scaled + I(depth_scaled^2),
     data = d_ye,
     spde = mesh400kn,
@@ -441,7 +468,7 @@ if (!file.exists(f)) {
 ```
 
 ```{r echo = F}
-m_ye2 <- readRDS(file = "models/yelloweye-hybrid-RW-wfixedsp-400kn.rds")
+m_ye2 <- readRDS(file = "models/yelloweye-hybrid-RW-no-yr-wfixedsp-400kn.rds")
 ```
 
 `r round(AIC(m_ye2))`
@@ -458,15 +485,15 @@ get_diag(m_ye)
 For CDA only (HBLL and trawl grids)
 
 ```{r eval = TRUE, echo=F}
-f <- "data-generated/hybrid-halibut-RW-index-cda.rds"
+f <- "data-generated/hybrid-halibut-RW-no-yr-index-cda.rds"
 if (!file.exists(f)) {
   p_hal_cda <- predict(m_halibut, newdata = cda_grid, return_tmb_object = TRUE)
-  saveRDS(p_hal_cda, "data-generated/hybrid-halibut-RW-predictions-cda.rds")
+  saveRDS(p_hal_cda, "data-generated/hybrid-halibut-RW-no-yr-predictions-cda.rds")
   i_hal_cda <- get_index(p_hal_cda, bias_correct = F)
   saveRDS(i_hal_cda, f)
 }
 
-ss <- "data-generated/hybrid-halibut-RW-index-cda-sim-500.rds"
+ss <- "data-generated/hybrid-halibut-RW-no-yr-index-cda-sim-500.rds"
 if (!file.exists(ss)) {
   i_hal_cda2 <- get_all_sims(m_halibut, newdata = cda_grid)
   saveRDS(i_hal_cda2, ss)
@@ -476,16 +503,16 @@ if (!file.exists(ss)) {
 For 3CD outside CDA (HBLL and trawl grids)
 
 ```{r eval = T, echo=F}
-f <- "data-generated/hybrid-halibut-RW-index-3CD-outside-cda.rds"
+f <- "data-generated/hybrid-halibut-RW-no-yr-index-3CD-outside-cda.rds"
 if (!file.exists(f)) {
   p_hal_noncda <- predict(m_halibut, newdata = noncda_grid, return_tmb_object = TRUE)
-  saveRDS(p_hal_noncda, "data-generated/hybrid-halibut-RW-predictions-3CD-outside-cda.rds")
+  saveRDS(p_hal_noncda, "data-generated/hybrid-halibut-RW-no-yr-predictions-3CD-outside-cda.rds")
 
   i_hal_noncda <- get_index(p_hal_noncda, bias_correct = F)
   saveRDS(i_hal_noncda, f)
 }
 
-ss <- "data-generated/hybrid-halibut-RW-index-3CD-outside-cda-sim-500.rds"
+ss <- "data-generated/hybrid-halibut-RW-no-yr-index-3CD-outside-cda-sim-500.rds"
 if (!file.exists(ss)) {
   i_hal_noncda2 <- get_all_sims(m_halibut, newdata = noncda_grid)
   saveRDS(i_hal_noncda2, ss)
@@ -495,20 +522,20 @@ if (!file.exists(ss)) {
 For area 5A (HBLL and trawl grids)
 
 ```{r eval = T, echo=F}
-f <- "data-generated/hybrid-halibut-RW-predictions-5A.rds"
+f <- "data-generated/hybrid-halibut-RW-no-yr-predictions-5A.rds"
 
 if (!file.exists(f)) {
 p_hal_5A <- predict(m_halibut, newdata = s_5A_grid, return_tmb_object = TRUE)
-saveRDS(p_hal_5A, "data-generated/hybrid-halibut-RW-predictions-5A.rds")
+saveRDS(p_hal_5A, "data-generated/hybrid-halibut-RW-no-yr-predictions-5A.rds")
 }
 
-f <- "data-generated/hybrid-halibut-RW-index-5A.rds"
+f <- "data-generated/hybrid-halibut-RW-no-yr-index-5A.rds"
 if (!file.exists(f)) {
   i_hal_5A <- get_index(p_hal_5A, bias_correct = F)
   saveRDS(i_hal_5A, f)
 }
 
-ss <- "data-generated/hybrid-halibut-RW-index-5A-sim-500.rds"
+ss <- "data-generated/hybrid-halibut-RW-no-yr-index-5A-sim-500.rds"
 if (!file.exists(ss)) {
   i_hal_5A2 <- get_all_sims(m_halibut, newdata = s_5A_grid)
   saveRDS(i_hal_5A2, ss)
@@ -518,42 +545,42 @@ if (!file.exists(ss)) {
 For entire southern outside HBLL grid including CDA plus the trawl survey area that falls within HBLL bounds.
 
 ```{r eval = T, echo=F}
-f <- "data-generated/hybrid-halibut-RW-index-all-S.rds"
-# if (!file.exists(f)) {
+f <- "data-generated/hybrid-halibut-RW-no-yr-index-all-S.rds"
+if (!file.exists(f)) {
   p_hal_S <- predict(m_halibut, newdata = full_s_grid, return_tmb_object = TRUE)
-  saveRDS(p_hal_S, "data-generated/hybrid-halibut-RW-predictions-all-S.rds")
+  saveRDS(p_hal_S, "data-generated/hybrid-halibut-RW-no-yr-predictions-all-S.rds")
 
   i_hal_S <- get_index(p_hal_S, bias_correct = F) # bias_correction not working only for full grid
   saveRDS(i_hal_S, f)
-# }
+}
 
-ss <- "data-generated/hybrid-halibut-RW-index-all-S-sim-500.rds"
-# if (!file.exists(ss)) {
+ss <- "data-generated/hybrid-halibut-RW-no-yr-index-all-S-sim-500.rds"
+if (!file.exists(ss)) {
   i_hal_S2 <- get_all_sims(m_halibut, newdata = full_s_grid)
   saveRDS(i_hal_S2, ss)
-# }
+}
 ```
 
 For just southern outside HBLL 
 
 ```{r eval = T, echo=F}
-f <- "data-generated/hybrid-halibut-RW-index-hbll-S.rds"
-# if (!file.exists(f)) {
+f <- "data-generated/hybrid-halibut-RW-no-yr-index-hbll-S.rds"
+if (!file.exists(f)) {
   
   hbll_s_grid <- filter(full_s_grid, survey == "HBLL")
   
   p_hal_Sb <- predict(m_halibut, newdata = hbll_s_grid, return_tmb_object = TRUE)
-  saveRDS(p_hal_Sb, "data-generated/hybrid-halibut-RW-predictions-hbll-S.rds")
+  saveRDS(p_hal_Sb, "data-generated/hybrid-halibut-RW-no-yr-predictions-hbll-S.rds")
 
   i_hal_Sb <- get_index(p_hal_Sb, bias_correct = F) # bias_correction not working only for full grid
   saveRDS(i_hal_Sb, f)
-# }
+}
 
-ss <- "data-generated/hybrid-halibut-RW-index-hbll-S-sim-500.rds"
-# if (!file.exists(ss)) {
+ss <- "data-generated/hybrid-halibut-RW-no-yr-index-hbll-S-sim-500.rds"
+if (!file.exists(ss)) {
   i_hal_S2b <- get_all_sims(m_halibut, newdata = hbll_s_grid)
   saveRDS(i_hal_S2b, ss)
-# }
+}
 ```
 
 
@@ -562,100 +589,100 @@ ss <- "data-generated/hybrid-halibut-RW-index-hbll-S-sim-500.rds"
 For CDA only (HBLL and trawl grids)
 
 ```{r eval = TRUE, echo=F}
-f <- "data-generated/hybrid-yelloweye-RW-index-cda.rds"
-# if (!file.exists(f)) {
+f <- "data-generated/hybrid-yelloweye-RW-no-yr-index-cda.rds"
+if (!file.exists(f)) {
   p_ye_cda <- predict(m_ye, newdata = cda_grid, return_tmb_object = TRUE)
-  saveRDS(p_ye_cda, "data-generated/hybrid-yelloweye-RW-predictions-cda.rds")
+  saveRDS(p_ye_cda, "data-generated/hybrid-yelloweye-RW-no-yr-predictions-cda.rds")
 
   i_ye_cda <- get_index(p_ye_cda, bias_correct = F)
   saveRDS(i_ye_cda, f)
-# }
+}
 
-ss <- "data-generated/hybrid-yelloweye-RW-index-cda-sim-500.rds"
-# if (!file.exists(ss)) {
+ss <- "data-generated/hybrid-yelloweye-RW-no-yr-index-cda-sim-500.rds"
+if (!file.exists(ss)) {
   i_ye_cda2 <- get_all_sims(m_ye, newdata = cda_grid)
   saveRDS(i_ye_cda2, ss)
-# }
+}
 ```
 
 For 3CD outside CDA (HBLL and trawl grids)
 
 ```{r eval = T, echo=F}
-f <- "data-generated/hybrid-yelloweye-RW-index-3CD-outside-cda.rds"
-# if (!file.exists(f)) {
+f <- "data-generated/hybrid-yelloweye-RW-no-yr-index-3CD-outside-cda.rds"
+if (!file.exists(f)) {
   p_ye_noncda <- predict(m_ye, newdata = noncda_grid, return_tmb_object = TRUE)
-  saveRDS(p_ye_noncda, "data-generated/hybrid-yelloweye-RW-predictions-3CD-outside-cda.rds")
+  saveRDS(p_ye_noncda, "data-generated/hybrid-yelloweye-RW-no-yr-predictions-3CD-outside-cda.rds")
 
   i_ye_noncda <- get_index(p_ye_noncda, bias_correct = F)
   saveRDS(i_ye_noncda, f)
-# }
+}
 
-ss <- "data-generated/hybrid-yelloweye-RW-index-3CD-outside-cda-sim-500.rds"
-# if (!file.exists(ss)) {
+ss <- "data-generated/hybrid-yelloweye-RW-no-yr-index-3CD-outside-cda-sim-500.rds"
+if (!file.exists(ss)) {
   i_ye_noncda2 <- get_all_sims(m_ye, newdata = noncda_grid)
   saveRDS(i_ye_noncda2, ss)
-# }
+}
 ```
 
 For area 5A (HBLL and trawl grids)
 
 ```{r eval = T, echo=F}
-f <- "data-generated/hybrid-yelloweye-RW-index-5A.rds"
-# if (!file.exists(f)) {
+f <- "data-generated/hybrid-yelloweye-RW-no-yr-index-5A.rds"
+if (!file.exists(f)) {
   p_ye_5A <- predict(m_ye, newdata = s_5A_grid, return_tmb_object = TRUE)
-  saveRDS(p_ye_5A, "data-generated/hybrid-yelloweye-RW-predictions-5A.rds")
+  saveRDS(p_ye_5A, "data-generated/hybrid-yelloweye-RW-no-yr-predictions-5A.rds")
 
   i_ye_5A <- get_index(p_ye_5A, bias_correct = F)
   saveRDS(i_ye_5A, f)
-# }
+}
 
-ss <- "data-generated/hybrid-yelloweye-RW-index-5A-sim-500.rds"
-# if (!file.exists(ss)) {
+ss <- "data-generated/hybrid-yelloweye-RW-no-yr-index-5A-sim-500.rds"
+if (!file.exists(ss)) {
   i_ye_5A2 <- get_all_sims(m_ye, newdata = s_5A_grid)
   saveRDS(i_ye_5A2, ss)
-# }
+}
 ```
 
 For entire southern outside HBLL grid including CDA plus the trawl survey area that falls within HBLL bounds.
 This is roughly equivilant to entire southern outside yelloweye stock.  
 
 ```{r eval = T, echo=F}
-f <- "data-generated/hybrid-yelloweye-RW-index-all-S.rds"
-# if (!file.exists(f)) {
+f <- "data-generated/hybrid-yelloweye-RW-no-yr-index-all-S.rds"
+if (!file.exists(f)) {
   p_ye_S <- predict(m_ye, newdata = full_s_grid, return_tmb_object = TRUE)
-  saveRDS(p_ye_S, "data-generated/hybrid-yelloweye-RW-predictions-all-S.rds")
+  saveRDS(p_ye_S, "data-generated/hybrid-yelloweye-RW-no-yr-predictions-all-S.rds")
 
   i_ye_S <- get_index(p_ye_S, bias_correct = F)
   saveRDS(i_ye_S, f)
-# }
+}
 
-ss <- "data-generated/hybrid-yelloweye-RW-index-all-S-sim-500.rds"
-# if (!file.exists(ss)) {
+ss <- "data-generated/hybrid-yelloweye-RW-no-yr-index-all-S-sim-500.rds"
+if (!file.exists(ss)) {
   i_ye_S2 <- get_all_sims(m_ye, newdata = full_s_grid)
   saveRDS(i_ye_S2, ss)
-# }
+}
 ```
 
 For just southern outside HBLL 
 
 ```{r eval = T}
-f <- "data-generated/hybrid-yelloweye-RW-index-hbll-S.rds"
-# if (!file.exists(f)) {
+f <- "data-generated/hybrid-yelloweye-RW-no-yr-index-hbll-S.rds"
+if (!file.exists(f)) {
   
   hbll_s_grid <- filter(full_s_grid, survey == "HBLL")
   
   p_ye_Sb <- predict(m_ye, newdata = hbll_s_grid, return_tmb_object = TRUE)
-  saveRDS(p_ye_Sb, "data-generated/hybrid-yelloweye-RW-predictions-hbll-S.rds")
+  saveRDS(p_ye_Sb, "data-generated/hybrid-yelloweye-RW-no-yr-predictions-hbll-S.rds")
 
   i_ye_Sb <- get_index(p_ye_Sb, bias_correct = F) # bias_correction not working only for full grid
   saveRDS(i_ye_Sb, f)
-# }
+}
 
-ss <- "data-generated/hybrid-yelloweye-RW-index-hbll-S-sim-500.rds"
-# if (!file.exists(ss)) {
+ss <- "data-generated/hybrid-yelloweye-RW-no-yr-index-hbll-S-sim-500.rds"
+if (!file.exists(ss)) {
   i_ye_S2b <- get_all_sims(m_ye, newdata = hbll_s_grid)
   saveRDS(i_ye_S2b, ss)
-# }
+}
 ```
 
 # Model checks 
@@ -663,7 +690,7 @@ ss <- "data-generated/hybrid-yelloweye-RW-index-hbll-S-sim-500.rds"
 ## Check predictions against those from the HBLL-only count model
 
 ```{r echo=F, message=F, warning=F}
-hybrid_pred <- readRDS("data-generated/hybrid-halibut-RW-predictions-hbll-S.rds")
+hybrid_pred <- readRDS("data-generated/hybrid-halibut-RW-no-yr-predictions-hbll-S.rds")
 poisson_pred <- readRDS("data-generated/halibut-predictions-all-S.rds")
 
 hyb <- hybrid_pred$data %>% 
@@ -692,7 +719,7 @@ ggplot(d_test, aes(log_count, log_biomass)) + geom_point(alpha = 0.1) + facet_wr
 ```
 
 ```{r echo=F, message=F, warning=F}
-hybrid_pred <- readRDS("data-generated/hybrid-yelloweye-RW-predictions-hbll-S.rds")
+hybrid_pred <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-predictions-hbll-S.rds")
 poisson_pred <- readRDS("data-generated/yelloweye-spatial-predictions-all-S.rds")
 
 hyb <- hybrid_pred$data %>% 
@@ -722,8 +749,8 @@ ggplot(d_test, aes(log_count, log_biomass)) + geom_point(alpha = 0.1) + facet_wr
 ## Check distribution of simulations
 
 ```{r message=F, echo=F, warning=F}
-sim_hal_cda <- readRDS("data-generated/hybrid-halibut-RW-index-cda-sim-500.rds")[[2]]
-sim_hal_noncda <- readRDS("data-generated/hybrid-halibut-RW-index-3CD-outside-cda-sim-500.rds")[[2]]
+sim_hal_cda <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-cda-sim-500.rds")[[2]]
+sim_hal_noncda <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-3CD-outside-cda-sim-500.rds")[[2]]
 
 ggplot(sim_hal_cda, aes(as.factor(year), .value)) + geom_violin(colour = "red") + geom_violin(data = sim_hal_noncda, aes(as.factor(year), .value), colour = "blue")
 
@@ -740,8 +767,8 @@ Uses only HBLL S grid and transforms predicted counts from HBLL model into bioma
 ```{r echo=F, message=F, warning=F}
 i_hal_hbll <- readRDS("data-generated/halibut-index-all-S-sim-500.rds")[[1]]
 i_ye_hbll <- readRDS("data-generated/yelloweye-spatial-index-all-S-sim-500.rds")[[1]]
-i_hal <- readRDS("data-generated/hybrid-halibut-RW-index-hbll-S-sim-500.rds")[[1]]
-i_ye <- readRDS("data-generated/hybrid-yelloweye-RW-index-hbll-S-sim-500.rds")[[1]]
+i_hal <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-hbll-S-sim-500.rds")[[1]]
+i_ye <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-index-hbll-S-sim-500.rds")[[1]]
 
 .dat <- bind_rows(mutate(i_hal, Model = "HBLL + trawl (biomass)", Species = "Halibut"),
   mutate(i_hal_hbll, Model = "HBLL (counts x mean weight)", Species = "Halibut", 
@@ -782,14 +809,14 @@ ggsave("figs/compare-model-indices.png", width = 7, height = 5, dpi = 400)
 
 ```{r message=F, echo=F}
 # i_hal <- readRDS("data-generated/halibut-index-all-S.rds")
-# i_hal_cda <- readRDS("data-generated/hybrid-halibut-RW-index-cda.rds")
-# i_hal_noncda <- readRDS("data-generated/hybrid-halibut-RW-index-3CD-outside-cda.rds")
+# i_hal_cda <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-cda.rds")
+# i_hal_noncda <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-3CD-outside-cda.rds")
 # i_hal_5A <- readRDS("data-generated/halibut-index-5A.rds")
-i_hal <- readRDS("data-generated/hybrid-halibut-RW-index-all-S-sim-500.rds")[[1]]
-i_hal_cda <- readRDS("data-generated/hybrid-halibut-RW-index-cda-sim-500.rds")[[1]]
-i_hal_noncda <- readRDS("data-generated/hybrid-halibut-RW-index-3CD-outside-cda-sim-500.rds")[[1]]
-i_hal_5A <- readRDS("data-generated/hybrid-halibut-RW-index-5A-sim-500.rds")[[1]]
-i_hal_hbll <- readRDS("data-generated/hybrid-halibut-RW-index-hbll-S-sim-500.rds")[[1]]
+i_hal <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-all-S-sim-500.rds")[[1]]
+i_hal_cda <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-cda-sim-500.rds")[[1]]
+i_hal_noncda <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-3CD-outside-cda-sim-500.rds")[[1]]
+i_hal_5A <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-5A-sim-500.rds")[[1]]
+i_hal_hbll <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-hbll-S-sim-500.rds")[[1]]
 
 .dat <- bind_rows(
   mutate(i_hal, Area = "Full combined"),
@@ -812,19 +839,19 @@ ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
   scale_fill_brewer(palette = "Set1") +
   scale_colour_brewer(palette = "Set1")
-ggsave("figs/hybrid-halibut-RW-index-by-area.png", width = 7, height = 4, dpi = 400)
+ggsave("figs/hybrid-halibut-RW-no-yr-index-by-area.png", width = 7, height = 4, dpi = 400)
 ```
 
 
 ## Index of total Yelloweye Rockfish catch through time
 
 ```{r message=F, echo=F}
-i_ye <- readRDS("data-generated/hybrid-yelloweye-RW-index-all-S-sim-500.rds")[[1]]
-i_ye_cda <- readRDS("data-generated/hybrid-yelloweye-RW-index-cda-sim-500.rds")[[1]]
-i_ye_noncda <- readRDS("data-generated/hybrid-yelloweye-RW-index-3CD-outside-cda-sim-500.rds")[[1]]
-i_ye_5A <- readRDS("data-generated/hybrid-yelloweye-RW-index-5A-sim-500.rds")[[1]]
+i_ye <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-index-all-S-sim-500.rds")[[1]]
+i_ye_cda <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-index-cda-sim-500.rds")[[1]]
+i_ye_noncda <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-index-3CD-outside-cda-sim-500.rds")[[1]]
+i_ye_5A <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-index-5A-sim-500.rds")[[1]]
 
-i_ye_hbll <- readRDS("data-generated/hybrid-yelloweye-RW-index-hbll-S-sim-500.rds")[[1]]
+i_ye_hbll <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-index-hbll-S-sim-500.rds")[[1]]
 
 .dat <- bind_rows(
   mutate(i_ye, Area = "Full combined"),
@@ -848,7 +875,7 @@ ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
   scale_fill_brewer(palette = "Set1") +
   scale_colour_brewer(palette = "Set1")
-ggsave("figs/hybrid-yelloweye-RW-index-by-area.png", width = 7, height = 4, dpi = 400)
+ggsave("figs/hybrid-yelloweye-RW-no-yr-index-by-area.png", width = 7, height = 4, dpi = 400)
 ```
 
 ## Estimated catch per 100 hooks through time
@@ -858,8 +885,8 @@ Average predicted catch within the entire court defined area is in red, remainde
 ### Pacific Halibut
 
 ```{r message = F, echo= F}
-i_hal_cda <- readRDS("data-generated/hybrid-halibut-RW-index-cda-sim-500.rds")[[1]]
-i_hal_noncda <- readRDS("data-generated/hybrid-halibut-RW-index-3CD-outside-cda-sim-500.rds")[[1]]
+i_hal_cda <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-cda-sim-500.rds")[[1]]
+i_hal_noncda <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-3CD-outside-cda-sim-500.rds")[[1]]
 
 .dat <- bind_rows(
   mutate(i_hal_noncda,
@@ -889,7 +916,7 @@ ggplot(.dat, aes(year, est)) +
     breaks = seq(2008, 2020, 2)) + 
   scale_fill_brewer(palette = "Set1") +
   scale_colour_brewer(palette = "Set1")
-ggsave("figs/hybrid-halibut-RW-average-index.png", width = 7, height = 4, dpi = 400)
+ggsave("figs/hybrid-halibut-RW-no-yr-average-index.png", width = 7, height = 4, dpi = 400)
 ```
 
 ### Yelloweye Rockfish
@@ -923,17 +950,17 @@ ggplot(.dat, aes(year, est)) +
     breaks = seq(2008, 2020, 2)) + 
   scale_fill_brewer(palette = "Set1") +
   scale_colour_brewer(palette = "Set1")
-ggsave("figs/hybrid-yelloweye-RW-average-index.png", width = 7, height = 4, dpi = 400)
+ggsave("figs/hybrid-yelloweye-RW-no-yr-average-index.png", width = 7, height = 4, dpi = 400)
 ```
 
 
 # Calculate predicted catch rates in the different areas
 
 ```{r}
-i_hal2 <- readRDS("data-generated/hybrid-halibut-RW-index-all-S-sim-500.rds")[[2]]
-i_hal_cda2 <- readRDS("data-generated/hybrid-halibut-RW-index-cda-sim-500.rds")[[2]]
-i_hal_noncda2 <- readRDS("data-generated/hybrid-halibut-RW-index-3CD-outside-cda-sim-500.rds")[[2]]
-i_hal_5A2 <- readRDS("data-generated/hybrid-halibut-RW-index-5A-sim-500.rds")[[2]]
+i_hal2 <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-all-S-sim-500.rds")[[2]]
+i_hal_cda2 <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-cda-sim-500.rds")[[2]]
+i_hal_noncda2 <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-3CD-outside-cda-sim-500.rds")[[2]]
+i_hal_5A2 <- readRDS("data-generated/hybrid-halibut-RW-no-yr-index-5A-sim-500.rds")[[2]]
 
 .dat2 <- bind_rows(
   mutate(i_hal2, Area = "Full combined", num_cells = nrow(full_s_grid)),
@@ -958,10 +985,10 @@ saveRDS(catch_per_cell, "data-generated/hal_catch_per_cell.rds")
 ```
 
 ```{r}
-i_ye2 <- readRDS("data-generated/hybrid-yelloweye-RW-index-all-S-sim-500.rds")[[2]]
-i_ye_cda2 <- readRDS("data-generated/hybrid-yelloweye-RW-index-cda-sim-500.rds")[[2]]
-i_ye_noncda2 <- readRDS("data-generated/hybrid-yelloweye-RW-index-3CD-outside-cda-sim-500.rds")[[2]]
-i_ye_5A2 <- readRDS("data-generated/hybrid-yelloweye-RW-index-5A-sim-500.rds")[[2]]
+i_ye2 <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-index-all-S-sim-500.rds")[[2]]
+i_ye_cda2 <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-index-cda-sim-500.rds")[[2]]
+i_ye_noncda2 <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-index-3CD-outside-cda-sim-500.rds")[[2]]
+i_ye_5A2 <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-index-5A-sim-500.rds")[[2]]
 
 .dat2 <- bind_rows(
   mutate(i_ye2, Area = "Full combined", num_cells = nrow(full_s_grid)),
@@ -997,7 +1024,7 @@ ggplot(i_hal_2020) + geom_histogram(aes(.value / num_cells), alpha = 0.75, fill 
     subtitle = "Yelloweye Rockfish (coloured bars) vs. Pacific Halibut (grey bars)"
   )
 
-ggsave("figs/hybrid-RW-estimated-biomass-densities.png", width = 5, height = 7, dpi = 400)
+ggsave("figs/hybrid-RW-no-yr-estimated-biomass-densities.png", width = 5, height = 7, dpi = 400)
 ```
 
 
@@ -1032,7 +1059,7 @@ ggplot(hal_ratios) +
   xlim(0, max(hal_ratios$CDAto3CD)) +
   xlab("Proportion of total catch inside CDA") + ylab("Number of simulations") +
   ggtitle("Pacific Halibut survey biomass in area 3CD (red) and full combined grid (grey)")
-ggsave("figs/hybrid-halibut-RW-relative-biomass.png", width = 7, height = 3, dpi = 400)
+ggsave("figs/hybrid-halibut-RW-no-yr-relative-biomass.png", width = 7, height = 3, dpi = 400)
 ```
 
 ```{r echo=F, message=F, warning=F}
@@ -1060,7 +1087,7 @@ ggplot(ye_ratios) +
   xlim(0, max(hal_ratios$CDAto3CD)) +
   xlab("Proportion of total biomass inside CDA") + ylab("Number of simulations") +
   ggtitle("Yelloweye Rockfish survey biomass in area 3CD (red) and full combined grid (grey)")
-ggsave("figs/hybrid-yelloweye-RW-relative-biomass.png", width = 7, height = 3, dpi = 400)
+ggsave("figs/hybrid-yelloweye-RW-no-yr-relative-biomass.png", width = 7, height = 3, dpi = 400)
 ```
 
 
@@ -1168,7 +1195,7 @@ ggplot(.dat, aes(year, ye_per_hal, fill = Area, colour = Area)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
   xlab("Year") +
   ylab("Estimated yelloweye to halibut biomass ratio") +
-  coord_cartesian(expand = T, ylim = c(0.03, max(.dat$upr) * 1.04)) +
+  coord_cartesian(expand = T, ylim = c(0, max(.dat$upr) * 1.04)) +
   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
   scale_x_continuous(
     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
@@ -1183,7 +1210,7 @@ ggplot(.dat, aes(year, hal_per_ye, fill = Area, colour = Area)) +
   geom_ribbon(aes(ymin = lwr_hal, ymax = upr_hal), alpha = 0.4, colour = NA) +
   xlab("Year") +
   ylab("Estimated halibut to yelloweye biomass ratio") +
-  coord_cartesian(expand = T, ylim = c(2, max(.dat$upr_hal) * 1.04)) +
+  coord_cartesian(expand = T, ylim = c(0, max(.dat$upr_hal) * 1.04)) +
   scale_x_continuous(
     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
     breaks = seq(2008, 2020, 2)) + 
@@ -1202,7 +1229,7 @@ Predictions depicted for HBLL survey grid area that falls within region 3CD. "Co
 2020 predictions with all survey catches post-2016
 
 ```{r message=F, echo=F}
-p_hal2020 <- readRDS("data-generated/hybrid-halibut-RW-predictions-all-S.rds")[[1]] %>% 
+p_hal2020 <- readRDS("data-generated/hybrid-halibut-RW-no-yr-predictions-all-S.rds")[[1]] %>% 
   filter(year == 2020)
 d_hal_plots <- readRDS("data-generated/halibut-hybrid-model-data.rds") %>%
   # plot observations for last 3 years to ensure sampling in all regions
@@ -1232,7 +1259,7 @@ ggsave("figs/hybrid-halibut-2020-predictions-RW.png", width = 5.5, height = 6, d
 ```
 
 ```{r map-predictions-all, message=F, echo=F, warning=F, cache=TRUE}
-p_hal <- readRDS("data-generated/hybrid-halibut-RW-predictions-all-S.rds")
+p_hal <- readRDS("data-generated/hybrid-halibut-RW-no-yr-predictions-all-S.rds")
 years <- unique(p_hal$data$year)
 p_hal_d <- p_hal$data #%>%
 #   filter(year %in% years) %>%
@@ -1283,7 +1310,7 @@ ggsave("figs/hybrid-halibut-predictions-RW.png", width = 9, height = 10, dpi = 2
 2020 predictions with all survey catches post-2016
 
 ```{r message=F, echo=F}
-p_ye <- readRDS("data-generated/hybrid-yelloweye-RW-predictions-all-S.rds")[[1]] %>% 
+p_ye <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-predictions-all-S.rds")[[1]] %>% 
   filter(year == 2020)
 d_ye_plots <- readRDS("data-generated/yelloweye-hybrid-model-data.rds") %>%
   filter(latitude < 52.15507)  %>% filter(year %in% c(#2017,2018,
@@ -1307,7 +1334,7 @@ ggsave("figs/hybrid-yelloweye-2020-predictions-RW.png", width = 5.5, height = 6,
 ```
 
 ```{r ye-map-all, cache=TRUE, echo=F, message=F, warning=F}
-p_ye <- readRDS("data-generated/hybrid-yelloweye-RW-predictions-all-S.rds")
+p_ye <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-predictions-all-S.rds")
 years <- unique(p_ye$data$year)
 p_ye_d <- p_ye$data #%>%
 #   filter(year %in% years) %>%
@@ -1354,8 +1381,8 @@ ggsave("figs/hybrid-ye-predictions-RW.png", width = 9, height = 10, dpi = 200)
 
 ```{r message=F}
 # calculate ratio of yelloweye to halibut
-p_ye <- readRDS("data-generated/hybrid-yelloweye-RW-predictions-all-S.rds")
-p_hal <- readRDS("data-generated/hybrid-halibut-RW-predictions-all-S.rds")
+p_ye <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-predictions-all-S.rds")
+p_hal <- readRDS("data-generated/hybrid-halibut-RW-no-yr-predictions-all-S.rds")
 pyd <- p_ye$data %>% rename(ye_est = est)
 phd <- p_hal$data %>%
   rename(hal_est = est) %>%
@@ -1428,14 +1455,14 @@ ggsave("figs/hybrid-halibut-to-ye-2020-w-hal-catch-RW.png", width = 5.5, height 
 Solid lines are cumulative halibut catch potential for each addition cell fished in decreasing order of predicted halibut abundance.
 Dashed lines are the cumulative yelloweye catch that might be anticipated for those same cells.
 ```{r message=F, echo=F, warning=F}
-p_hal_cda <- readRDS("data-generated/hybrid-halibut-RW-predictions-cda.rds")
-p_ye_cda <- readRDS("data-generated/hybrid-yelloweye-RW-predictions-cda.rds")
+p_hal_cda <- readRDS("data-generated/hybrid-halibut-RW-no-yr-predictions-cda.rds")
+p_ye_cda <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-predictions-cda.rds")
 
-p_hal_noncda <- readRDS("data-generated/hybrid-halibut-RW-predictions-3CD-outside-cda.rds")
-p_ye_noncda <- readRDS("data-generated/hybrid-yelloweye-RW-predictions-3CD-outside-cda.rds")
+p_hal_noncda <- readRDS("data-generated/hybrid-halibut-RW-no-yr-predictions-3CD-outside-cda.rds")
+p_ye_noncda <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-predictions-3CD-outside-cda.rds")
 
-p_hal_5A <- readRDS("data-generated/hybrid-halibut-RW-predictions-5A.rds")
-p_ye_5A <- readRDS("data-generated/hybrid-yelloweye-RW-predictions-5A.rds")
+p_hal_5A <- readRDS("data-generated/hybrid-halibut-RW-no-yr-predictions-5A.rds")
+p_ye_5A <- readRDS("data-generated/hybrid-yelloweye-RW-no-yr-predictions-5A.rds")
 
 py_cda <- p_ye_cda$data %>% rename(ye_est = est)
 py_noncda <- p_ye_noncda$data %>% rename(ye_est = est)
