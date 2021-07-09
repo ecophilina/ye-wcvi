@@ -6,23 +6,29 @@ library(tidyr)
 # devtools::install_github("seananderson/ggsidekick")
 library(ggsidekick) # for fourth_root_power_trans and theme_sleek
 theme_set(ggsidekick::theme_sleek())
-# i_hal2 <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-all-S-sim-500.rds")[[3]]
-g_cda <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-cda-sim-500.rds")[[3]] %>% select(X, Y, year)
-g_noncda <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-3CD-outside-cda-sim-500.rds")[[3]] %>% select(X, Y, year)
-g_5A <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-5A-sim-500.rds")[[3]] %>% select(X, Y, year)
+
+
+# model_type <- "-trawlinhbllyrs-paired"
+model_type <- "-paired"
+model_type <- "-RW"
+
+# i_hal2 <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "index-all-S-sim-500.rds"))[[3]]
+g_cda <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "-index-cda-sim-500.rds"))[[3]] %>% select(X, Y, year)
+g_noncda <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "-index-3CD-outside-cda-sim-500.rds"))[[3]] %>% select(X, Y, year)
+g_5A <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "-index-5A-sim-500.rds"))[[3]] %>% select(X, Y, year)
 
 cda_2020 <- filter(g_cda, year ==2020)
 
-# i_hal4 <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-all-S-sim-500.rds")[[4]]
-s_hal_cda4 <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-cda-sim-500.rds")[[4]]
-s_hal_noncda4 <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-3CD-outside-cda-sim-500.rds")[[4]]
-s_hal_5A4 <- readRDS("data-generated/hybrid-halibut-trawlinhbllyrs-paired-index-5A-sim-500.rds")[[4]]
+# i_hal4 <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "index-all-S-sim-500.rds"))[[4]]
+s_hal_cda4 <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "-index-cda-sim-500.rds"))[[4]]
+s_hal_noncda4 <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "-index-3CD-outside-cda-sim-500.rds"))[[4]]
+s_hal_5A4 <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "-index-5A-sim-500.rds"))[[4]]
 
 
-# i_ye4 <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-all-S-sim-500.rds")[[4]]
-s_ye_cda4 <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-cda-sim-500.rds")[[4]]
-s_ye_noncda4 <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-3CD-outside-cda-sim-500.rds")[[4]]
-s_ye_5A4 <- readRDS("data-generated/hybrid-yelloweye-trawlinhbllyrs-paired-index-5A-sim-500.rds")[[4]]
+# i_ye4 <- readRDS(paste0("data-generated/hybrid-yelloweye", model_type, "index-all-S-sim-500.rds"))[[4]]
+s_ye_cda4 <- readRDS(paste0("data-generated/hybrid-yelloweye", model_type, "-index-cda-sim-500.rds"))[[4]]
+s_ye_noncda4 <- readRDS(paste0("data-generated/hybrid-yelloweye", model_type, "-index-3CD-outside-cda-sim-500.rds"))[[4]]
+s_ye_5A4 <- readRDS(paste0("data-generated/hybrid-yelloweye", model_type, "-index-5A-sim-500.rds"))[[4]]
 
 s_hal_cda4 <- bind_cols(g_cda, as.data.frame(s_hal_cda4))
 s_hal_noncda4 <- bind_cols(g_noncda, as.data.frame(s_hal_noncda4))
@@ -163,8 +169,8 @@ range(maximize_hal_sum_cda$mean_ye_per_hal)
 avoiding_ye_sum$Area <- ordered(avoiding_ye_sum$Area, levels = c("5A", "non-CDA 3CD", "CDA", "Full combined"))
 maximize_hal_sum$Area <- ordered(maximize_hal_sum$Area, levels = c("5A", "non-CDA 3CD", "CDA", "Full combined"))
 
-saveRDS(maximize_hal_sum, "data-generated/maximize_hal_sum.rds")
-saveRDS(avoiding_ye_sum, "data-generated/avoiding_ye_sum.rds")
+saveRDS(maximize_hal_sum, paste0("data-generated/maximize_hal_sum", model_type, ".rds"))
+saveRDS(avoiding_ye_sum, paste0("data-generated/avoiding_ye_sum", model_type, ".rds"))
 
 #### make plots ####
 
@@ -207,7 +213,7 @@ ggplot(avoiding_ye_sum %>%
   theme(legend.position = c(0.85, 0.2))
 
 # ggsave("figs/expected_YE_when_avoiding_YE_CI.png", width = 4.5, height = 6)
-ggsave("figs/expected_YE_when_avoiding_YE_CI.png", width = 6, height = 3.5)
+ggsave(paste0("figs/expected_YE_when_avoiding_YE_CI", model_type, ".png"), width = 6, height = 3.5)
 
 # flipped ratio
 ggplot(avoiding_ye_sum %>%
@@ -256,7 +262,7 @@ ggplot(avoiding_ye_sum %>%
 
 # ggsave("figs/expected_hal_when_avoiding_YE_CI.png", width = 4.5, height = 6)
 # ggsave("figs/expected_hal_when_avoiding_YE_CI.png", width = 6, height = 3.5)
-ggsave("figs/expected_hal_when_avoiding_YE_CI2.png", width = 6, height = 3.5)
+ggsave(paste0("figs/expected_hal_when_avoiding_YE_CI2", model_type, ".png"), width = 6, height = 3.5)
 
 ggplot(maximize_hal_sum %>%
     filter(ordered %in% c(
@@ -296,7 +302,7 @@ ggplot(maximize_hal_sum %>%
   theme(legend.position = c(0.85, 0.2))
 
 # ggsave("figs/expected_YE_when_maximize_hal_CI.png", width = 4.5, height = 6)
-ggsave("figs/expected_YE_when_maximize_hal_CI.png", width = 6, height = 3.5)
+ggsave(paste0("figs/expected_YE_when_maximize_hal_CI", model_type, ".png"), width = 6, height = 3.5)
 
 
 
@@ -342,7 +348,7 @@ ggplot(maximize_hal_sum %>%
   theme(legend.position = c(0.85, 0.2))
 
 # ggsave("figs/expected_hal_when_maximize_hal_CI.png", width = 4.5, height = 6)
-ggsave("figs/expected_hal_when_maximize_hal_CI.png", width = 6, height = 3.5)
+ggsave(paste0("figs/expected_hal_when_maximize_hal_CI", model_type, ".png"), width = 6, height = 3.5)
 
 
 
