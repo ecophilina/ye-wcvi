@@ -67,17 +67,17 @@ events <- events %>% mutate (X2 = X*100000, Y2 = Y*100000)
 
 # calculate proportion of each substrate within 1 km radius of each fishing event
 events_w_rocky <- raster::extract(rocky, xx,
-  buffer=500, fun = mean, na.rm=TRUE,
+  buffer=1000, fun = mean, na.rm=TRUE,
   df=TRUE, sp = TRUE
 )
 
 events_w_mixed <- raster::extract(mixed, xx,
-  buffer=500, fun = mean, na.rm=TRUE,
+  buffer=1000, fun = mean, na.rm=TRUE,
   df=TRUE, sp = TRUE
 )
 
 events_w_muddy <- raster::extract(muddy, xx,
-  buffer=500, fun = mean, na.rm=TRUE,
+  buffer=1000, fun = mean, na.rm=TRUE,
   df=TRUE, sp = TRUE
 )
 
@@ -86,7 +86,8 @@ events_w_sub$mixed <- events_w_mixed@data$mixed
 events_w_sub$any_rock <-  events_w_sub$rocky + events_w_sub$mixed
 events_w_sub$muddy <- events_w_muddy@data$muddy
 
-saveRDS(events_w_sub, file = "data-generated/events_w_substrate_500m_buffer.rds")
+# saveRDS(events_w_sub, file = "data-generated/events_w_substrate_500m_buffer.rds")
+saveRDS(events_w_sub, file = "data-generated/events_w_substrate_1km_buffer.rds")
 
 ggplot(events_w_sub,  aes(X, Y, col = rocky)) + geom_point()
 ggplot(events_w_sub,  aes(X, Y, col = mixed)) + geom_point()
