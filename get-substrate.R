@@ -6,30 +6,34 @@ library(raster)
 library(sf)
 
 # library(sf)
-# retrieve substate layers
-rocky <- raster("data/substrate/rocky.tif")
-
-mixed <- raster("data/substrate/mixed.tif")
-
-# original projection
-proj <- "+proj=aea +lat_1=50 +lat_2=58.5 +lat_0=45 +lon_0=-126 +x_0=1000000 +y_0=0"
-projdefs <- "+datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
-geoCRS <- paste( proj, projdefs, sep=" " )
-
-# new projection
-proj <- "+proj=utm +zone=9 +datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0  +units=m +no_defs"
-
-new_rocky <- raster::projectExtent(rocky, crs = proj)
-raster::res(new_rocky) <- 100
-new_mixed <- raster::projectExtent(mixed, crs = proj)
-raster::res(new_mixed) <- 100
-
-# # Project values to new raster
-hres_rocky <- raster::projectRaster(rocky, new_rocky) #, method = "ngb")
-writeRaster(hres_rocky, file = "data/highres-rocky-raster.grd")
-hres_mixed <- raster::projectRaster(mixed, new_mixed) #, method = "ngb")
-writeRaster(hres_mixed, file = "data/highres-mixed-raster.grd")
-
+# # retrieve substate layers if not done so before
+# rocky <- raster("data/substrate/rocky.tif")
+# mixed <- raster("data/substrate/mixed.tif")
+# muddy <- raster("data/substrate/muddy.tif")
+#
+# # original projection
+# proj <- "+proj=aea +lat_1=50 +lat_2=58.5 +lat_0=45 +lon_0=-126 +x_0=1000000 +y_0=0"
+# projdefs <- "+datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
+# geoCRS <- paste( proj, projdefs, sep=" " )
+#
+# # new projection
+# proj <- "+proj=utm +zone=9 +datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0  +units=m +no_defs"
+#
+# new_rocky <- raster::projectExtent(rocky, crs = proj)
+# raster::res(new_rocky) <- 100
+# new_mixed <- raster::projectExtent(mixed, crs = proj)
+# raster::res(new_mixed) <- 100
+# new_muddy <- raster::projectExtent(muddy, crs = proj)
+# raster::res(new_muddy) <- 100
+#
+# # # Project values to new raster
+# hres_rocky <- raster::projectRaster(rocky, new_rocky) #, method = "ngb")
+# writeRaster(hres_rocky, file = "data/highres-rocky-raster.grd")
+# hres_mixed <- raster::projectRaster(mixed, new_mixed) #, method = "ngb")
+# writeRaster(hres_mixed, file = "data/highres-mixed-raster.grd")
+# hres_muddy <- raster::projectRaster(muddy, new_muddy) #, method = "ngb")
+# writeRaster(hres_muddy, file = "data/highres-muddy-raster.grd")
+#
 
 
 # Add substrate columns to event data
@@ -39,7 +43,7 @@ events <- readRDS("data-generated/halibut-hybrid-model-data-paired.rds")
 # load previously saved raster
 rocky <- raster("data/highres-rocky-raster.grd")
 mixed <- raster("data/highres-mixed-raster.grd")
-
+muddy <- raster("data/highres-muddy-raster.grd")
 ## can be plotted but very very slow!
 # coords1 <- as.data.frame(raster::rasterToPoints(rocky))[, c("x", "y")]
 # coords1$rocky <- as.data.frame(raster::rasterToPoints(rocky))[, 3]
@@ -63,24 +67,31 @@ events <- events %>% mutate (X2 = X*100000, Y2 = Y*100000)
 
 # calculate proportion of each substrate within 1 km radius of each fishing event
 events_w_rocky <- raster::extract(rocky, xx,
-  buffer=1000, fun = mean, na.rm=TRUE,
+  buffer=500, fun = mean, na.rm=TRUE,
   df=TRUE, sp = TRUE
 )
 
 events_w_mixed <- raster::extract(mixed, xx,
-  buffer=1000, fun = mean, na.rm=TRUE,
+  buffer=500, fun = mean, na.rm=TRUE,
+  df=TRUE, sp = TRUE
+)
+
+events_w_muddy <- raster::extract(muddy, xx,
+  buffer=500, fun = mean, na.rm=TRUE,
   df=TRUE, sp = TRUE
 )
 
 events_w_sub <- events_w_rocky@data
 events_w_sub$mixed <- events_w_mixed@data$mixed
 events_w_sub$any_rock <-  events_w_sub$rocky + events_w_sub$mixed
+events_w_sub$muddy <- events_w_muddy@data$muddy
 
-saveRDS(events_w_sub, file = "data-generated/events_w_substrate.rds")
+saveRDS(events_w_sub, file = "data-generated/events_w_substrate_500m_buffer.rds")
 
 ggplot(events_w_sub,  aes(X, Y, col = rocky)) + geom_point()
 ggplot(events_w_sub,  aes(X, Y, col = mixed)) + geom_point()
 ggplot(events_w_sub,  aes(X, Y, col = any_rock)) + geom_point()
+ggplot(events_w_sub,  aes(X, Y, col = muddy)) + geom_point()
 
 
 ###################
@@ -155,8 +166,14 @@ predict_grid_mixed <- raster::extract(x = mixed, y = predict_grid.df)
 extracted_mixed <- cbind(predict_grid.df, predict_grid_mixed)
 nd_mixed <- extracted_mixed %>% mutate(X = x/1000, Y = y/1000) %>% mutate(X = round(X)/100, Y = round(Y)/100)%>% dplyr::select(-x, -y)
 
-nd_new <- left_join(nd_all, nd_rocky) %>% left_join(nd_mixed) %>% distinct() %>%
-  rename(rocky = predict_grid_rocky, mixed = predict_grid_mixed) %>%
+muddy <-raster("data/highres-muddy-raster.grd")
+predict_grid_muddy <- raster::extract(x = muddy, y = predict_grid.df)
+extracted_muddy <- cbind(predict_grid.df, predict_grid_muddy)
+nd_muddy <- extracted_muddy %>% mutate(X = x/1000, Y = y/1000) %>% mutate(X = round(X)/100, Y = round(Y)/100)%>% dplyr::select(-x, -y)
+
+
+nd_new <- left_join(nd_all, nd_rocky) %>% left_join(nd_mixed) %>% left_join(nd_muddy) %>% #distinct() %>%
+  rename(rocky = predict_grid_rocky, mixed = predict_grid_mixed, muddy = predict_grid_muddy) %>%
   mutate(any_rock = rocky + mixed)
 
 
