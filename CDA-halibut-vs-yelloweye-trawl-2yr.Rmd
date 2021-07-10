@@ -251,7 +251,7 @@ if(!file.exists("data-generated/full_hybrid_grid_w_rocky.rds")) {
   stop("Need to run get-substrate.R script.")
 } else {
 grid <- readRDS(file = "data-generated/full_hybrid_grid_w_rocky.rds")
-substrate <- readRDS(file = "data-generated/events_w_substrate.rds") %>% select(X, Y, fishing_event_id, any_rock, rocky, mixed)
+substrate <- readRDS(file = "data-generated/events_w_substrate.rds") %>% select(X, Y, fishing_event_id, any_rock, rocky, mixed, muddy)
 }
 
 
@@ -333,11 +333,11 @@ plot(mesh400kn)
 d_hal <- readRDS("data-generated/halibut-hybrid-model-data-paired.rds") %>%
   filter(latitude < 52.15507) %>%
   filter(year %in% years)%>% left_join(substrate) 
-f <- paste0("models/halibut-hybrid-model-paired-400kn.rds")
+f <- paste0("models/halibut-hybrid-model-allsub-tv-depth-400kn.rds")
 if (!file.exists(f)) {
   m_halibut <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) + s(any_rock, k = 3) +
-      depth_scaled + I(depth_scaled^2),
+    formula = density ~ 0 + as.factor(year) + as.factor(survey) + s(rocky, k = 3) + s(mixed, k = 3) + s(muddy, k = 3), 
+    time_varying = ~ 0 + depth_scaled + I(depth_scaled^2),
     data = d_hal,
     spde = mesh400kn,
     ar1_fields = F,
