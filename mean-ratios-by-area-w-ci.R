@@ -9,8 +9,17 @@ theme_set(ggsidekick::theme_sleek())
 
 
 # model_type <- "-trawlinhbllyrs-paired"
-model_type <- "-paired"
-model_type <- "-RW"
+model_type <- "-paired" # no substrate, independent spatiotemporal fields and year effect
+model_type <- "-RW" # no substrate, no year effect and fixed spatial field, random walk instead
+
+# add substrate
+model_type <- "-RW-w-mudd-rock"
+model_type <- "-rocky-muddy"
+
+
+# add substrate + and est for hbll
+model_type <- "-RW-hbll-ests-w-mud-rock"
+model_type <- "-hbll-est-rock-mud"
 
 # i_hal2 <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "index-all-S-sim-500.rds"))[[3]]
 g_cda <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "-index-cda-sim-500.rds"))[[3]] %>% select(X, Y, year)
@@ -349,7 +358,4 @@ ggplot(maximize_hal_sum %>%
 
 # ggsave("figs/expected_hal_when_maximize_hal_CI.png", width = 4.5, height = 6)
 ggsave(paste0("figs/expected_hal_when_maximize_hal_CI", model_type, ".png"), width = 6, height = 3.5)
-
-
-
 
