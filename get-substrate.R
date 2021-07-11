@@ -173,7 +173,8 @@ extracted_muddy <- cbind(predict_grid.df, predict_grid_muddy)
 nd_muddy <- extracted_muddy %>% mutate(X = x/1000, Y = y/1000) %>% mutate(X = round(X)/100, Y = round(Y)/100)%>% dplyr::select(-x, -y)
 
 
-nd_new <- left_join(nd_all, nd_rocky) %>% left_join(nd_mixed) %>% left_join(nd_muddy) %>% #distinct() %>%
+nd_new <- left_join(nd_all, nd_rocky) %>% left_join(nd_mixed) %>% left_join(nd_muddy) %>%
+  distinct() %>%
   rename(rocky = predict_grid_rocky, mixed = predict_grid_mixed, muddy = predict_grid_muddy) %>%
   mutate(any_rock = rocky + mixed)
 
@@ -181,7 +182,7 @@ nd_new <- left_join(nd_all, nd_rocky) %>% left_join(nd_mixed) %>% left_join(nd_m
 ggplot(nd_new,  aes(X, Y, fill = any_rock)) + geom_tile(alpha = 0.75, width = 0.02, height = 0.02) +
   scale_fill_viridis_c(trans= "sqrt", na.value = "red") + ggsidekick::theme_sleek()
 
-ggplot(nd_new,  aes(X, Y, fill = rocky)) + geom_tile(alpha = 0.75, width = 0.02, height = 0.02) +
+ggplot(nd_new,  aes(X, Y, fill = muddy)) + geom_tile(alpha = 0.75, width = 0.02, height = 0.02) +
   scale_fill_viridis_c(trans= "sqrt", na.value = "red") + ggsidekick::theme_sleek()
 
-saveRDS(nd_new, file = "data-generated/full_hybrid_grid_w_rocky.rds")
+saveRDS(nd_new, file = "data-generated/full_hybrid_grid_w_substrate.rds")
