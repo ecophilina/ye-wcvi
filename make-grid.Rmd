@@ -70,8 +70,8 @@ sp_dat2 <- hbll_s_grid$grid %>% filter(latitude > 50.5)
 
 ## Create the clipping polygons
 CP <- as(raster::extent(
-  min(hbll_s_grid$grid$x), max(hbll_s_grid$grid$x),
-  min(hbll_s_grid$grid$y), max(hbll_s_grid$grid$y)
+  min(hbll_s_grid$grid$x)-1000, max(hbll_s_grid$grid$x)+1000,
+  min(hbll_s_grid$grid$y)-1000, max(hbll_s_grid$grid$y)+1000
   ), "SpatialLines")
 
 
@@ -189,7 +189,7 @@ ggplot() +
 
 ```{r}
 grid1 <- sf::st_make_grid(x = sa_poly,
-  # offset = st_bbox(sa_poly)[c("xmin", "ymax")] + c(-1000, 1000),
+  offset = c(-1000, 1000),
   cellsize=c(2000, 2000))
 
 keep <- st_intersects(sa_poly, grid1)
@@ -199,59 +199,87 @@ new_grid <- st_as_sf(grid1)
 
 ggplot() +
   # geom_sf(data=sa_poly) +
-  geom_sf(data=grid1) +
-  # geom_sf(data=new_grid) +
+  # geom_sf(data=grid1) +
+  geom_sf(data=new_grid) +
   theme_classic()
-
 ```
 
 
 ```{r}
-new_grid <- st_as_sf(grid1)
+# get RCA
+# setwd(here::here("grids/RCA2019/"))
+rcas <- st_read(here::here("grids/RCA2019/RCA_2019.shp"))
+# plot(rcas)
+# glimpse(rcas)
+# st_geometry(rcas) <- NULL
+st_crs()
 
+rcas_utm <- st_transform(rcas, crs = 3156)
+# rcas_ll <- st_transform(rcas, crs = 4326)
+
+cells_in_rcas <- st_intersection(new_grid, rcas_utm)
+rcas_in_grid <- st_intersection(rcas_utm, new_grid)
+
+# plot(rcas_in_grid)
+
+
+# this approach of getting centroids fails... none of cell centroids seem to match
+# cells_in_rcas$geometry <- st_centroid(cells_in_rcas) %>% st_geometry()
+# coords_rcas <- as.data.frame(st_coordinates(cells_in_rcas$geometry))
+
+#not sure why, but st_union required otherwise df becomes huge!
+new_grid_norca <- st_difference(new_grid, st_union(cells_in_rcas))
+
+# new_grid_norca <- st_difference(new_grid, st_union(rcas_in_grid))
+
+# st_is_valid(new_grid)
+# st_is_valid(cells_in_rcas)
+# class(new_grid)
+# class(cells_in_rcas)
+# st_erase = function(x, y) st_difference(x, st_union(st_combine(y)))
+
+# new_grid_norca <- st_erase(new_grid, cells_in_rcas)
+# rca_keep <- st_intersects(new_grid, rcas_utm)
+# cells_in_rcas <- rcas_utm[unlist(rca_keep)]
+# cells_in_rcas <- st_as_sf(cells_in_rcas)
+
+ggplot() +
+  geom_sf(data=new_grid_norca) +
+  theme_classic()
+```
+
+```{r}
 # already in UTMs
-new_grid_utm <- new_grid
+new_grid_utm <- new_grid_norca
+
+new_grid_utm$area <- as.numeric(st_area(new_grid_utm))
 new_grid_utm$geometry <- st_centroid(new_grid_utm) %>% st_geometry()
+hbll_s_grid_utm <- as.data.frame(st_coordinates(new_grid_utm$geometry))
+hbll_s_grid_utm$area <- new_grid_utm$area 
+hbll_grid_utm <- dplyr::select(hbll_s_grid_utm, area, X, Y) %>%
+  rename(x = X, y = Y) %>% mutate(X = round(x/1000)/100, Y = round(y/1000)/100)
 
-new_grid_ll <- st_transform(new_grid, crs = 4326)
+
+new_grid_ll <- st_transform(new_grid_norca, crs = 4326)
 new_grid_ll$geometry <- st_centroid(new_grid_ll) %>% st_geometry()
-
-# new_grid3$geometry[1]
-
-# # plot(st_geometry(new_grid))
-# plot(st_geometry(new_grid_ll))
-# plot(st_geometry(new_grid_utm))
-# plot(st_geometry(new_grid_utm), cex = 0.2, add = T)
-
-# to add sf geometry back onto dataframe
-sfc_as_cols <- function(x, names = c("x","y")) {
-  stopifnot(inherits(x,"sf") #&& inherits(sf::st_geometry(x),"sfc_POINT")
-  )
-  ret <- sf::st_coordinates(x)
-  ret <- tibble::as_tibble(ret)
-  # stopifnot(length(names) == ncol(ret))
-  x <- x[ , !names(x) %in% names]
-  ret <- setNames(ret,names)
-  dplyr::bind_cols(x,ret)
-}
-
-hbll_s_grid_ll <- as.data.frame(st_coordinates(new_grid_ll))
-
-hbll_s_grid_utm <- as.data.frame(st_coordinates(new_grid_utm))
-
-hbll_grid <- dplyr::select(hbll_s_grid_ll, X, Y) %>%
+hbll_s_grid_ll <- as.data.frame(st_coordinates(new_grid_ll$geometry))
+hbll_grid_ll <- dplyr::select(hbll_s_grid_ll, X, Y) %>%
   rename(longitude = X, latitude = Y)
 
-hbll_grid_utm <- dplyr::select(hbll_s_grid_utm, X, Y) %>%
-  rename(x = X, y = Y) %>% mutate(X = x/ 100000, Y = y/ 100000)
 
-hbll_grid <- bind_cols(hbll_grid, hbll_grid_utm)
+# cells_to_remove <- dplyr::select(coords_rcas, X, Y) %>%
+#   rename(x = X, y = Y) %>% mutate(X = round(x/1000)/100, Y = round(y/1000)/100)
 
-hbll_s_grid <- list(grid = hbll_grid, cell_area = 2.0)
-saveRDS(hbll_s_grid, here::here("grids/hbll_s_grid_filled.rds"))
+hbll_grid <- bind_cols(hbll_grid_ll, hbll_grid_utm)# %>% filter(area > 2e+06)
 
-hbll_grid %>% mutate(X = round(X * 100), Y = round(Y * 100)) %>%
-  mutate(X = (X / 100), Y = (Y / 100)) %>% View()
+ggplot(hbll_grid) +
+  geom_point(aes(X,Y)) +
+  theme_classic()
+
+saveRDS(hbll_grid, here::here("grids/hbll_s_grid_norca.rds"))
+
+# hbll_grid %>% mutate(X = round(X * 100), Y = round(Y * 100)) %>%
+#   mutate(X = (X / 100), Y = (Y / 100)) %>% View()
 ```
 
 
@@ -262,7 +290,6 @@ check <- old_grid$grid %>% mutate(X = round(X * 100), Y = round(Y * 100)) %>%
   mutate(X = (X / 100), Y = (Y / 100)) 
 View (check)
 ```
-
 
 Lindsay's code
 ```{r CreatingBoundingBox_coastline, include = FALSE }
