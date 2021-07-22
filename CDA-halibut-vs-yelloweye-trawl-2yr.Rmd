@@ -206,15 +206,49 @@ s_grid_utm$survey <- "HBLL"
 min(s_grid_utm$X)
 max(s_grid_utm$X)
 
-# grid <- readRDS("grids/overall-grid.rds") %>% mutate(X = X/100, Y = Y/100)
-load("grids/synoptic_grid.rda")
-grid <- synoptic_grid %>%
-  mutate(X = round(X), Y = round(Y),
+
+# ## code to modify to fill in gaps by intersecting with 5A3CD shape file?
+# hbll_s_grid <- readRDS(here::here("grids/hbll_s_grid.rds"))
+# 
+# hbll_sf <- st_as_sf(hbll_s_grid$grid, coords = c("longitude", "latitude"), crs = 4326)
+# hbll_sf <- st_transform(hbll_sf, crs = 3156)
+# hbll_sf$source_data <- "HBLL"
+# hbll_sf_grid <- sf::st_make_grid(x = hbll_sf,
+#   offset = st_bbox(hbll_sf)[c("xmin", "ymin")]+ c(-1000, -1000),
+#   cellsize=c(2000, 2000))
+# 
+# # plot(st_geometry(hbll_sf_grid))
+# # plot(st_geometry(hbll_sf), col= "red", add = T)
+# 
+# keep <- st_intersects(hbll_sf, hbll_sf_grid)
+# hbll_sf_grid <- hbll_sf_grid[unlist(keep)]
+# hbll_sf2 <- st_as_sf(hbll_sf_grid)
+# hbll_sf2$source_data <- "HBLL"
+# 
+
+
+
+
+# # grid <- readRDS("grids/overall-grid.rds") %>% mutate(X = X/100, Y = Y/100)
+# load("grids/synoptic_grid.rda")
+# 
+# grid <- synoptic_grid %>%
+#   mutate(X = round(X), Y = round(Y),
+#     X = X / 100, Y = Y / 100,
+#     depth_m = depth
+#   ) %>%
+#   select(X, Y, depth_m#, survey2 = survey
+#     ) %>%
+#   filter(
+#     X > min(s_grid_utm$X) & X < max(s_grid_utm$X) &
+#       Y > min(s_grid_utm$Y) & Y < max(s_grid_utm$Y)
+#   )
+
+grid <- readRDS(here::here("grids/nd_all_synoptic_new.rds")) %>% 
+  mutate(#X = round(X), Y = round(Y),
     X = X / 100, Y = Y / 100,
     depth_m = depth
-  ) %>%
-  select(X, Y, depth_m#, survey2 = survey
-    ) %>%
+  ) %>% select(X, Y, depth_m) %>%
   filter(
     X > min(s_grid_utm$X) & X < max(s_grid_utm$X) &
       Y > min(s_grid_utm$Y) & Y < max(s_grid_utm$Y)
@@ -276,6 +310,7 @@ grid_utm$survey <- "HBLL"
 ```
 
 ```{r}
+# make map of grid areas and their overlap
 f <- "figs/map-stitched-grid-overlap.png"
 
 if (!file.exists(f)) {
@@ -318,6 +353,9 @@ hbll_sf_grid <- sf::st_make_grid(x = hbll_sf,
   offset = st_bbox(hbll_sf)[c("xmin", "ymin")]+ c(-1000, -1000),
   cellsize=c(2000, 2000))
 
+# plot(st_geometry(hbll_sf_grid))
+# plot(st_geometry(hbll_sf), col= "red", add = T)
+
 keep <- st_intersects(hbll_sf, hbll_sf_grid)
 hbll_sf_grid <- hbll_sf_grid[unlist(keep)]
 hbll_sf2 <- st_as_sf(hbll_sf_grid)
@@ -329,7 +367,15 @@ trawl <- synoptic_grid %>%
   mutate(X = round(X), Y = round(Y),
     X = X*1000, Y = Y*1000,
     source_data = "TRAWL"
-  ) 
+  )
+
+# to veiw the filled in trawl grid, but not illustrate actual survey cells
+# trawl <- readRDS(here::here("grids/nd_all_synoptic_new.rds")) %>% 
+#   mutate(#X = round(X), Y = round(Y),
+#     X = X*1000, Y = Y*1000,
+#     source_data = "TRAWL"
+#   ) 
+
 trawl_sf <- st_as_sf(trawl, coords = c("X", "Y"), crs = 3156)
 trawl_sf_grid <- sf::st_make_grid(x = trawl_sf,
   offset = st_bbox(trawl_sf)[c("xmin", "ymin")]+ c(-1000, -1000),
@@ -1010,7 +1056,8 @@ ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
   # geom_line(data = .dat1, linetype = 2) +
   xlab("Year") +
   ylab("Biomass index") +
-  coord_cartesian(expand = FALSE, ylim = c(0, max(i_ye$upr) * 1.04)) +
+  coord_cartesian(#expand = FALSE, 
+    ylim = c(0, max(i_ye$upr) * 1.04)) +
   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
   scale_x_continuous(
     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
@@ -1113,7 +1160,7 @@ i_hal_5A2 <- readRDS("data-generated/hybrid-halibut-hbll-est-rock-mud-index-5A-s
 )
 .dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 3CD", "5A", "Full combined"))
 
-i_hal_2020 <- filter(.dat2, year == 2020) %>% filter(.iteration <= 200)
+i_hal_2020 <- filter(.dat2, year == 2020) #%>% filter(.iteration <= 200)
 
 catch_per_cell <- i_hal_2020 %>%
   group_by(Area) %>%
@@ -1141,7 +1188,7 @@ i_ye_5A2 <- readRDS("data-generated/hybrid-yelloweye-hbll-est-rock-mud-index-5A-
 )
 .dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 3CD", "5A", "Full combined"))
 
-i_ye_2020 <- filter(.dat2, year == 2020) %>% filter(.iteration <= 200)
+i_ye_2020 <- filter(.dat2, year == 2020)# %>% filter(.iteration <= 200)
 
 ye_catch_per_cell <- i_ye_2020 %>%
   group_by(Area) %>%
@@ -1157,17 +1204,25 @@ saveRDS(ye_catch_per_cell, "data-generated/ye_catch_per_cell.rds")
 
 
 ```{r message=F, echo=F}
-ggplot(i_hal_2020) + geom_histogram(aes(.value / num_cells), alpha = 0.75, fill = "black") +
-  geom_histogram(data = i_ye_2020, aes(.value / num_cells, fill = Area), alpha = 0.75) +
-  geom_vline(data = catch_per_cell, aes(xintercept = catch_med), linetype = 2, alpha = 0.5, colour = "black") +
-  geom_vline(data = ye_catch_per_cell, aes(xintercept = catch_med, colour = Area), linetype = 2) +
+ggplot(i_hal_2020 %>% filter(Area %in% c("CDA", "non-CDA 3CD"))) + geom_histogram(aes(.value / num_cells, 
+  fill = Area
+  ), alpha = 0.5
+  #, fill = "black"
+  ) +
+  geom_histogram(data = i_ye_2020 %>% filter(Area %in% c("CDA", "non-CDA 3CD")), aes(.value / num_cells, fill = Area), alpha = 0.75) +
+  geom_vline(data = catch_per_cell%>% filter(Area %in% c("CDA", "non-CDA 3CD")), aes(xintercept = catch_med,
+    colour = Area
+    ), linetype = 2, alpha = 0.5
+    #, colour = "black"
+    ) +
+  geom_vline(data = ye_catch_per_cell%>% filter(Area %in% c("CDA", "non-CDA 3CD")), aes(xintercept = catch_med, colour = Area), linetype = 2) +
   facet_grid(rows = vars(Area)) + xlab("Mean kg/ha") + ylab("Number of simulations") +
   scale_fill_brewer(palette = "Set1") + scale_colour_brewer(palette = "Set1") + theme(legend.position = "none") +
-  ggtitle("Estimated relative biomass densities (dashed lines are median)",
-    subtitle = "Yelloweye Rockfish (coloured bars) vs. Pacific Halibut (grey bars)"
+  ggtitle("Estimated 2020 biomass densities (dashed lines are median)",
+    subtitle = "Yelloweye Rockfish (darker bars) vs. Pacific Halibut (paler bars)"
   )
 
-ggsave("figs/hybrid-hbll-est-rock-mud-estimated-biomass-densities.png", width = 5, height = 7, dpi = 400)
+ggsave("figs/hybrid-hbll-est-rock-mud-estimated-biomass-densities.png", width = 6, height = 4, dpi = 400)
 ```
 
 
@@ -1371,14 +1426,21 @@ Predictions depicted for HBLL survey grid area that falls within region 3CD. "Co
 
 ## Halibut
 
-2020 predictions with all survey catches post-2016
+2020 predictions with all survey catches in 2019 and 2020
 
 ```{r message=F, echo=F}
-p_hal2020 <- readRDS("data-generated/hybrid-halibut-hbll-est-rock-mud-predictions-all-S.rds")[[1]] %>% 
+max_map_lat <- 51.4
+min_map_lon <- -130.1
+max_map_lon <- -125
+
+p_hal2020 <- readRDS("data-generated/hybrid-halibut-hbll-est-rock-mud-predictions-all-S.rds")[[1]] %>%
+  # plot observations for last 3 years to ensure sampling in all regions
+  filter(latitude < max_map_lat) %>%
   filter(year == 2020)
 d_hal_plots <- readRDS("data-generated/halibut-hybrid-model-data.rds") %>%
   # plot observations for last 3 years to ensure sampling in all regions
-  filter(latitude < 52.15507) %>% filter(year %in% c(#2017,2018,
+  filter(latitude < max_map_lat) %>%
+  filter(year %in% c(#2017,2018,
     2019,2020)) %>%  
   mutate(
     # back transform densities into catch per 100 hooks
@@ -1396,11 +1458,51 @@ g <- map_predictions(
   size_lab = "Observed catch\nper 100 hook\nequivalent",
   # pred_min = min(exp(p_hal2020$est), na.rm = T),
   # pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
+  map_lat_limits = c(48.6, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon),
   size_aes = catch_equiv 
 )
 g
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/hybrid-halibut-2020-predictions-hbll-est-rock-mud.png", width = 5.5, height = 6, dpi = 400)
+ggsave("figs/hybrid-halibut-2020-predictions-hbll-est-rock-mud.png", width = 5.5, height = 4.5, dpi = 400)
+```
+
+Close up of CDA with 2018 to 2020 catch
+```{r message=F, echo=F}
+max_map_lat2 <- 50.01
+min_map_lon2 <- -127.9
+max_map_lon2 <- -125.2
+
+p_hal2020 <- readRDS("data-generated/hybrid-halibut-hbll-est-rock-mud-predictions-all-S.rds")[[1]] %>%
+  # plot observations for last 3 years to ensure sampling in all regions
+  filter(latitude < max_map_lat2) %>%
+  filter(year == 2020)
+d_hal_plots <- readRDS("data-generated/halibut-hybrid-model-data.rds") %>%
+  # plot observations for last 3 years to ensure sampling in all regions
+  filter(latitude < max_map_lat2) %>%
+  filter(year %in% c(#2017,
+    2018,2019,2020)) %>%  
+  mutate(
+    # back transform densities into catch per 100 hooks
+    catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
+    max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
+    catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
+    )
+
+g <- map_predictions(
+  pred_data = p_hal2020,
+  pred_min = min(exp(p_hal2020$est), na.rm = T),
+  pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
+  obs_data = d_hal_plots,
+  fill_lab = "Predicted\nkg/ha",
+  size_lab = "2018-2020\nobserved catch\nper 100 hook\nequivalent",
+  map_lat_limits = c(48.6, max_map_lat2),
+  map_lon_limits = c(min_map_lon2, max_map_lon2),
+  size_aes = catch_equiv 
+) + theme(legend.box = 'horizontal')
+g
+dir.create("figs", showWarnings = FALSE)
+ggsave("figs/hybrid-halibut-2020-predictions-hbll-est-rock-mud-closeup.png", width = 6.75, height = 5.5, dpi = 400)
 ```
 
 ```{r map-predictions-all, message=F, echo=F, warning=F, cache=TRUE}
@@ -1438,21 +1540,23 @@ g <- map_predictions(
   pred_max = quantile(exp(p_hal_d$est), 0.99, na.rm = T),
   obs_data = d_hal_facet,
   fill_lab = "Predicted kg/ha",
-  size_aes = catch_equiv,
   size_lab = "Observed catch\nper 100 hook\nequivalent",
-  legend_position = "right"
+  legend_position = "right",
+  map_lat_limits = c(48.6, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon),
+  size_aes = catch_equiv 
 ) + facet_wrap(~pair_name)
 
 # g <- g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0))
 
-ggsave("figs/hybrid-halibut-predictions-hbll-est-rock-mud.png", width = 9, height = 10, dpi = 200)
+ggsave("figs/hybrid-halibut-predictions-hbll-est-rock-mud.png", width = 10, height = 8, dpi = 200)
 }
 ```
 
 
 ## Yelloweye Rockfish
 
-2020 predictions with all survey catches post-2016
+2020 predictions with all survey catches in 2019 and 2020
 
 ```{r message=F, echo=F}
 p_ye <- readRDS("data-generated/hybrid-yelloweye-hbll-est-rock-mud-predictions-all-S.rds")[[1]] %>% 
@@ -1470,13 +1574,152 @@ g <- map_predictions(
   pred_data = p_ye,
   fill_lab = "Predicted kg/ha",
   obs_data = d_ye_plots,  
-  size_aes = catch_equiv,
   size_lab = "Observed catch\nper 100 hook\nequivalent",
+  map_lat_limits = c(48.6, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon),
+  size_aes = catch_equiv 
 )
 g
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/hybrid-yelloweye-2020-predictions-hbll-est-rock-mud.png", width = 5.5, height = 6, dpi = 400)
+ggsave("figs/hybrid-yelloweye-2020-predictions-hbll-est-rock-mud.png", width = 5.5, height = 4.5, dpi = 400)
 ```
+
+Close up of CDA with 2018 to 2020 catch
+```{r message=F, echo=F}
+p_ye <- readRDS("data-generated/hybrid-yelloweye-hbll-est-rock-mud-predictions-all-S.rds")[[1]] %>% 
+  # plot observations for last 3 years to ensure sampling in all regions
+  filter(latitude < max_map_lat2) %>%
+  filter(year == 2020)
+
+d_ye_plots <- readRDS("data-generated/yelloweye-hybrid-model-data.rds") %>%
+  # plot observations for last 3 years to ensure sampling in all regions
+  filter(latitude < max_map_lat2) %>%
+  filter(year %in% c(2018,
+    2019,2020)) %>%  
+  mutate(
+    # back transform densities into catch per 100 hooks
+    catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight), 
+    max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
+    catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
+    )
+
+g <- map_predictions(
+  pred_data = p_ye,
+  pred_min = min(exp(p_ye$est), na.rm = T),
+  pred_max = quantile(exp(p_ye$est), 0.99, na.rm = T),
+  fill_lab = "Predicted\nkg/ha",
+  obs_data = d_ye_plots,  
+  size_lab = "2018-2020\nobserved catch\nper 100 hook\nequivalent",
+  map_lat_limits = c(48.6, max_map_lat2),
+  map_lon_limits = c(min_map_lon2, max_map_lon2),
+  size_aes = catch_equiv 
+) + theme(legend.box = 'horizontal')
+g
+dir.create("figs", showWarnings = FALSE)
+ggsave("figs/hybrid-yelloweye-2020-predictions-hbll-est-rock-mud-closeup.png", width = 6.75, height = 5.5, dpi = 400)
+```
+
+```{r}
+# glimpse(d_ye_plots)
+# glimpse(d_hal_plots) 
+d_hal_plotsN <- readRDS("data-generated/halibut-hybrid-model-data.rds") %>%
+  # plot observations for last 3 years to ensure sampling in all regions
+  filter(latitude > max_map_lat2 & latitude < max_map_lat) %>%
+  filter(year %in% c(#2017,
+    2018,2019,2020)) %>%  
+  mutate(
+    # back transform densities into catch per 100 hooks
+    catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
+    max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
+    catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
+    )
+
+d_ye_plotsN <- readRDS("data-generated/yelloweye-hybrid-model-data.rds") %>%
+  filter(latitude > max_map_lat2 & latitude < max_map_lat) %>% filter(year %in% c(#2017,
+    2018,2019,2020)) %>% 
+  mutate(
+    # back transform densities into catch per 100 hooks
+    catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight), 
+    max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
+    catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
+    )
+
+
+ye_obs <- d_ye_plotsN %>% 
+  mutate(catch_count_ye = (catch_count/hook_count)*100, catch_equiv_ye = catch_equiv) %>% 
+  select(X,Y, year_pair, year_true, survey, catch_count_ye, density_ye = density, fishing_event_id, catch_equiv_ye)
+hal_obs <- d_hal_plotsN %>% 
+  mutate(catch_count_hal = (catch_count/hook_count)*100, catch_equiv_hal = catch_equiv) %>% 
+  select(fishing_event_id, catch_count_hal, density_hal = density, catch_equiv_hal)
+catch_compN <- left_join(ye_obs, hal_obs)
+
+ggplot(catch_compN, aes(catch_equiv_hal, catch_equiv_ye)) + 
+  geom_smooth(method = "lm", colour = "grey") +
+  geom_jitter(aes(colour = survey)) + 
+  coord_cartesian(xlim=c(0, 12))
+
+ggplot(catch_compN, aes(log(catch_count_hal+1), log(catch_count_ye+1))) + 
+  geom_smooth(method = "lm", colour = "grey") +
+  geom_jitter(aes(colour = survey), alpha=0.7) + 
+  coord_cartesian()
+
+ggplot(catch_compN, aes(density_hal, density_ye)) + 
+  geom_smooth(method = "lm", colour = "grey") +
+  geom_jitter(aes(colour = survey)) + 
+  coord_cartesian(xlim=c(0, 3))
+```
+
+
+```{r}
+# glimpse(d_ye_plots)
+# glimpse(d_hal_plots) 
+d_hal_plotsS <- readRDS("data-generated/halibut-hybrid-model-data.rds") %>%
+  # plot observations for last 3 years to ensure sampling in all regions
+  filter(latitude < max_map_lat2) %>%
+  filter(year %in% c(#2017,
+    2018,2019,2020)) %>%  
+  mutate(
+    # back transform densities into catch per 100 hooks
+    catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
+    max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
+    catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
+    )
+
+d_ye_plotsS <- readRDS("data-generated/yelloweye-hybrid-model-data.rds") %>%
+  filter(latitude < max_map_lat2)  %>% filter(year %in% c(#2017,
+    2018,2019,2020)) %>% 
+  mutate(
+    # back transform densities into catch per 100 hooks
+    catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight), 
+    max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
+    catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
+    )
+
+
+ye_obs <- d_ye_plotsS %>% 
+  mutate(catch_count_ye = (catch_count/hook_count)*100, catch_equiv_ye = catch_equiv) %>% 
+  select(X,Y, year_pair, year_true, survey, catch_count_ye, density_ye = density, fishing_event_id, catch_equiv_ye)
+hal_obs <- d_hal_plotsS %>% 
+  mutate(catch_count_hal = (catch_count/hook_count)*100, catch_equiv_hal = catch_equiv) %>% 
+  select(fishing_event_id, catch_count_hal, density_hal = density, catch_equiv_hal)
+catch_compS <- left_join(ye_obs, hal_obs)
+
+ggplot(catch_compS, aes(catch_equiv_hal, catch_equiv_ye)) + 
+  geom_smooth(method = "lm", colour = "grey") +
+  geom_jitter(aes(colour = survey)) + 
+  coord_cartesian(xlim=c(0, 12))
+
+ggplot(catch_compS, aes(log(catch_count_hal+1), log(catch_count_ye+1))) + 
+  geom_smooth(method = "lm", colour = "grey") +
+  geom_jitter(aes(colour = survey), alpha=0.7) + 
+  coord_cartesian()
+
+ggplot(catch_compS, aes(density_hal, density_ye)) + 
+  geom_smooth(method = "lm", colour = "grey") +
+  geom_jitter(aes(colour = survey)) + 
+  coord_cartesian(xlim=c(0, 3))
+```
+
 
 ```{r ye-map-all, cache=TRUE, echo=F, message=F, warning=F}
 p_ye <- readRDS("data-generated/hybrid-yelloweye-hbll-est-rock-mud-predictions-all-S.rds")
@@ -1512,12 +1755,14 @@ g <- map_predictions(
   fill_lab = "Predicted kg/ha",
   pred_min = min(exp(p_ye$data$est), na.rm = T),
   pred_max = quantile(exp(p_ye$data$est), 0.99, na.rm = T),
-  size_aes = catch_equiv,
   size_lab = "Observed catch\nper 100 hook\nequivalent",
-  legend_position = "right"
+  legend_position = "right",
+  map_lat_limits = c(48.6, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon),
+  size_aes = catch_equiv 
 ) + facet_wrap(~pair_name) 
 # g <- g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0))
-ggsave("figs/hybrid-ye-predictions-hbll-est-rock-mud.png", width = 9, height = 10, dpi = 200)
+ggsave("figs/hybrid-ye-predictions-hbll-est-rock-mud.png", width = 10, height = 8, dpi = 200)
 }
 ```
 

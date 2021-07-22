@@ -182,6 +182,8 @@ map_predictions <- function(
   title = "",
   size_lab = "Observed fish\nper 100 hooks",
   fill_lab = "Predicted fish\nper 100 hooks",
+  map_lat_limits = c(48.6, 51.3),
+  map_lon_limits = c(-130.1,-125.1),
   legend_position = c(0.99, 0.99),
   grey_waters = TRUE) {
   utm_zone9 <- 3156
@@ -322,9 +324,11 @@ map_predictions <- function(
 
   g <- g +
     theme(panel.grid.major = element_line(colour = "grey60", size = 0.3)) +
-    coord_sf(
-      xlim = c(230957.7 + 205000, 1157991 - 385000),
-      ylim = c(5366427 + 25000, 6353456 - 590000)
+    coord_sf(expand = F,
+      # xlim = c(230957.7 + 205000, 1157991 - 385000),
+      # ylim = c(5366427 + 25000, 5694150 - 8000) #6353456 - 590000)
+      xlim = c(convert2utm9(map_lon_limits[1], 50.0)[1], convert2utm9(map_lon_limits[2], 50.0)[1]),
+      ylim = c(convert2utm9(-130, map_lat_limits[1])[2], convert2utm9(-130, map_lat_limits[2])[2])
     ) +
     guides(
       fill = guide_colorbar(order = 1),
