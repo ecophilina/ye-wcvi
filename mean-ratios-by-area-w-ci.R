@@ -8,18 +8,20 @@ library(ggsidekick) # for fourth_root_power_trans and theme_sleek
 theme_set(ggsidekick::theme_sleek())
 
 
-# model_type <- "-trawlinhbllyrs-paired"
-model_type <- "-paired" # no substrate, independent spatiotemporal fields and year effect
-model_type <- "-RW" # no substrate, no year effect and fixed spatial field, random walk instead
-
-# add substrate
-model_type <- "-RW-w-mudd-rock"
-model_type <- "-rocky-muddy"
-
-
-# add substrate + and est for hbll
-model_type <- "-RW-hbll-ests-w-mud-rock"
+# # model_type <- "-trawlinhbllyrs-paired"
+# model_type <- "-paired" # no substrate, independent spatiotemporal fields and year effect
+# model_type <- "-RW" # no substrate, no year effect and fixed spatial field, random walk instead
+#
+# # add substrate
+# model_type <- "-RW-w-mudd-rock"
+# model_type <- "-rocky-muddy"
+#
+#
+# # add substrate + and est for hbll
+# model_type <- "-RW-hbll-ests-w-mud-rock"
 model_type <- "-hbll-est-rock-mud"
+
+# model_type <- "-new-RW-hbll-ests-w-mud-rock"
 
 # i_hal2 <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "index-all-S-sim-500.rds"))[[3]]
 g_cda <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "-index-cda-sim-500.rds"))[[3]] %>% select(X, Y, year)
@@ -28,6 +30,8 @@ g_5A <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "-index-5A-s
 
 cda_2020 <- filter(g_cda, year ==2020)
 
+.file <- paste0("data-generated/avoiding_ye_sum", model_type, ".rds")
+if (!file.exists(.file)) {
 # i_hal4 <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "index-all-S-sim-500.rds"))[[4]]
 s_hal_cda4 <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "-index-cda-sim-500.rds"))[[4]]
 s_hal_noncda4 <- readRDS(paste0("data-generated/hybrid-halibut", model_type, "-index-3CD-outside-cda-sim-500.rds"))[[4]]
@@ -66,7 +70,7 @@ s_ye_5A4 <- bind_cols(g_5A, as.data.frame(s_ye_5A4))
 .s_hal$Area <- ordered(.s_hal$Area, levels = c("CDA", "non-CDA 3CD", "5A", "Full combined"))
 
 .dat <- left_join(.s_ye, .s_hal) %>% mutate(
-  halibut = exp(hal_est) * (100 * 0.0024384 * 0.009144 * 10000)*1.33 , # convert kg/ha to kg/100 hooks and apply adams high hal mass
+  halibut = exp(hal_est) * (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks and apply adams high hal mass
   yelloweye = exp(ye_est) * (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
   ye_per_hal = yelloweye / (halibut), # not correcting for <1
   hal_per_ye = (halibut) / yelloweye # not correcting for <1
@@ -180,8 +184,11 @@ maximize_hal_sum$Area <- ordered(maximize_hal_sum$Area, levels = c("5A", "non-CD
 
 saveRDS(maximize_hal_sum, paste0("data-generated/maximize_hal_sum", model_type, ".rds"))
 saveRDS(avoiding_ye_sum, paste0("data-generated/avoiding_ye_sum", model_type, ".rds"))
+}
 
 #### make plots ####
+maximize_hal_sum <- readRDS( paste0("data-generated/maximize_hal_sum", model_type, ".rds"))
+avoiding_ye_sum <- readRDS( paste0("data-generated/avoiding_ye_sum", model_type, ".rds"))
 
 # mean_ye_hal
 ggplot(avoiding_ye_sum %>%
@@ -195,7 +202,7 @@ ggplot(avoiding_ye_sum %>%
       , round((nrow(cda_2020))*.2)
       , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4)
       , round((nrow(cda_2020))*.5)
-      # , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
+      , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
     ))) +
   geom_line(
     aes(x = ordered*4,
@@ -207,7 +214,8 @@ ggplot(avoiding_ye_sum %>%
     fill = Area), alpha=0.2) +
   scale_x_continuous(breaks = c(0, 500, 1000)) +
   coord_cartesian(# expand = F, # xlim = c(0, nrow(cda_2020)/2),
-    ylim = c(0, 0.03)) +
+    # ylim = c(0, 0.03)) +
+    ylim = c(0, 0.2)) +
   # scale_color_identity(name = "Area",
   #   breaks = c("darkgreen","darkblue", "red"),
   #   labels = c("5A", "3CD (non-CDA)", "CDA"),
@@ -215,14 +223,16 @@ ggplot(avoiding_ye_sum %>%
   scale_fill_brewer(palette = "Set1", direction = -1) +
   scale_colour_brewer(palette = "Set1", direction = -1) +
   ylab("Mean ratio of YE to halibut") +
-  xlab("Total area of cells selected to minimize yelloweye (km2)") +
+  xlab(expression("Total area of cells selected to minimize YE ("~km^2~")")) +
   # facet_wrap(~pair_name, ncol = 2)+
   # theme(legend.position = c(0.65, 0.1))
   facet_wrap(~pair_name, ncol = 4)+
   theme(legend.position = c(0.85, 0.2))
 
 # ggsave("figs/expected_YE_when_avoiding_YE_CI.png", width = 4.5, height = 6)
-ggsave(paste0("figs/expected_YE_when_avoiding_YE_CI", model_type, ".png"), width = 6, height = 3.5)
+
+ggsave(paste0("figs/expected_YE_when_avoiding_YE_CI", model_type, "_allcda.png"), width = 6, height = 3.5)
+# ggsave(paste0("figs/expected_YE_when_avoiding_YE_CI", model_type, ".png"), width = 6, height = 3.5)
 
 # flipped ratio
 ggplot(avoiding_ye_sum %>%
@@ -251,10 +261,10 @@ ggplot(avoiding_ye_sum %>%
   # coord_cartesian(
   #   # expand = F,
   #   # xlim = c(0, nrow(cda_2020)/2),
-  #   ylim = c(0,2000)
+  #   ylim = c(1,(10001))
   # ) +
-  #
-  scale_y_log10() +
+  scale_y_log10(breaks = c(1, 10, 100, 1000, 10000)) +
+  # scale_y_continuous(breaks = c(1, 10, 100, 1000, 10000)) +
   scale_x_continuous(breaks = c(0, 500, 1000, 2000)) +
   # scale_color_identity(name = "Area",
   #   breaks = c("darkgreen","darkblue", "red"),
@@ -263,7 +273,7 @@ ggplot(avoiding_ye_sum %>%
   scale_fill_brewer(palette = "Set1", direction = -1) +
   scale_colour_brewer(palette = "Set1", direction = -1) +
   ylab("Mean ratio of halibut to YE (ratio + 1)") +
-  xlab("Total area of cells selected to minimize yelloweye (km2)") +
+  xlab(expression("Total area of cells selected to minimize YE ("~km^2~")")) +
   # facet_wrap(~pair_name, ncol = 2)+
   # theme(legend.position = c(0.65, 0.1))
   facet_wrap(~pair_name, ncol = 4)+
@@ -271,7 +281,7 @@ ggplot(avoiding_ye_sum %>%
 
 # ggsave("figs/expected_hal_when_avoiding_YE_CI.png", width = 4.5, height = 6)
 # ggsave("figs/expected_hal_when_avoiding_YE_CI.png", width = 6, height = 3.5)
-ggsave(paste0("figs/expected_hal_when_avoiding_YE_CI2", model_type, ".png"), width = 6, height = 3.5)
+ggsave(paste0("figs/expected_hal_when_avoiding_YE_CI", model_type, "_allcda.png"), width = 6, height = 3.5)
 
 ggplot(maximize_hal_sum %>%
     filter(ordered %in% c(
