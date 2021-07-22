@@ -1,0 +1,305 @@
+---
+title: "Create filled in prediction grid with RCAs excluded"  
+author:
+- Philina A. English
+- Lindsay N.K. Davidson
+date: "21 July 2021"
+---
+
+#Purpose  
+
+This code is to create a filled in prediction grid for southern outside Hard Bottom Longline survey area. The prediction grid is a 2 km X 2 km grid that extends from 20m to the 1000m bathymetry within this zone and excludes RCAs. 
+
+```{r setup, include = FALSE, cache=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  echo = FALSE, message = FALSE, warning = FALSE, evaluate = FALSE, cache = TRUE
+)
+```
+
+
+```{r packages, include = FALSE, evaluate = FALSE}
+library(sf)
+library(ggplot2)
+library(dplyr)
+library(sp) #coverting to UTMS
+library(rgdal) #converting to UTMS
+library(PBSmapping) #depth contours
+library(maptools)
+library(rgeos)
+library(here)
+```
+
+
+```{r loaddat, include = FALSE}
+# sp_dat <- readRDS("data-raw/north-pacific-spiny-dogfish.RDS")
+# head(sp_set_counts)
+hbll_s_grid <- readRDS(here::here("grids/hbll_s_grid.rds"))
+
+```
+
+
+```{r convertoUTMs, include = FALSE }
+# df <- sp_dat
+# coordinates(df) <- c("set_counts.lon", "set_counts.lat")
+# proj4string(df) <- CRS("+proj=longlat + datum=WGS84")
+# data <-spTransform(df,CRS="+proj=utm +zone=9 +datum=WGS84")
+# data <- as.data.frame(coordinates(data))
+# head(data)
+# names(data) <-c("UTM.lon.m", "UTM.lat.m")
+# data$UTM.lat <- data$UTM.lat.m/1000
+# data$UTM.lon <- data$UTM.lon.m/1000
+# sp_dat <- cbind(sp_dat, data)
+# class(sp_dat)
+# glimpse(sp_dat)
+```
+
+
+#Methods
+
+To create the grid, I first created bounding boxes to accomodate the strange shape of the grid more closely. 
+The west and east limits were defined by the 1000 m bathymetry [bathymetry data from `PBSmapping ` (Schnute, Boers, and Haigh, 2021)] and shoreline [spatial data from Hakai Institute]. 
+The prediction grid covered the extent of the bounding box and was a 2 km X 2 km resolution. 
+The final database comprised of the locations of the centroids for each of the 2 km X 2 km grid cells.  
+
+```{r CreateBoundingBox_bathymetry, include = FALSE }
+sp_dat1 <- hbll_s_grid$grid %>% filter(latitude < 50.5) #%>% select(x, y)
+sp_dat2 <- hbll_s_grid$grid %>% filter(latitude > 50.5) 
+
+
+## Create the clipping polygons
+CP <- as(raster::extent(
+  min(hbll_s_grid$grid$x), max(hbll_s_grid$grid$x),
+  min(hbll_s_grid$grid$y), max(hbll_s_grid$grid$y)
+  ), "SpatialLines")
+
+
+CP1 <- as(raster::extent(
+  min(sp_dat1$x), max(sp_dat1$x),
+  min(sp_dat1$y), max(sp_dat1$y)
+  ), "SpatialLines")
+
+
+CP2 <- as(raster::extent(
+  min(sp_dat2$x), max(sp_dat2$x),
+  min(sp_dat2$y), max(sp_dat2$y)
+  ), "SpatialLines")
+
+
+
+crsstring <- "+proj=utm +zone=9 +datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0  +units=m +no_defs" # i believe this is 3156
+crsnum <- 3156
+
+proj4string(CP) <- CRS(crsstring) 
+proj4string(CP1) <- CRS(crsstring) 
+proj4string(CP2) <- CRS(crsstring) 
+CP <- st_as_sf(CP)
+CP1 <- st_as_sf(CP1)
+CP2 <- st_as_sf(CP2)
+CP <- st_transform(CP, crs = crsnum)
+CP1 <- st_transform(CP1, crs = crsnum)
+CP2 <- st_transform(CP2, crs = crsnum)
+
+
+#use this polygon and clip to the contours in bcBathymetry
+# citation("PBSmapping")
+data(bcBathymetry) #bathymetry
+contour(bcBathymetry$x, bcBathymetry$y, bcBathymetry$z, col = "pink", method = "edge", vfont = c("sans serif", "plain"))
+#,   nlevels = 2)
+#make a spatial object
+cont <- contourLines(bcBathymetry$x, bcBathymetry$y, bcBathymetry$z, nlevels = 1000) 
+# class(cont)
+#generate contours
+clines <- ContourLines2SLDF(cont)
+clines@data[["level"]]
+lines <- st_as_sf(clines) #make sf object
+
+# SHALLOW BOUNDARY
+c.linesfilter <- lines %>% filter(level == 20) 
+st_crs(c.linesfilter) <- CRS('+proj=longlat')
+c.linesproj <- st_transform(c.linesfilter, crs = crsnum)
+gridarea <- st_bbox(st_intersection(st_geometry(CP1), st_geometry(c.linesproj))) %>% st_point %>% st_sfc(crs=3156)
+sa_clip <- st_intersection(st_as_sfc(st_bbox(CP1)),c.linesproj)
+
+#DEEP BOUNDARY
+c.linesfilter2 <- lines %>% filter(level == 1000) 
+st_crs(c.linesfilter2) <- CRS('+proj=longlat')
+c.linesproj2 <- st_transform(c.linesfilter2, crs = crsnum)
+gridarea2 <- st_bbox(st_intersection(st_geometry(CP1), st_geometry(c.linesproj2))) %>% st_point %>% st_sfc(crs=3156)
+sa_clip2 <- st_intersection(st_as_sfc(st_bbox(CP1)),c.linesproj2)
+
+# SHALLOW BOUNDARY IN NORTH
+c.linesfilter <- lines %>% filter(level == 20) 
+st_crs(c.linesfilter) <- CRS('+proj=longlat')
+c.linesproj <- st_transform(c.linesfilter, crs = crsnum)
+gridarea <- st_bbox(st_intersection(st_geometry(CP2), st_geometry(c.linesproj))) %>% st_point %>% st_sfc(crs=3156)
+sa_clipN <- st_intersection(st_as_sfc(st_bbox(CP2)),c.linesproj)
+
+#DEEP BOUNDARY IN NORTH
+c.linesfilter2 <- lines %>% filter(level == 1000) 
+st_crs(c.linesfilter2) <- CRS('+proj=longlat')
+c.linesproj2 <- st_transform(c.linesfilter2, crs = crsnum)
+gridarea2 <- st_bbox(st_intersection(st_geometry(CP2), st_geometry(c.linesproj2))) %>% st_point %>% st_sfc(crs=3156)
+sa_clipN2 <- st_intersection(st_as_sfc(st_bbox(CP2)),c.linesproj2)
+
+
+ggplot() +
+  # geom_sf(data=st_as_sfc(st_bbox(CP1)),fill=NA) +
+  geom_sf(data=sa_clip) +
+  geom_sf(data=sa_clip2) +
+  geom_sf(data=sa_clipN) +
+  geom_sf(data=sa_clipN2) +
+  theme_classic()
+
+#Cast the linestring to points, append the corner, close the linestring, turn into polygon.
+pts_shallow <- sa_clip %>% st_geometry %>% st_cast("POINT")
+pts_deep <- sa_clip2 %>% st_geometry %>% st_cast("POINT")
+pts_shallowN <- sa_clipN %>% st_geometry %>% st_cast("POINT")
+pts_deepN <- sa_clipN2 %>% st_geometry %>% st_cast("POINT")
+# 
+# st_bbox(pts_shallow) <- st_bbox(CP) 
+
+corner <- st_bbox(CP2)[c('xmin','ymax')] %>% st_point %>% st_sfc(crs=crsnum)%>% st_cast("POINT")
+
+# test <- st_intersection(CP1, pts) %>% st_geometry %>% st_cast("POINT")
+sa_lineN <- c(pts_shallowN[1:195], pts_deepN[1:90], 
+  corner, pts_shallowN[1]) %>% st_combine %>% st_cast('LINESTRING')
+sa_lineS <- c(pts_shallow[1:218], pts_deep[1:212], pts_shallow[1]) %>% st_combine %>% st_cast('LINESTRING')
+# sa_polyN <- c(pts_shallowN[1:195], pts_deepN[1:90], corner, 
+#   pts_shallowN[1]
+#   ) %>% st_combine %>% st_cast('LINESTRING') %>% st_polygonize()
+# sa_polyS <- c(pts_shallow[1:218], pts_deep[1:212], pts_shallow[1]
+#   ) %>% st_combine %>% st_cast('LINESTRING') %>% st_polygonize()
+sa_poly <-  c(
+  pts_shallowN[1:195], pts_shallow[1:218],
+  pts_deep[1:212], pts_deepN[1:90],
+  corner, pts_shallowN[1]
+  ) %>% st_combine %>% st_cast('LINESTRING') %>% st_polygonize()
+
+ggplot() +
+  # geom_sf(data=sa_lineN) +
+  # geom_sf(data=sa_lineS) +
+  geom_sf(data=sa_poly) +
+  # coord_sf(xlim = st_bbox(CP)[c(1,3)], # min & max of x values
+  #          ylim = st_bbox(CP)[c(2,4)]) +
+  theme_classic()
+```
+
+
+```{r}
+grid1 <- sf::st_make_grid(x = sa_poly,
+  # offset = st_bbox(sa_poly)[c("xmin", "ymax")] + c(-1000, 1000),
+  cellsize=c(2000, 2000))
+
+keep <- st_intersects(sa_poly, grid1)
+grid1 <- grid1[unlist(keep)]
+
+new_grid <- st_as_sf(grid1)
+
+ggplot() +
+  # geom_sf(data=sa_poly) +
+  geom_sf(data=grid1) +
+  # geom_sf(data=new_grid) +
+  theme_classic()
+
+```
+
+
+```{r}
+new_grid <- st_as_sf(grid1)
+
+# already in UTMs
+new_grid_utm <- new_grid
+new_grid_utm$geometry <- st_centroid(new_grid_utm) %>% st_geometry()
+
+new_grid_ll <- st_transform(new_grid, crs = 4326)
+new_grid_ll$geometry <- st_centroid(new_grid_ll) %>% st_geometry()
+
+# new_grid3$geometry[1]
+
+# # plot(st_geometry(new_grid))
+# plot(st_geometry(new_grid_ll))
+# plot(st_geometry(new_grid_utm))
+# plot(st_geometry(new_grid_utm), cex = 0.2, add = T)
+
+# to add sf geometry back onto dataframe
+sfc_as_cols <- function(x, names = c("x","y")) {
+  stopifnot(inherits(x,"sf") #&& inherits(sf::st_geometry(x),"sfc_POINT")
+  )
+  ret <- sf::st_coordinates(x)
+  ret <- tibble::as_tibble(ret)
+  # stopifnot(length(names) == ncol(ret))
+  x <- x[ , !names(x) %in% names]
+  ret <- setNames(ret,names)
+  dplyr::bind_cols(x,ret)
+}
+
+hbll_s_grid_ll <- as.data.frame(st_coordinates(new_grid_ll))
+
+hbll_s_grid_utm <- as.data.frame(st_coordinates(new_grid_utm))
+
+hbll_grid <- dplyr::select(hbll_s_grid_ll, X, Y) %>%
+  rename(longitude = X, latitude = Y)
+
+hbll_grid_utm <- dplyr::select(hbll_s_grid_utm, X, Y) %>%
+  rename(x = X, y = Y) %>% mutate(X = x/ 100000, Y = y/ 100000)
+
+hbll_grid <- bind_cols(hbll_grid, hbll_grid_utm)
+
+hbll_s_grid <- list(grid = hbll_grid, cell_area = 2.0)
+saveRDS(hbll_s_grid, here::here("grids/hbll_s_grid_filled.rds"))
+
+hbll_grid %>% mutate(X = round(X * 100), Y = round(Y * 100)) %>%
+  mutate(X = (X / 100), Y = (Y / 100)) %>% View()
+```
+
+
+check if numbers match old grid after rounding
+```{r}
+old_grid <- readRDS(here::here("grids/hbll_s_grid.rds"))
+check <- old_grid$grid %>% mutate(X = round(X * 100), Y = round(Y * 100)) %>%
+  mutate(X = (X / 100), Y = (Y / 100)) 
+View (check)
+```
+
+
+Lindsay's code
+```{r CreatingBoundingBox_coastline, include = FALSE }
+# #get from Hakai github here:
+# #https://github.com/HakaiInstitute/hakai_guide_to_r/tree/master/data/2_Shapefile
+# BC.shp <- readOGR("data-raw/", "COAST_TEST2")
+# proj4string(BC.shp)
+# BC.shp@data
+# summary(BC.shp)
+# bc <- st_read("data-raw/", "COAST_TEST2")
+# #convert this to lat longs
+# bcutm <- st_transform(bc, '+proj=utm +zone=9 +datum=WGS84 +units=m +no_defs')
+# st_crs(bcutm)
+# ### crop shapefile polygons to the extent defined
+# extent <- st_polygonize(CP2)
+# land<- st_intersection(extent, bcutm)
+```
+
+
+
+```{r CreateGrid_Area, include = FALSE }
+# gridarea1 <- st_difference (st_geometry(extent), st_geometry(land))
+# gridarea <- st_difference (st_geometry(gridarea1),st_geometry(sa_poly2))
+# st_write(gridarea, "output/gridarea.shp", append=FALSE)
+```
+
+
+
+```{r CreateGrid_Centroids, include = FALSE }
+# #change resolution here...
+# grid_spacing <- 10000 #meters
+# polygony <- st_make_grid(gridarea, square = T, cellsize = c(grid_spacing, grid_spacing)) %>%
+#   st_sf() #
+# grid_extent <- st_intersection(st_geometry(gridarea), st_geometry(polygony))
+# st_write(grid_extent, "output/PredictionGrid.shp", append = FALSE)
+# #get lat long of centre of grid cell and turn into a database.
+# center <- st_centroid(grid_extent)
+# st_write(center, "output/PredictionGridCentres.shp", append = FALSE)
+```
+
