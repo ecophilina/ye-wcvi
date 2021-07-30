@@ -32,15 +32,76 @@ library(raster)
 # install.packages("marmap") # needs to be installed but not loaded 
 ```
 
-
 To create the grid, I first created bounding boxes to accomodate the strange shape of the grid more closely. 
-The west and east limits were defined by the 1000 m bathymetry [bathymetry data from `PBSmapping` (Schnute, Boers, and Haigh, 2021)] and shoreline [spatial data from Hakai Institute]. 
+The west and east limits were defined by the 1000 m and 20m bathymetry contours respectively [data from `PBSmapping` (Schnute, Boers, and Haigh, 2021)]. 
 The prediction grid covered the extent of the bounding box and was a 2 km X 2 km resolution. 
-The final database comprised of the locations of the centroids for each of the 2 km X 2 km grid cells.  
+Rockfish Conservation Areas (RCAs) were then removed and area of cells and parts of cells not within RCAs was calculated. 
+The final dataframe comprised of the locations of the centroids for each of the grid cells (including partial grid cells).  
+Mean depth [data from `marmap`] and proportions of bottom substrate categories [data from Cole Fields] are then calculated using weighted means for each cell. 
 
-Load HBLL grid
+```{r eval = F, include = F}
+# if correction to archived HBLL S grid coordinates not already done, run this chunck
+shape <- st_read(here::here("grids/HBLL-N-S/PHMA_S_GRID.shp"))
+# plot(shape)
+
+proj1 =  crs(shape)
+proj2 <- "+proj=utm +zone=9 +datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0  +units=m +no_defs" # I believe this is 3156
+
+hbll_sf <- st_as_sf(shape)
+
+hbll_sf_utm <- st_transform(hbll_sf, crs = 3156)
+hbll_sf_utm$geometry <- st_centroid(hbll_sf_utm$geometry) %>%
+  # since you want the centroids in a second geometry col:
+  st_geometry()
+
+hbll_sf_ll <- st_transform(hbll_sf, crs = 4326)
+hbll_sf_ll$geometry <- st_centroid(hbll_sf_ll$geometry) %>%
+  # since you want the centroids in a second geometry col:
+  st_geometry()
+
+# hbll_sf3$geometry[1]
+
+# plot(st_geometry(hbll_sf))
+plot(st_geometry(hbll_sf_ll))
+plot(st_geometry(hbll_sf_utm))
+plot(st_geometry(hbll_sf_utm), cex = 0.2, add = T)
+
+# to add sf geometry back onto dataframe
+sfc_as_cols <- function(x, names = c("x","y")) {
+  stopifnot(inherits(x,"sf") #&& inherits(sf::st_geometry(x),"sfc_POINT")
+  )
+  ret <- sf::st_coordinates(x)
+  ret <- tibble::as_tibble(ret)
+  stopifnot(length(names) == ncol(ret))
+  x <- x[ , !names(x) %in% names]
+  ret <- setNames(ret,names)
+  dplyr::bind_cols(x,ret)
+}
+
+hbll_s_grid_ll <- sfc_as_cols(hbll_sf_ll, c("x", "y"))
+st_geometry(hbll_s_grid_ll) <- NULL
+
+hbll_s_grid_utm <- sfc_as_cols(hbll_sf_utm, c("x", "y"))
+st_geometry(hbll_s_grid_utm) <- NULL
+
+hbll_grid <- dplyr::select(hbll_s_grid_ll, x, y, LONGITUDE, LATITUDE, DEPTH_M) %>%
+  rename(longitude = x, latitude = y, old_lon = LONGITUDE, old_lat = LATITUDE, depth = DEPTH_M)
+
+hbll_grid_utm <- dplyr::select(hbll_s_grid_utm, x, y, LONGITUDE, LATITUDE, DEPTH_M) %>%
+  rename(old_lon = LONGITUDE, old_lat = LATITUDE, depth = DEPTH_M) %>% mutate(X = x/ 100000, Y = y/ 100000)
+
+hbll_grid <- left_join(hbll_grid, hbll_grid_utm)
+
+hbll_grid <- mutate(hbll_grid, depth = -depth) %>%
+  filter(depth > 0)
+
+hbll_s_grid <- list(grid = hbll_grid, cell_area = 2.0)
+saveRDS(hbll_s_grid, here::here("grids/hbll_s_grid.rds"))
+```
+
+Load HBLL S grid
 ```{r loaddat, include = FALSE}
-hbll_s_grid <- readRDS(here::here("grids/hbll_s_grid.rds"))
+hbll_s_grid <- readRDS(here::here("grids/hbll_s_grid.rds")) # make sure it has the re-extracted cell coordinates
 ```
 
 Use bathymetry contours from PBSmapping to define grid area
@@ -233,7 +294,7 @@ ggplot() +
 # # saveRDS(grid, file = "data-generated/hybrid_grid.rds") 
 ```
 
-Remove Rockfish Conservation Areas (RCAs) from grid
+Remove RCAs from grid
 ```{r}
 # get RCA
 rcas <- st_read(here::here("grids/RCA2019/RCA_2019.shp"))
