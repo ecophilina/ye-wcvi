@@ -349,18 +349,21 @@ check <- old_grid$grid %>% mutate(X = round(X * 100), Y = round(Y * 100)) %>%
 View (check)
 ```
 
-
+Download depth data for extent of grid
 ```{r}
-hbll_grid <- readRDS(here::here("grids/hbll_s_grid_norca.rds"))
-
 # Load package
 library(marmap)
+
+hbll_grid <- readRDS(here::here("grids/hbll_s_grid_norca.rds"))
 
 # # Download bathymetric data and save on disk
 # bat <- getNOAA.bathy(min(hbll_grid$longitude)-2, max(hbll_grid$longitude)+2,
 #   min(hbll_grid$latitude)-2, max(hbll_grid$latitude)+2, res = 1, keep = TRUE) #resolution of the grid, in minutes (default is 4 or > 4 miles)
 # saveRDS(bat, "data/bath_res1_marmap.rds")
+```
 
+Explore depth data retrieved
+```{r eval=F}
 # Create nice looking color palettes
 blues <- c("lightsteelblue4", "lightsteelblue3", "lightsteelblue2", "lightsteelblue1")
 greys <- c(grey(0.6), grey(0.93), grey(0.99))
@@ -397,8 +400,8 @@ lines(track2$time, track2$depth, type = "o", cex = 0.5, col = "darkorange1")
 legend("bottomright", legend = c("Track 1", "Track 2"), lwd = 1, col = c("brown3", "darkorange1"), pch = 1, pt.cex = 0.5)
 ```
 
+Extract depth for grid cells
 ```{r}
-
 # Load package
 library(marmap)
 
@@ -412,7 +415,7 @@ rast_bat <- projectRaster(rast_bat, crs = proj)
 plot(rast_bat)
 
 
-# grid of complete cells
+# depth for complete cells only
 hbll_grid <- readRDS(here::here("grids/hbll_s_grid_norca.rds"))
 grid_scale <- 2000 #scale of prediction grid in m
 grid <- raster(
@@ -427,91 +430,85 @@ extracted_depth <- cbind(grid.df, depth)
 hbll_grid_full_cells <- left_join(hbll_grid, extracted_depth)
 
 
-
-# grid including partial cells
+# depth for partial cells too
 new_grid_norca <- readRDS("hbll_shp_grid_norca.rds")
 new_grid_norca <- st_as_sf(new_grid_norca)
 new_grid_norca <- st_transform(new_grid_norca, crs = 3156)
 
-depth2 <- raster::extract(x=rast_bat, y=new_grid_norca, na.rm = T, exact=T, sp = T, fun = mean)
-mean_depth <- unlist(lapply(depth2, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
+# unweighted depths
+get_depth <- raster::extract(x=rast_bat, y=new_grid_norca, na.rm = T, exact=T, sp = T)
+mean_depth <- unlist(lapply(get_depth, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
 
-all_depths <- bind_cols(hbll_grid_full_cells, mean_depth = mean_depth) %>% 
-  mutate(cell_depth = -depth, depth_all = -mean_depth)
+# weighted depths
+get_depth2 <- raster::extract(x=rast_bat, y=new_grid_norca, na.rm = T, exact=T, weights=T, sp = T)
+mean_depth2 <- sapply(get_depth2, function(x) if (!is.null(x)) {sum(apply(x, 1, prod)) / sum(x[,2])} else NA)
+
+
+all_depths <- bind_cols(hbll_grid_full_cells, mean_depth = mean_depth, wm_depth = mean_depth2) %>% 
+  mutate(cell_depth = -depth, depth_uw = -mean_depth, depth_wm = -wm_depth, depth = -wm_depth) %>% dplyr::select(-mean_depth, -wm_depth)
 
 saveRDS(all_depths, "exrtracted_depths_norca.rds")
 
-ggplot(all_depths, aes(cell_depth, depth_all, colour = area)) + geom_point(alpha=0.2)
+
+ggplot(all_depths) + geom_point( aes(cell_depth, depth_uw, colour = area),alpha=0.2) # unweighted
+ggplot(all_depths) + geom_point( aes(cell_depth, depth_wm, colour = area), alpha=0.2) # weighted
+# weighted seems closer to the full cells only way of doing this...
+ggplot(all_depths) + geom_point(aes(depth_wm, depth_uw, colour = area),alpha=0.2)
 
 
-hbll_grid_keep <- all_depths %>% 
-  filter(depth_all < 1100) %>% filter(depth_all > 10) 
-
-
+# will apply this filter after extracting substrate
+hbll_grid_keep <- all_depths %>%
+  # filter(depth_all < 1100) %>% filter(depth_all > 10) 
+  filter(depth > 0.5) 
 
 # ggplot(all_depths) +
 ggplot(hbll_grid_keep) +
-  geom_point(aes(X,Y, colour = -depth_all), alpha = 0.2) +
-  geom_point(aes(X,Y, colour = -cell_depth), alpha = 0.2) +
+  geom_point(aes(X,Y, colour = log(depth)), alpha = 0.75) +
+  scale_colour_viridis_c(direction = -1) +
+  # geom_point(aes(X,Y, colour = -cell_depth), alpha = 0.2) +
+  theme_classic()
+```
+
+Get substrate covariates
+```{r}
+# load previously saved raster
+rocky <- raster("data/highres-rocky-raster.grd")
+## with weights
+get_rocky2 <- raster::extract(x=rocky, y=new_grid_norca, na.rm = T, exact=T, weights=T, sp = T)
+mean_rocky2 <- sapply(get_rocky2, function(x) if (!is.null(x)) {sum(apply(x, 1, prod), na.rm = T) / sum(x[,2], na.rm = T)} else NA)
+## without weights
+# get_rocky <- raster::extract(x=rocky, y=new_grid_norca, na.rm = T, exact=T, sp = T)
+# mean_rocky <- unlist(lapply(get_rocky, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
+
+muddy <- raster("data/highres-muddy-raster.grd")
+## with weights
+get_muddy <- raster::extract(x=muddy, y=new_grid_norca, na.rm = T, exact=T, weights=T, sp = T)
+mean_muddy <- sapply(get_muddy, function(x) if (!is.null(x)) {sum(apply(x, 1, prod), na.rm = T) / sum(x[,2], na.rm = T)} else NA)
+## without weights
+# get_muddy <- raster::extract(x=muddy, y=new_grid_norca, na.rm = T, exact=T, sp = T)
+# mean_muddy <- unlist(lapply(get_muddy, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
+
+mixed <- raster("data/highres-mixed-raster.grd")
+get_mixed <- raster::extract(x=mixed, y=new_grid_norca, na.rm = T, exact=T, weights=T, sp = T)
+mean_mixed <-  sapply(get_mixed, function(x) if (!is.null(x)) {sum(apply(x, 1, prod), na.rm = T) / sum(x[,2], na.rm = T)} else NA)
+## or without weights
+# get_mixed <- raster::extract(x=mixed, y=new_grid_norca, na.rm = T, exact=T, sp = T)
+# mean_mixed <- unlist(lapply(get_mixed, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
+
+sandy <- raster("data/highres-sandy-raster.grd")
+get_sandy <- raster::extract(x=sandy, y=new_grid_norca, na.rm = T, exact=T, weights=T, sp = T)
+mean_sandy <-  sapply(get_sandy, function(x) if (!is.null(x)) {sum(apply(x, 1, prod), na.rm = T) / sum(x[,2], na.rm = T)} else NA)
+
+# add substrate to grid with depth data
+all_covs <- bind_cols(all_depths, rocky = mean_rocky2, rocky_uw = mean_rocky, muddy = mean_muddy, mixed = mean_mixed, sandy = mean_sandy) 
+
+# check how weighting changes things?
+ggplot(all_covs) +
+  geom_point(aes(rocky,rocky_uw, colour = log(area)), alpha = 0.25) +
   theme_classic()
 
-
-```
-
-```{r}
-r <- raster(ncol=36, nrow=18, vals=1:(18*36))
-
-cds1 <- rbind(c(-180,-20), c(-160,5), c(-60, 0), c(-160,-60), c(-180,-20))
-cds2 <- rbind(c(80,0), c(100,60), c(120,0), c(120,-55), c(80,0))
-polys <- spPolygons(cds1, cds2)
-
-v <- extract(r, polys)
-# mean for each polygon
-unlist(lapply(v, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
-
-
+saveRDS(all_covs, "norca_grid_w_substrate.rds")
 ```
 
 
-```{r}
-```
-
-Lindsay's code
-```{r CreatingBoundingBox_coastline, include = FALSE }
-# #get from Hakai github here:
-# #https://github.com/HakaiInstitute/hakai_guide_to_r/tree/master/data/2_Shapefile
-# BC.shp <- readOGR("data-raw/", "COAST_TEST2")
-# proj4string(BC.shp)
-# BC.shp@data
-# summary(BC.shp)
-# bc <- st_read("data-raw/", "COAST_TEST2")
-# #convert this to lat longs
-# bcutm <- st_transform(bc, '+proj=utm +zone=9 +datum=WGS84 +units=m +no_defs')
-# st_crs(bcutm)
-# ### crop shapefile polygons to the extent defined
-# extent <- st_polygonize(CP2)
-# land<- st_intersection(extent, bcutm)
-```
-
-
-
-```{r CreateGrid_Area, include = FALSE }
-# gridarea1 <- st_difference (st_geometry(extent), st_geometry(land))
-# gridarea <- st_difference (st_geometry(gridarea1),st_geometry(sa_poly2))
-# st_write(gridarea, "output/gridarea.shp", append=FALSE)
-```
-
-
-
-```{r CreateGrid_Centroids, include = FALSE }
-# #change resolution here...
-# grid_spacing <- 10000 #meters
-# polygony <- st_make_grid(gridarea, square = T, cellsize = c(grid_spacing, grid_spacing)) %>%
-#   st_sf() #
-# grid_extent <- st_intersection(st_geometry(gridarea), st_geometry(polygony))
-# st_write(grid_extent, "output/PredictionGrid.shp", append = FALSE)
-# #get lat long of centre of grid cell and turn into a database.
-# center <- st_centroid(grid_extent)
-# st_write(center, "output/PredictionGridCentres.shp", append = FALSE)
-```
 
