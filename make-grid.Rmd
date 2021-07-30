@@ -196,14 +196,70 @@ keep <- st_intersects(sa_poly, grid1)
 grid1 <- grid1[unlist(keep)]
 
 new_grid <- st_as_sf(grid1)
-
 ggplot() +
   # geom_sf(data=sa_poly) +
   # geom_sf(data=grid1) +
   geom_sf(data=new_grid) +
   theme_classic()
+
 ```
 
+Add in trawl grid
+```{r eval=FALSE}
+# trawl <- readRDS(here::here("grids/nd_all_synoptic_new.rds")) %>% 
+#   mutate(#X = round(X), Y = round(Y),
+#     # X = X / 100, Y = Y / 100,
+#     X = X*1000, Y = Y*1000,
+#     depth_m = depth
+#   ) %>% select(X, Y, depth_m) #%>%
+#   # filter(
+#   #   X > min(hbll_s_grid$grid$X) & X < max(hbll_s_grid$grid$X) &
+#   #     Y > min(hbll_s_grid$grid$Y) & Y < max(hbll_s_grid$grid$Y)
+#   # )
+# 
+# min(trawl$X)
+# max(trawl$X)
+# 
+# trawl_sf <- st_as_sf(trawl, coords = c("X", "Y"), crs = 3156)
+# trawl_sf_grid <- sf::st_make_grid(x = trawl_sf,
+#   offset = st_bbox(trawl_sf)[c("xmin", "ymin")]+ c(-1000, -1000),
+#   cellsize=c(2000, 2000))
+# 
+# keep <- st_intersects(trawl_sf, trawl_sf_grid)
+# trawl_sf_grid <- trawl_sf_grid[unlist(keep)]
+# trawl_sf2 <- st_as_sf(trawl_sf_grid)
+# trawl_sf2$source_data <- "TRAWL"
+
+# 
+# ggplot() +
+#   geom_sf(data=new_grid, colour = "red") +
+#   geom_sf(data=trawl_sf2, alpha = 0.5, colour ="NA") +
+#   theme_classic()
+# 
+# 
+# 
+# 
+# grid_utm <- full_join(grid, s_grid_utm, by = c("X", "Y")) %>%
+#   mutate(depth = ifelse(is.na(depth_m), depth, depth_m), 
+#     survey = ifelse(is.na(survey), "TRAWL" #survey2
+#       , survey)) %>%
+#   select(-depth_m, #-survey2, 
+#     -latitude, -longitude)
+# 
+# grid_xy <- grid_utm %>%
+#   select(X, Y) %>%
+#   mutate(X = X * 100, Y = Y * 100)
+# grid_ll <- utm2ll(grid_xy) %>% rename(longitude = X, latitude = Y)
+# 
+# grid_utm <- bind_cols(grid_utm, grid_ll)
+# 
+# grid_sf <- st_as_sf(grid_utm, coords = c("longitude", "latitude"))
+# st_crs(grid_sf) <- 4326 # set the coordinate reference system
+# grid <- sfc_as_cols(grid_sf, c("longitude", "latitude"))
+# st_geometry(grid) <- NULL
+# 
+# saveRDS(grid, file = "data-generated/hybrid_grid.rds") 
+```
 
 ```{r}
 # get RCA
@@ -242,6 +298,8 @@ new_grid_norca <- st_difference(new_grid, st_union(cells_in_rcas))
 # rca_keep <- st_intersects(new_grid, rcas_utm)
 # cells_in_rcas <- rcas_utm[unlist(rca_keep)]
 # cells_in_rcas <- st_as_sf(cells_in_rcas)
+
+saveRDS(new_grid_norca, "hbll_shp_grid_norca.rds")
 
 ggplot() +
   geom_sf(data=new_grid_norca) +
@@ -289,6 +347,133 @@ old_grid <- readRDS(here::here("grids/hbll_s_grid.rds"))
 check <- old_grid$grid %>% mutate(X = round(X * 100), Y = round(Y * 100)) %>%
   mutate(X = (X / 100), Y = (Y / 100)) 
 View (check)
+```
+
+
+```{r}
+hbll_grid <- readRDS(here::here("grids/hbll_s_grid_norca.rds"))
+
+# Load package
+library(marmap)
+
+# # Download bathymetric data and save on disk
+# bat <- getNOAA.bathy(min(hbll_grid$longitude)-2, max(hbll_grid$longitude)+2,
+#   min(hbll_grid$latitude)-2, max(hbll_grid$latitude)+2, res = 1, keep = TRUE) #resolution of the grid, in minutes (default is 4 or > 4 miles)
+# saveRDS(bat, "data/bath_res1_marmap.rds")
+
+# Create nice looking color palettes
+blues <- c("lightsteelblue4", "lightsteelblue3", "lightsteelblue2", "lightsteelblue1")
+greys <- c(grey(0.6), grey(0.93), grey(0.99))
+# Plot
+plot(bat, image = TRUE, land = TRUE, lwd = 0.1, bpal = list(c(0, max(bat), greys), c(min(bat), 0, blues)))
+plot(bat, lwd = 0.8, deep = -1000, shallow = -20, step = 20, add = TRUE) # highlight coastline
+
+# Get depth profile along both tracks and remove positive depths (since random fake values can be on land)
+# path.profile() gets depth value for all cells of the bathymetric grid below the gps tracks
+path1 <- path.profile(track1[,-3], bat) ; path1 <- path1[-path1[,4]>0,]
+path2 <- path.profile(track2[,-3], bat) ; path2 <- path2[-path2[,4]>0,]
+# Get depth values for each gps tracking point
+# get.depth() retrieve depth values only for gps tracking points
+depth1 <- get.depth(bat, track1$lon, track1$lat, locator = FALSE, distance = TRUE) ;
+depth2 <- get.depth(bat, track2$lon, track2$lat, locator = FALSE, distance = TRUE) ;
+# Add depth values to tracks 1 and 2 and remove positive depths
+track1$depth <- depth1$depth ; track1 <- track1[-track1$depth > 0,]
+track2$depth <- depth2$depth ; track2 <- track2[-track2$depth > 0,]
+# Plot
+layout(matrix(c(1, 2, 1, 3, 4, 4), ncol = 2, byrow = TRUE), height = c(1, 1, 1))
+## Bathymetric map with gps tracks
+plot(bat, land = TRUE, image = TRUE, lwd = 0.2, bpal = list(c(min(bat,na.rm=TRUE), 0, blues), c(0, max(bat, na.rm=TRUE), greys)), ylim=c(-36.5,-35.25))
+plot(bat, deep = 0, shallow = 0, step = 0, lwd = 0.8, add = TRUE)
+lines(track1, col = "brown3")
+lines(track2, col = "darkorange1")
+legend("topright", legend = c("Track 1", "Track 2"), lwd = 1, col = c("brown3", "darkorange1"), pch = 1, pt.cex = 0.5, bg="white")
+## Depths profiles along gps tracks
+plotProfile(path1, main = "Track 1")
+plotProfile(path2, main = "Track 2")
+## Depth as a function of time since the deployment of gps tags
+par(mar=c(5,4,1,2))
+plot(track1$time, track1$depth, xlab = "Time (arbitrary unit)", ylab = "Depth (m)", type = "o", cex = 0.5, col = "brown3", xlim = range(c(track1$time, track2$time)), ylim = range(c(track1$depth, track2$depth)))
+lines(track2$time, track2$depth, type = "o", cex = 0.5, col = "darkorange1")
+legend("bottomright", legend = c("Track 1", "Track 2"), lwd = 1, col = c("brown3", "darkorange1"), pch = 1, pt.cex = 0.5)
+```
+
+```{r}
+
+# Load package
+library(marmap)
+
+# make depth raster
+bat <- readRDS( "data/bath_res1_marmap.rds")
+rast_bat <- marmap::as.raster(bat) 
+
+# change projection to match grid
+proj <- "+proj=utm +zone=9 +datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0  +units=m +no_defs"
+rast_bat <- projectRaster(rast_bat, crs = proj) 
+plot(rast_bat)
+
+
+# grid of complete cells
+hbll_grid <- readRDS(here::here("grids/hbll_s_grid_norca.rds"))
+grid_scale <- 2000 #scale of prediction grid in m
+grid <- raster(
+  ext = extent(hbll_grid)+c(-1000, 1000, -1000, 1000), # need to add 1km in all directions to allow coordinates to be the centroids of 2x2km cells
+  resolution = grid_scale, crs = CRS(proj))
+
+grid.df <- as.data.frame(grid, xy = TRUE)
+grid.df$layer <- NULL
+depth <- raster::extract(x=rast_bat, y=grid.df, fun = mean, na.rm = T, exact=T)
+extracted_depth <- cbind(grid.df, depth)
+
+hbll_grid_full_cells <- left_join(hbll_grid, extracted_depth)
+
+
+
+# grid including partial cells
+new_grid_norca <- readRDS("hbll_shp_grid_norca.rds")
+new_grid_norca <- st_as_sf(new_grid_norca)
+new_grid_norca <- st_transform(new_grid_norca, crs = 3156)
+
+depth2 <- raster::extract(x=rast_bat, y=new_grid_norca, na.rm = T, exact=T, sp = T, fun = mean)
+mean_depth <- unlist(lapply(depth2, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
+
+all_depths <- bind_cols(hbll_grid_full_cells, mean_depth = mean_depth) %>% 
+  mutate(cell_depth = -depth, depth_all = -mean_depth)
+
+saveRDS(all_depths, "exrtracted_depths_norca.rds")
+
+ggplot(all_depths, aes(cell_depth, depth_all, colour = area)) + geom_point(alpha=0.2)
+
+
+hbll_grid_keep <- all_depths %>% 
+  filter(depth_all < 1100) %>% filter(depth_all > 10) 
+
+
+
+# ggplot(all_depths) +
+ggplot(hbll_grid_keep) +
+  geom_point(aes(X,Y, colour = -depth_all), alpha = 0.2) +
+  geom_point(aes(X,Y, colour = -cell_depth), alpha = 0.2) +
+  theme_classic()
+
+
+```
+
+```{r}
+r <- raster(ncol=36, nrow=18, vals=1:(18*36))
+
+cds1 <- rbind(c(-180,-20), c(-160,5), c(-60, 0), c(-160,-60), c(-180,-20))
+cds2 <- rbind(c(80,0), c(100,60), c(120,0), c(120,-55), c(80,0))
+polys <- spPolygons(cds1, cds2)
+
+v <- extract(r, polys)
+# mean for each polygon
+unlist(lapply(v, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
+
+
+```
+
+
+```{r}
 ```
 
 Lindsay's code
