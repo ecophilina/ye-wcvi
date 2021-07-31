@@ -2,7 +2,6 @@
 title: "Create filled in prediction grid with RCAs excluded"  
 author:
 - Philina A. English
-- Lindsay N.K. Davidson
 date: "21 July 2021"
 ---
 
@@ -223,9 +222,11 @@ ggplot() +
 
 Create grid cells to fill in grid area
 ```{r}
+grid_scale <- 2000 # currently using 2 x 2 km, but I think we could change this...
+
 grid1 <- sf::st_make_grid(x = sa_poly,
   offset = c(-1000, 1000),
-  cellsize=c(2000, 2000))
+  cellsize=c(grid_scale, grid_scale))
 
 keep <- st_intersects(sa_poly, grid1)
 grid1 <- grid1[unlist(keep)]
@@ -456,7 +457,7 @@ plot(rast_bat)
 
 # depth for complete cells only
 hbll_grid <- readRDS(here::here("grids/hbll_s_grid_norca.rds"))
-grid_scale <- 2000 #scale of prediction grid in m
+# grid_scale <- 2000 #scale of prediction grid in m
 grid <- raster(
   ext = extent(hbll_grid)+c(-1000, 1000, -1000, 1000), # need to add 1km in all directions to allow coordinates to be the centroids of 2x2km cells
   resolution = grid_scale, crs = CRS(proj))
@@ -585,7 +586,7 @@ ggplot(all_covs) +
   geom_point(aes(rocky, rocky_uw, colour = log(area)), alpha = 0.25) +
   theme_classic()
 
-saveRDS(all_covs, "norca_grid_w_substrate.rds")
+saveRDS(all_covs, here::here("grids/norca_grid_w_substrate.rds"))
 ```
 
 
