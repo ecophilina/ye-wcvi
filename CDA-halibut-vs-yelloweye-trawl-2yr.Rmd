@@ -1664,8 +1664,8 @@ catch_compN <- left_join(ye_obs, hal_obs)
 
 
 ggplot(catch_compN, aes(log(catch_equiv_hal+1), log(catch_equiv_ye+1))) + 
-  geom_smooth(data = filter(catch_compS, survey == "TRAWL"), method = "lm", colour = "grey") +
-  geom_jitter(data = filter(catch_compS, survey == "TRAWL"), alpha=0.5) + 
+  geom_smooth(data = filter(catch_compN, survey == "TRAWL"), method = "lm", colour = "grey") +
+  geom_jitter(data = filter(catch_compN, survey == "TRAWL"), alpha=0.5) + 
   coord_cartesian() + ggtitle("Trawl survey north of 50 degrees latitude")
 
 ggplot(catch_compN, aes(log(catch_count_hal+1), log(catch_count_ye+1))) + 
