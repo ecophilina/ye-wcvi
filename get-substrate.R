@@ -1,15 +1,14 @@
+#### PART 1 ####
 library(tidyverse)
-
 library(rgdal)
 library(raster)
-
 library(sf)
 
-# library(sf)
 # # retrieve substate layers if not done so before
 # rocky <- raster("data/substrate/rocky.tif")
 # mixed <- raster("data/substrate/mixed.tif")
 # muddy <- raster("data/substrate/muddy.tif")
+# sandy <- raster("data/substrate/sandy.tif")
 #
 # # original projection
 # proj <- "+proj=aea +lat_1=50 +lat_2=58.5 +lat_0=45 +lon_0=-126 +x_0=1000000 +y_0=0"
@@ -25,6 +24,8 @@ library(sf)
 # raster::res(new_mixed) <- 100
 # new_muddy <- raster::projectExtent(muddy, crs = proj)
 # raster::res(new_muddy) <- 100
+# new_sandy <- raster::projectExtent(sandy, crs = proj)
+# raster::res(new_sandy) <- 100
 #
 # # # Project values to new raster
 # hres_rocky <- raster::projectRaster(rocky, new_rocky) #, method = "ngb")
@@ -33,7 +34,8 @@ library(sf)
 # writeRaster(hres_mixed, file = "data/highres-mixed-raster.grd")
 # hres_muddy <- raster::projectRaster(muddy, new_muddy) #, method = "ngb")
 # writeRaster(hres_muddy, file = "data/highres-muddy-raster.grd")
-#
+# hres_sandy <- raster::projectRaster(sandy, new_sandy) #, method = "ngb")
+# writeRaster(hres_sandy, file = "data/highres-sandy-raster.grd")
 
 
 # Add substrate columns to event data
@@ -51,7 +53,7 @@ muddy <- raster("data/highres-muddy-raster.grd")
 # coords1$mixed <- as.data.frame(raster::rasterToPoints(mixed))[, 3]
 # ggplot(coords1,  aes(x, y, col = mixed)) + geom_point()
 
-# new projection
+# match event projection to substrate
 proj <- "+proj=utm +datum=NAD83 +zone=9 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
 
 # make spatial points dataframe
@@ -95,15 +97,21 @@ ggplot(events_w_sub,  aes(X, Y, col = any_rock)) + geom_point()
 ggplot(events_w_sub,  aes(X, Y, col = muddy)) + geom_point()
 
 
-###################
 
-# add substrate data to prediction grid
+#### PART 2 ####
+
+# add substrate data to original survey prediction grids
+# use make-grid.Rmd to make filled in grid.
 
 # new projection
 proj <- "+proj=utm +zone=9 +datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0  +units=m +no_defs"
 
 # put prediction data in raster form
 nd_all <- readRDS(file = "data-generated/hybrid_grid.rds") #%>% filter(year %in% c(2008)) %>% dplyr::select(-depth_scaled, -depth_centred)
+
+# # use new filled in grid
+# nd_all  <- readRDS("exrtracted_depths_norca.rds")
+
 nd <- nd_all %>%
   mutate (x = round(X*100000), y = round(Y*100000), z = depth)# %>% dplyr::select(x, y)
 # mutate(X=X*1000, Y=Y*1000) # change utms to meters from Kms
