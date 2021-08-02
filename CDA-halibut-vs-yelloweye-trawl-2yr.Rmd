@@ -1246,10 +1246,14 @@ ye_ratios <- i_ye_2020 %>%
   select(-num_cells) %>%
   pivot_wider(names_from = Area, values_from = .value) %>%
   group_by(.iteration) %>%
-  mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 5A3CD`), CDAtoFull = CDA / (`Full combined`))
+  mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 5A3CD`), 
+    CDAtoFull = CDA / (`Full combined`),
+    prop5A3CDN = `5A3CD N of 50 degrees`/`non-CDA 5A3CD`,
+    prop5A3CDS = `non-CDA 5A3CD S N of 50 degrees`/`non-CDA 5A3CD`
+    )
 
 mean_ye_ratios <- ye_ratios %>%
-  pivot_longer(cols = c(CDAto5A3CD, CDAtoFull), names_to = "area", values_to = "ratio") %>%
+  pivot_longer(cols = c(CDAto5A3CD, prop5A3CDN, prop5A3CDS), names_to = "area", values_to = "ratio") %>%
   group_by(area) %>%
   summarise(    
     ratio_mean = mean(ratio),
@@ -1261,11 +1265,13 @@ saveRDS(mean_ye_ratios, "data-generated/mean_ye_ratios.rds")
 
 ggplot(ye_ratios) +
   geom_histogram(aes(CDAto5A3CD), fill = "red", alpha = 0.75) +
-  geom_histogram(aes(CDAtoFull), fill = "black", alpha = 0.5) +
-  # geom_vline(data = mean_ye_ratios, aes(xintercept = ratio_med), linetype = 2) +
-  xlim(0, max(hal_ratios$CDAto5A3CD)) +
-  xlab("Proportion of total biomass inside CDA") + ylab("Number of simulations") +
-  ggtitle("Yelloweye Rockfish survey biomass in area 5A3CD (red) and full combined grid (grey)")
+  # geom_histogram(aes(CDAtoFull), fill = "black", alpha = 0.5) +
+  geom_histogram(aes(prop5A3CDN), fill = "black", alpha = 0.5) +
+  geom_histogram(aes(prop5A3CDS), fill = "blue", alpha = 0.5) +
+  geom_vline(data = mean_ye_ratios, aes(xintercept = ratio_med), linetype = 2) +
+  # xlim(0, max(ye_ratios$CDAto5A3CD)) +
+  xlab("Proportion of total biomass relative to all of 3CD5A") + ylab("Number of simulations") +
+  ggtitle("Yelloweye Rockfish survey biomass in CDA (red), S of 50 (blue), and N of 50 (grey)")
 ggsave("figs/filled-yelloweye-hbll-est-rock-mud-relative-biomass.png", width = 7, height = 3, dpi = 400)
 ```
 
