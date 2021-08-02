@@ -1130,10 +1130,10 @@ i_hal_5A2 <- readRDS("data-generated/filled-halibut-hbll-est-rock-mud-index-5A-s
   mutate(i_hal_5A2, Area = "5A", num_cells = nrow(s_5A_grid)),
   mutate(i_hal_noncda2, Area = "non-CDA 5A3CD", num_cells = nrow(noncda_grid)),
   mutate(i_hal_noncda2N, Area = "5A3CD N of 50 degrees", num_cells = nrow(noncda_gridN)),
-  mutate(i_hal_noncda2S, Area = "non-CDA 5A3CD S N of 50 degrees", num_cells = nrow(noncda_gridS)),
+  mutate(i_hal_noncda2S, Area = "non-CDA 5A3CD S of 50 degrees", num_cells = nrow(noncda_gridS)),
   mutate(i_hal_cda2, Area = "CDA", num_cells = nrow(cda_grid))
 )
-.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 5A3CD", "5A3CD N of 50 degrees", "non-CDA 5A3CD S N of 50 degrees", "5A", "Full combined"))
+.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 5A3CD", "5A3CD N of 50 degrees", "non-CDA 5A3CD S of 50 degrees", "5A", "Full combined"))
 
 i_hal_2020 <- filter(.dat2, year == 2020) #%>% filter(.iteration <= 200)
 
@@ -1164,10 +1164,10 @@ i_ye_5A2 <- readRDS("data-generated/filled-yelloweye-hbll-est-rock-mud-index-5A-
   mutate(i_ye_5A2, Area = "5A", num_cells = nrow(s_5A_grid)),
   mutate(i_ye_noncda2, Area = "non-CDA 5A3CD", num_cells = nrow(noncda_grid)),
   mutate(i_ye_noncda2N, Area = "5A3CD N of 50 degrees", num_cells = nrow(noncda_gridN)),
-  mutate(i_ye_noncda2S, Area = "non-CDA 5A3CD S N of 50 degrees", num_cells = nrow(noncda_gridS)),
+  mutate(i_ye_noncda2S, Area = "non-CDA 5A3CD S of 50 degrees", num_cells = nrow(noncda_gridS)),
   mutate(i_ye_cda2, Area = "CDA", num_cells = nrow(cda_grid))
 )
-.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 5A3CD", "5A3CD N of 50 degrees", "non-CDA 5A3CD S N of 50 degrees", "5A", "Full combined"))
+.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 5A3CD", "5A3CD N of 50 degrees", "non-CDA 5A3CD S of 50 degrees", "5A", "Full combined"))
 
 i_ye_2020 <- filter(.dat2, year == 2020)# %>% filter(.iteration <= 200)
 
@@ -1214,65 +1214,73 @@ What proportion of 5A3CD HBLL + trawl survey grid is inside CDA?
 `r round(nrow(cda_grid) / (nrow(cda_grid) + nrow(noncda_grid)), 2)`
 
 ```{r echo=F, message=F, warning=F}
-hal_ratios <- i_hal_2020 %>%
-  select(-num_cells) %>%
-  pivot_wider(names_from = Area, values_from = .value) %>%
-  group_by(.iteration) %>%
-  mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 5A3CD`), CDAtoFull = CDA / `Full combined`)
-
-mean_hal_ratios <- hal_ratios %>%
-  pivot_longer(cols = c(CDAto5A3CD, CDAtoFull), names_to = "area", values_to = "ratio") %>%
-  group_by(area) %>%
-  summarise(
-    ratio_mean = mean(ratio),
-    ratio_med = median(ratio),
-    ratio_lwr = quantile(ratio, 0.025),
-    ratio_upr = quantile(ratio, 0.975)
-  )
-saveRDS(mean_hal_ratios, "data-generated/mean_hal_ratios.rds")
-
-ggplot(hal_ratios) +
-  geom_histogram(aes(CDAto5A3CD), fill = "red", alpha = 0.75) +
-  geom_histogram(aes(CDAtoFull), fill = "black", alpha = 0.5) +
-  # geom_vline(data = mean_hal_ratios, aes(xintercept = ratio_med), linetype = 2) +
-  xlim(0, max(hal_ratios$CDAto5A3CD)) +
-  xlab("Proportion of total catch inside CDA") + ylab("Number of simulations") +
-  ggtitle("Pacific Halibut survey biomass in area 5A3CD (red) and full combined grid (grey)")
-ggsave("figs/filled-halibut-hbll-est-rock-mud-relative-biomass.png", width = 7, height = 3, dpi = 400)
+## clearly wrong at the moment because simulations producing numerator and denominator are not actually the same
+# 
+# hal_ratios <- i_hal_2020 %>%
+#   select(-num_cells) %>%
+#   pivot_wider(names_from = Area, values_from = .value) %>%
+#   group_by(.iteration) %>%
+#   mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 5A3CD`), CDAtoFull = CDA / `Full combined`,
+#     prop5A3CDN = `5A3CD N of 50 degrees`/`non-CDA 5A3CD`,
+#     prop5A3CDS = `non-CDA 5A3CD S of 50 degrees`/`non-CDA 5A3CD`)
+# 
+# mean_hal_ratios <- hal_ratios %>%
+#   pivot_longer(cols = c(CDAto5A3CD, prop5A3CDN, prop5A3CDS), names_to = "area", values_to = "ratio") %>%
+#   group_by(area) %>%
+#   summarise(
+#     ratio_mean = mean(ratio),
+#     ratio_med = median(ratio),
+#     ratio_lwr = quantile(ratio, 0.025),
+#     ratio_upr = quantile(ratio, 0.975)
+#   )
+# saveRDS(mean_hal_ratios, "data-generated/mean_hal_ratios.rds")
+# 
+# ggplot(hal_ratios) +
+#   geom_histogram(aes(CDAto5A3CD), fill = "red", alpha = 0.75) +
+#   # geom_histogram(aes(CDAtoFull), fill = "black", alpha = 0.5) +
+#   geom_histogram(aes(prop5A3CDN), fill = "darkgreen", alpha = 0.5) +
+#   geom_histogram(aes(prop5A3CDS), fill = "blue", alpha = 0.5) +
+#   geom_vline(data = mean_hal_ratios, aes(xintercept = ratio_med), linetype = 2) +
+#   xlim(0, 1) +
+#   xlab("Proportion of total biomass relative to all of 3CD5A") + ylab("Number of simulations") +
+#   ggtitle("Pacific Halibut survey biomass in CDA (red), S of 50 (blue), and N of 50 (green)")
+# ggsave("figs/filled-halibut-hbll-est-rock-mud-relative-biomass.png", width = 7, height = 3, dpi = 400)
 ```
 
 ```{r echo=F, message=F, warning=F}
-ye_ratios <- i_ye_2020 %>%
-  select(-num_cells) %>%
-  pivot_wider(names_from = Area, values_from = .value) %>%
-  group_by(.iteration) %>%
-  mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 5A3CD`), 
-    CDAtoFull = CDA / (`Full combined`),
-    prop5A3CDN = `5A3CD N of 50 degrees`/`non-CDA 5A3CD`,
-    prop5A3CDS = `non-CDA 5A3CD S N of 50 degrees`/`non-CDA 5A3CD`
-    )
-
-mean_ye_ratios <- ye_ratios %>%
-  pivot_longer(cols = c(CDAto5A3CD, prop5A3CDN, prop5A3CDS), names_to = "area", values_to = "ratio") %>%
-  group_by(area) %>%
-  summarise(    
-    ratio_mean = mean(ratio),
-    ratio_med = median(ratio),
-    ratio_lwr = quantile(ratio, 0.025),
-    ratio_upr = quantile(ratio, 0.975)
-  )
-saveRDS(mean_ye_ratios, "data-generated/mean_ye_ratios.rds")
-
-ggplot(ye_ratios) +
-  geom_histogram(aes(CDAto5A3CD), fill = "red", alpha = 0.75) +
-  # geom_histogram(aes(CDAtoFull), fill = "black", alpha = 0.5) +
-  geom_histogram(aes(prop5A3CDN), fill = "black", alpha = 0.5) +
-  geom_histogram(aes(prop5A3CDS), fill = "blue", alpha = 0.5) +
-  geom_vline(data = mean_ye_ratios, aes(xintercept = ratio_med), linetype = 2) +
-  # xlim(0, max(ye_ratios$CDAto5A3CD)) +
-  xlab("Proportion of total biomass relative to all of 3CD5A") + ylab("Number of simulations") +
-  ggtitle("Yelloweye Rockfish survey biomass in CDA (red), S of 50 (blue), and N of 50 (grey)")
-ggsave("figs/filled-yelloweye-hbll-est-rock-mud-relative-biomass.png", width = 7, height = 3, dpi = 400)
+## clearly wrong at the moment because simulations producing numerator and denominator are not actually the same
+# 
+# ye_ratios <- i_ye_2020 %>%
+#   select(-num_cells) %>%
+#   pivot_wider(names_from = Area, values_from = .value) %>%
+#   group_by(.iteration) %>%
+#   mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 5A3CD`), 
+#     CDAtoFull = CDA / (`Full combined`),
+#     prop5A3CDN = `5A3CD N of 50 degrees`/`non-CDA 5A3CD`,
+#     prop5A3CDS = `non-CDA 5A3CD S of 50 degrees`/`non-CDA 5A3CD`
+#     )
+# 
+# mean_ye_ratios <- ye_ratios %>%
+#   pivot_longer(cols = c(CDAto5A3CD, prop5A3CDN, prop5A3CDS), names_to = "area", values_to = "ratio") %>%
+#   group_by(area) %>%
+#   summarise(    
+#     ratio_mean = mean(ratio),
+#     ratio_med = median(ratio),
+#     ratio_lwr = quantile(ratio, 0.025),
+#     ratio_upr = quantile(ratio, 0.975)
+#   )
+# saveRDS(mean_ye_ratios, "data-generated/mean_ye_ratios.rds")
+# 
+# ggplot(ye_ratios) +
+#   geom_histogram(aes(CDAto5A3CD), fill = "red", alpha = 0.75) +
+#   # geom_histogram(aes(CDAtoFull), fill = "black", alpha = 0.5) +
+#   geom_histogram(aes(prop5A3CDN), fill = "darkgreen", alpha = 0.5) +
+#   geom_histogram(aes(prop5A3CDS), fill = "blue", alpha = 0.5) +
+#   geom_vline(data = mean_ye_ratios, aes(xintercept = ratio_med), linetype = 2) +
+#   xlim(0, 1) +
+#   xlab("Proportion of total biomass relative to all of 3CD5A") + ylab("Number of simulations") +
+#   ggtitle("Yelloweye Rockfish survey biomass in CDA (red), S of 50 (blue), and N of 50 (green)")
+# ggsave("figs/filled-yelloweye-hbll-est-rock-mud-relative-biomass.png", width = 7, height = 3, dpi = 400)
 ```
 
 
