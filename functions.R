@@ -42,7 +42,13 @@ get_all_sims <- function(fit_obj, newdata, sims = 500, level = 0.95,
   est_function = stats::median,
   agg_function = function(x) sum(exp(x))){
 
-  pred_obj <- predict(fit_obj, newdata = newdata, sims = sims)
+  pred_obj_unscaled <- predict(fit_obj, newdata = newdata, sims = sims)
+
+  # grid area is currently in m2 so need to convert to km2 (note that this is not the unit of biomass which is hectares but that number gets too huge)
+  newdata$area <- newdata$area / 1000000
+
+  pred_obj <- apply(pred_obj_unscaled, 2, function(x) x*newdata$area)
+  attr(pred_obj, "time") <- "year" # restore attribute
   # browser()
   i <- get_index_sims(pred_obj, return_sims = F, level = level,
     est_function = est_function, agg_function = agg_function)
@@ -50,7 +56,9 @@ get_all_sims <- function(fit_obj, newdata, sims = 500, level = 0.95,
   if(return_sims){
   i_sims <- get_index_sims(pred_obj, return_sims = T, level = level,
     est_function = est_function, agg_function = agg_function)
-    return(list(index = i, sims = i_sims, grid = newdata, sim.predictions = pred_obj#, fit_obj = fit_obj
+    return(list(index = i, sims = i_sims, grid = newdata
+      , sim.predictions = pred_obj # this takes up a lot of space so if not using it...
+      #, fit_obj = fit_obj
       ))
   } else {
     return(i)
