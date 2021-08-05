@@ -963,12 +963,12 @@ i_hal_hbll <- readRDS("data-generated/filled-halibut-hbll-est-rock-mud-index-hbl
   mutate(i_hal, Area = "Full combined"),
   # mutate(i_hal_hbll, Area = "HBLL grid only"),
   mutate(i_hal_5A, Area = "5A"),
-  mutate(i_hal_noncda, Area = "non-CDA 5A3CD"),
+  mutate(i_hal_noncda, Area = "non-CDA 3CD5A"),
   mutate(i_hal_cda, Area = "CDA")
 )
 
 
-.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 5A3CD", "5A", "Full combined", "HBLL grid only"))
+.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A", "5A", "Full combined", "HBLL grid only"))
 ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
@@ -1000,10 +1000,10 @@ i_ye_hbll <- readRDS("data-generated/filled-yelloweye-hbll-est-rock-mud-index-hb
   mutate(i_ye, Area = "Full combined"),
   # mutate(i_ye_hbll, Area = "HBLL grid only"),
   mutate(i_ye_5A, Area = "5A"),
-  mutate(i_ye_noncda, Area = "non-CDA 5A3CD"),
+  mutate(i_ye_noncda, Area = "non-CDA 3CD5A"),
   mutate(i_ye_cda, Area = "CDA")
 )
-.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 5A3CD", "5A", "Full combined", "HBLL grid only"))
+.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A", "5A", "Full combined", "HBLL grid only"))
 ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
@@ -1036,19 +1036,19 @@ i_hal_noncdaS <- readRDS("data-generated/filled-halibut-hbll-est-rock-mud-index-
 
 .dat <- bind_rows(
   mutate(i_hal_noncda,
-    Area = "non-CDA 5A3CD",
+    Area = "non-CDA 3CD5A",
     est = est / nrow(noncda_grid),
     lwr = lwr / nrow(noncda_grid),
     upr = upr / nrow(noncda_grid)
   ),
   # mutate(i_hal_noncdaN,
-  #   Area = "non-CDA 5A3CDN",
+  #   Area = "non-CDA 3CD5AN",
   #   est = est / nrow(noncda_gridN),
   #   lwr = lwr / nrow(noncda_gridN),
   #   upr = upr / nrow(noncda_gridN)
   # ),
   # mutate(i_hal_noncdaS,
-  #   Area = "non-CDA 5A3CDS",
+  #   Area = "non-CDA 3CD5AS",
   #   est = est / nrow(noncda_gridS),
   #   lwr = lwr / nrow(noncda_gridS),
   #   upr = upr / nrow(noncda_gridS)
@@ -1083,7 +1083,7 @@ ggsave("figs/filled-halibut-hbll-est-rock-mud-average-index.png", width = 7, hei
 ```{r message = F, echo= F}
 .dat <- bind_rows(
   mutate(i_ye_noncda,
-    Area = "non-CDA 5A3CD",
+    Area = "non-CDA 3CD5A",
     est = est / nrow(noncda_grid),
     lwr = lwr / nrow(noncda_grid),
     upr = upr / nrow(noncda_grid)
@@ -1128,12 +1128,12 @@ i_hal_5A2 <- readRDS("data-generated/filled-halibut-hbll-est-rock-mud-index-5A-s
 .dat2 <- bind_rows(
   mutate(i_hal2, Area = "Full combined", num_cells = nrow(full_s_grid)),
   mutate(i_hal_5A2, Area = "5A", num_cells = nrow(s_5A_grid)),
-  mutate(i_hal_noncda2, Area = "non-CDA 5A3CD", num_cells = nrow(noncda_grid)),
+  mutate(i_hal_noncda2, Area = "non-CDA 3CD5A", num_cells = nrow(noncda_grid)),
   mutate(i_hal_noncda2N, Area = "5A3CD N of 50 degrees", num_cells = nrow(noncda_gridN)),
-  mutate(i_hal_noncda2S, Area = "non-CDA 5A3CD S of 50 degrees", num_cells = nrow(noncda_gridS)),
+  mutate(i_hal_noncda2S, Area = "non-CDA 3CD5A S of 50 degrees", num_cells = nrow(noncda_gridS)),
   mutate(i_hal_cda2, Area = "CDA", num_cells = nrow(cda_grid))
 )
-.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 5A3CD", "5A3CD N of 50 degrees", "non-CDA 5A3CD S of 50 degrees", "5A", "Full combined"))
+.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 3CD5A", "5A3CD N of 50 degrees", "non-CDA 3CD5A S of 50 degrees", "5A", "Full combined"))
 
 i_hal_2020 <- filter(.dat2, year == 2020) #%>% filter(.iteration <= 200)
 
@@ -1162,12 +1162,12 @@ i_ye_5A2 <- readRDS("data-generated/filled-yelloweye-hbll-est-rock-mud-index-5A-
 .dat2 <- bind_rows(
   mutate(i_ye2, Area = "Full combined", num_cells = nrow(full_s_grid)),
   mutate(i_ye_5A2, Area = "5A", num_cells = nrow(s_5A_grid)),
-  mutate(i_ye_noncda2, Area = "non-CDA 5A3CD", num_cells = nrow(noncda_grid)),
+  mutate(i_ye_noncda2, Area = "non-CDA 3CD5A", num_cells = nrow(noncda_grid)),
   mutate(i_ye_noncda2N, Area = "5A3CD N of 50 degrees", num_cells = nrow(noncda_gridN)),
-  mutate(i_ye_noncda2S, Area = "non-CDA 5A3CD S of 50 degrees", num_cells = nrow(noncda_gridS)),
+  mutate(i_ye_noncda2S, Area = "non-CDA 3CD5A S of 50 degrees", num_cells = nrow(noncda_gridS)),
   mutate(i_ye_cda2, Area = "CDA", num_cells = nrow(cda_grid))
 )
-.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 5A3CD", "5A3CD N of 50 degrees", "non-CDA 5A3CD S of 50 degrees", "5A", "Full combined"))
+.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 3CD5A", "5A3CD N of 50 degrees", "non-CDA 3CD5A S of 50 degrees", "5A", "Full combined"))
 
 i_ye_2020 <- filter(.dat2, year == 2020)# %>% filter(.iteration <= 200)
 
@@ -1185,18 +1185,18 @@ saveRDS(ye_catch_per_cell, "data-generated/ye_catch_per_cell.rds")
 
 
 ```{r message=F, echo=F}
-ggplot(i_hal_2020 %>% filter(Area %in% c("CDA", "non-CDA 5A3CD"))) + geom_histogram(aes(.value / num_cells, 
+ggplot(i_hal_2020 %>% filter(Area %in% c("CDA", "non-CDA 3CD5A"))) + geom_histogram(aes(.value / num_cells, 
   fill = Area
   ), alpha = 0.5
   #, fill = "black"
   ) +
-  geom_histogram(data = i_ye_2020 %>% filter(Area %in% c("CDA", "non-CDA 5A3CD")), aes(.value / num_cells, fill = Area), alpha = 0.75) +
-  geom_vline(data = catch_per_cell%>% filter(Area %in% c("CDA", "non-CDA 5A3CD")), aes(xintercept = catch_med,
+  geom_histogram(data = i_ye_2020 %>% filter(Area %in% c("CDA", "non-CDA 3CD5A")), aes(.value / num_cells, fill = Area), alpha = 0.75) +
+  geom_vline(data = catch_per_cell%>% filter(Area %in% c("CDA", "non-CDA 3CD5A")), aes(xintercept = catch_med,
     colour = Area
     ), linetype = 2, alpha = 0.5
     #, colour = "black"
     ) +
-  geom_vline(data = ye_catch_per_cell%>% filter(Area %in% c("CDA", "non-CDA 5A3CD")), aes(xintercept = catch_med, colour = Area), linetype = 2) +
+  geom_vline(data = ye_catch_per_cell%>% filter(Area %in% c("CDA", "non-CDA 3CD5A")), aes(xintercept = catch_med, colour = Area), linetype = 2) +
   facet_grid(rows = vars(Area)) + xlab("Mean kg/ha") + ylab("Number of simulations") +
   scale_fill_brewer(palette = "Set1") + scale_colour_brewer(palette = "Set1") + theme(legend.position = "none") +
   ggtitle("Estimated 2020 biomass densities (dashed lines are median)",
@@ -1220,9 +1220,9 @@ What proportion of 5A3CD HBLL + trawl survey grid is inside CDA?
 #   select(-num_cells) %>%
 #   pivot_wider(names_from = Area, values_from = .value) %>%
 #   group_by(.iteration) %>%
-#   mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 5A3CD`), CDAtoFull = CDA / `Full combined`,
-#     prop5A3CDN = `5A3CD N of 50 degrees`/`non-CDA 5A3CD`,
-#     prop5A3CDS = `non-CDA 5A3CD S of 50 degrees`/`non-CDA 5A3CD`)
+#   mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 3CD5A`), CDAtoFull = CDA / `Full combined`,
+#     prop5A3CDN = `5A3CD N of 50 degrees`/`non-CDA 3CD5A`,
+#     prop5A3CDS = `non-CDA 3CD5A S of 50 degrees`/`non-CDA 3CD5A`)
 # 
 # mean_hal_ratios <- hal_ratios %>%
 #   pivot_longer(cols = c(CDAto5A3CD, prop5A3CDN, prop5A3CDS), names_to = "area", values_to = "ratio") %>%
@@ -1254,10 +1254,10 @@ What proportion of 5A3CD HBLL + trawl survey grid is inside CDA?
 #   select(-num_cells) %>%
 #   pivot_wider(names_from = Area, values_from = .value) %>%
 #   group_by(.iteration) %>%
-#   mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 5A3CD`), 
+#   mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 3CD5A`), 
 #     CDAtoFull = CDA / (`Full combined`),
-#     prop5A3CDN = `5A3CD N of 50 degrees`/`non-CDA 5A3CD`,
-#     prop5A3CDS = `non-CDA 5A3CD S of 50 degrees`/`non-CDA 5A3CD`
+#     prop5A3CDN = `5A3CD N of 50 degrees`/`non-CDA 3CD5A`,
+#     prop5A3CDS = `non-CDA 3CD5A S of 50 degrees`/`non-CDA 3CD5A`
 #     )
 # 
 # mean_ye_ratios <- ye_ratios %>%
@@ -1290,26 +1290,28 @@ What proportion of 5A3CD HBLL + trawl survey grid is inside CDA?
 .i_ye <- bind_rows(
   mutate(i_ye2, Area = "Full combined", num_cells = nrow(full_s_grid)),
   mutate(i_ye_5A2, Area = "5A", num_cells = nrow(s_5A_grid)),
-  mutate(i_ye_noncda2, Area = "non-CDA 5A3CD", num_cells = nrow(noncda_grid)),
+  mutate(i_ye_noncda2, Area = "non-CDA 3CD5A", num_cells = nrow(noncda_grid)),
   mutate(i_ye_noncda2N, Area = "5A3CD N of 50 degrees", num_cells = nrow(noncda_gridN)),
-  mutate(i_ye_noncda2S, Area = "non-CDA 5A3CD S of 50 degrees", num_cells = nrow(noncda_gridS)),
+  mutate(i_ye_noncda2S, Area = "non-CDA 3CD5A S of 50 degrees", num_cells = nrow(noncda_gridS)),
   mutate(i_ye_cda2, Area = "CDA", num_cells = nrow(cda_grid))
 ) %>%   filter(.iteration <= 500) %>%
   rename(yelloweye = .value) 
 
-.i_ye$Area <- ordered(.i_ye$Area, levels = c("CDA", "non-CDA 5A3CD", "non-CDA 5A3CD S of 50 degrees", "5A3CD N of 50 degrees", "5A", "Full combined"))
+.i_ye$Area <- ordered(.i_ye$Area, 
+  levels = c("CDA", "non-CDA 3CD5A", "non-CDA 3CD5A S of 50 degrees", "5A3CD N of 50 degrees", "5A", "Full combined"))
 
 .i_hal <- bind_rows(
   mutate(i_hal2, Area = "Full combined", num_cells = nrow(full_s_grid)),
   mutate(i_hal_5A2, Area = "5A", num_cells = nrow(s_5A_grid)),
-  mutate(i_hal_noncda2, Area = "non-CDA 5A3CD", num_cells = nrow(noncda_grid)),
+  mutate(i_hal_noncda2, Area = "non-CDA 3CD5A", num_cells = nrow(noncda_grid)),
   mutate(i_hal_noncda2N, Area = "5A3CD N of 50 degrees", num_cells = nrow(noncda_gridN)),
-  mutate(i_hal_noncda2S, Area = "non-CDA 5A3CD S of 50 degrees", num_cells = nrow(noncda_gridS)),
+  mutate(i_hal_noncda2S, Area = "non-CDA 3CD5A S of 50 degrees", num_cells = nrow(noncda_gridS)),
   mutate(i_hal_cda2, Area = "CDA", num_cells = nrow(cda_grid))
 ) %>% filter(.iteration <= 500) %>%
   rename(halibut = .value)
 
-.i_hal$Area <- ordered(.i_hal$Area, levels = c("CDA", "non-CDA 5A3CD", "non-CDA 5A3CD S of 50 degrees", "5A3CD N of 50 degrees", "5A", "Full combined"))
+.i_hal$Area <- ordered(.i_hal$Area, 
+  levels = c("CDA", "non-CDA 3CD5A", "non-CDA 3CD5A S of 50 degrees", "5A3CD N of 50 degrees", "5A", "Full combined"))
 
 .dat <- left_join(.i_ye, .i_hal) %>% mutate(
     ye_per_hal = yelloweye / (halibut),
@@ -1328,7 +1330,7 @@ What proportion of 5A3CD HBLL + trawl survey grid is inside CDA?
 # saveRDS(.dat, "data-generated/ratios-yelloweye-to-halibut.rds")
 
 .dat2 <- .dat %>% filter(Area %in% c(
-  "non-CDA 5A3CD",
+  "non-CDA 3CD5A",
   "CDA"
   ))
 
@@ -1348,7 +1350,7 @@ ggplot(.dat2, aes(year, ye_per_hal, fill = Area, colour = Area)) +
 ggsave("figs/filled-ye-to-hal-index-hbll-est-rock-mud.png", width = 7, height = 4, dpi = 400)
 
 .dat3 <- .dat %>% filter(Area %in% c(
-  "non-CDA 5A3CD S of 50 degrees",
+  "non-CDA 3CD5A S of 50 degrees",
   "5A3CD N of 50 degrees",
   "CDA"
   ))
@@ -1358,7 +1360,7 @@ ggplot(.dat3, aes(year, ye_per_hal, fill = Area, colour = Area)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
   xlab("Year") +
   ylab("Estimated yelloweye to halibut biomass ratio") +
-  coord_cartesian(expand = T, ylim = c(0.03, max(.dat2$upr))) +
+  coord_cartesian(expand = T, ylim = c(0.03, max(.dat3$upr))) +
   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
   scale_x_continuous(
     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
@@ -1407,7 +1409,7 @@ hbll_in_noncda <- nrow(hbll_noncda_grid)/nrow(noncda_grid)
     upr_hal = quantile(hal_per_ye, 0.975),
     hal_per_ye = mean(hal_per_ye)
   ) 
-.datx <- .datx %>% filter(Area %in% c("non-CDA 5A3CD", "CDA"))
+.datx <- .datx %>% filter(Area %in% c("non-CDA 3CD5A", "CDA"))
 # saveRDS(.dat, "data-generated/ratios-yelloweye-to-halibutx.rds")
 
 ggplot(.dat2, aes(year, ye_per_hal, fill = Area, colour = Area)) +
