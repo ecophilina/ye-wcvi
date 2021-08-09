@@ -20,23 +20,23 @@ here::dr_here()
 We fit geostatistical spatiotemporal models to the southern outside Hard Bottom Longline survey (HBLL) and synoptic trawl survey data using the R package sdmTMB <https://github.com/pbs-assess/sdmTMB>. 
 The HBLL survey focuses on rockfish habitats, rather than a broader range of habitats and depths that halibut occupy. 
 This survey is usually conducted in alternating years, except that no survey occurred in both 2012 and 2013. 
-The synoptic trawl surveys sample soft-bottom habitats, but use a different gear type and record biomass densities, rather than fish counts as on the HBLLL. 
-Two of these surveys overlap spatially with the HBLL: the southern portion with the West Coast Vancouver Island Synoptic Survey conducted in even years (except 2020 due to covid **is this true?**), and the northern portion with the Queen Charlotte Sound Synoptic Survey conducted in odd years.
-In order to stitch all three of these surveys together and produce estimates of local variation in biomass density, we pooled odd and even year pairs and converted the catch counts from the HBLL into biomass densities. 
-HBLL catch counts are converted to biomass using an estimate of mean weight (currently using all fish sampled on the trawl surveys, because we don't have the Halibut measurements from the HBLL in our database and yelloweye sizes do not seem differ between the survey types). 
+The synoptic trawl surveys sample soft-bottom habitats, but use a different gear type and record biomass densities, rather than fish counts as on the HBLL. 
+Two of these surveys overlap spatially with the HBLL: the southern portion with the West Coast Vancouver Island Synoptic Survey conducted in even years (except 2020 due to COVID), and the northern portion with the Queen Charlotte Sound Synoptic Survey conducted in odd years.
+In order to joing or "stitch" these three surveys together and produce estimates of local variation in biomass density, we pooled odd and even year pairs and converted the catch counts from the HBLL into biomass densities. 
+We converted HBLL catch counts to biomass using an estimate of mean weight (currently using all fish sampled on the trawl surveys, because we don't have the Halibut measurements from the HBLL in our database and yelloweye sizes do not seem differ between the survey types). 
 This biomass estimate is further divided by the "area swept" calculation of hook count x a hook spacing of 0.0024384 km) x an assumed catch radius of 0.009144 km and converted from km2.
 Both this density and that from the trawl survey data are then converted from kg per km2 to kg per ha. 
 **is this going to make my index values inflated? In other words, does the calculation assume that the units are at a particular spatial scale?**
 
 Spatiotemporal correlation was much higher for Halibut than from YE, but improved model fit for both > delta 10 AIC. 
-For Halibut, including an AR1 correlation between spatiotemporal fields only marginally improved model fit (~5 AIC), so we use independent spatiotemporal fields for both species. 
-Our Halibut model is very similar to the model used by the IPHC for index standardization. **still true without an AR1?**
+For Halibut, including an AR1 correlation between spatiotemporal fields only marginally improved model fit (~5 AIC), so we used independent spatiotemporal fields for both species. 
+<!-- Our Halibut model is similar to the model used by the IPHC for index standardization with the main difference being that we allow annual mean biomass to be independent (following the standard in most NOAA assessments, e.g. REF, REF) and we use a Tweedie... -->
+
 We use a Tweedie...
 
-Survey type is included in the model as a fixed effect that captures differences in both selectivity **is that the right word?** and in the habitat types represented in the two survey types. 
-We also include a quadratic effect of depth, annual means for years, and latent "random fields" for spatial and spatiotemporal fields. 
-These random fields soak up remaining spatial or spatiotemporal correlation from predictors not explicitly included in the model.
-If we added a substrate layer that could more fully account for the difference in habitats represented by the survey types, than the fixed effect of survey type would be mostly an estimate of differences in selectivity which might allow for somewhat better extrapolation of predicted catch between gear types and into neighbouring unsampled grid cells. 
+We included survey type in the model as a fixed effect that captures differences in both catchability represented in the two survey types. 
+We also include a quadratic effect of depth, annual means for years, and latent "random fields" for representing remaining spatial and spatiotemporal correlation that is not explicitely modelled by the included covariates. 
+<!-- If we added a substrate layer that could more fully account for the difference in habitats represented by the survey types, than the fixed effect of survey type would be mostly an estimate of differences in catchability which might allow for somewhat better extrapolation of predicted catch between gear types and into neighbouring unsampled grid cells.  -->
 
 **should we include this bit and the comparison fig?**
 We also built models based on just the HBLL data to confirm that stiching of the survey types was still representative of the HBLL survey results. 
