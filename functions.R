@@ -44,60 +44,69 @@ expand_prediction_grid <- function(grid, years) {
 
 get_all_sims <- function(fit_obj, newdata, sims = 500, level = 0.95,
   split_by_region = T,
+  area_divisor = 10000, # 10000 for grid area in m2 to biomass/hectare,
+  # could be 1000000 for m2 to km2, or 4000000 for m2 to # hooks 2x2 km grid cell
   return_sims = TRUE, return_full_obj = TRUE,
   est_function = stats::median,
   agg_function = function(x) sum(exp(x))){
 
+# browser()
   pred_obj_unscaled <- predict(fit_obj, newdata = newdata, sims = sims)
-  # grid area is currently in m2 so need to convert to km2
-  #(note that this is not the unit of biomass which is hectares but that number gets too huge)
-  newdata$area <- newdata$area / 1000000
-  p <- apply(pred_obj_unscaled, 2, function(x) x * newdata$area)
-  attr(p, "time") <- "year"
 
+  if(any(names(newdata) == "area")){
+  # grid area is currently in m2 so need to convert to same units as the biomass variable
+  newdata$area <- newdata$area / area_divisor
+  p <- apply(pred_obj_unscaled, 2, function(x) x + log(newdata$area))
+  attr(p, "time") <- "year"
+  } else {
+  p <- pred_obj_unscaled
+  }
 
   if (split_by_region){
-  # if (any(names(newdata) == "region")) {
-    # browser()
-    ind <- list()
-    i_sims <- list()
+
     by_region <- list()
 
-    ind[[1]] <- get_index_sims(p, return_sims = F, level = level,
+    ind <- get_index_sims(p, return_sims = F, level = level,
       est_function = est_function, agg_function = agg_function)
 
-    i_sims[[1]] <- get_index_sims(p, return_sims = T, level = level,
+    ind$region <- "all"
+
+    i_sims <- get_index_sims(p, return_sims = T, level = level,
       est_function = est_function, agg_function = agg_function)
 
-    by_region[[1]] <- list(index = ind[[1]], sims = i_sims[[1]], grid = newdata
+    i_sims$region <- "all"
+
+    by_region[[1]] <- list(index = ind, sims = i_sims, grid = newdata
       , sim.predictions = p # this takes up a lot of space so if not using it...
     )
 
-    pred_obj <- list()
+    setNames(by_region[1], "all")
 
     for (i in seq_along(unique(newdata$region))){
 
     pred <- p[newdata$region == unique(newdata$region)[i], ]
     attr(pred, "time") <- "year"
 
-    ind[[i+1]] <- get_index_sims(pred, return_sims = F, level = level,
+    ind2 <- get_index_sims(pred, return_sims = F, level = level,
       est_function = est_function, agg_function = agg_function)
 
-    i_sims[[i+1]] <- get_index_sims(pred, return_sims = T, level = level,
+    i_sims2 <- get_index_sims(pred, return_sims = T, level = level,
       est_function = est_function, agg_function = agg_function)
 
-    pred_obj[[i+1]] <- pred
-    setNames(ind[i+1], unique(newdata$region)[i])
-    ind[[i+1]]$region <- unique(newdata$region)[i]
+    # setNames(ind2, unique(newdata$region)[i])
+    ind2$region <- unique(newdata$region)[i]
 
-    setNames(i_sims[i+1], unique(newdata$region)[i])
-    i_sims[[i+1]]$region <- unique(newdata$region)[i]
+    # setNames(i_sims2, unique(newdata$region)[i])
+    i_sims2$region <- unique(newdata$region)[i]
 
-    setNames(pred_obj[i], unique(newdata$region)[i])
+    # setNames(pred, unique(newdata$region)[i])
 
-    by_region[[i+1]] <- list(index = ind[[i+1]], sims = i_sims[[i+1]], grid = newdata
-      , sim.predictions = pred_obj[[i]] # this takes up a lot of space so if not using it...
+    by_region[[i+1]] <- list(index = ind2, sims = i_sims2, grid = newdata
+      , sim.predictions = pred # this takes up a lot of space so if not using it...
     )
+
+    setNames(by_region[i+1], paste(unique(newdata$region)[i]))
+
     }
 
     # alternatively they could go in one df
@@ -112,19 +121,15 @@ get_all_sims <- function(fit_obj, newdata, sims = 500, level = 0.95,
     return(by_region)
 
   } else {
-    pred_obj <- apply(pred_obj_unscaled, 2, function(x) x*newdata$area)
 
-
-  attr(pred_obj, "time") <- "year" # restore attribute
-  # browser()
-  i <- get_index_sims(pred_obj, return_sims = F, level = level,
+  i <- get_index_sims(p, return_sims = F, level = level,
     est_function = est_function, agg_function = agg_function)
 
   if(return_sims){
-  i_sims <- get_index_sims(pred_obj, return_sims = T, level = level,
+  i_sims <- get_index_sims(p, return_sims = T, level = level,
     est_function = est_function, agg_function = agg_function)
     return(list(index = i, sims = i_sims, grid = newdata
-      , sim.predictions = pred_obj # this takes up a lot of space so if not using it...
+      , sim.predictions = p # this takes up a lot of space so if not using it...
       #, fit_obj = fit_obj
       ))
   } else {
