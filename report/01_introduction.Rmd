@@ -142,8 +142,8 @@ include_graphics(here("figs/hybrid-hal-to-ye-index-trawlinhbllyrs-paired.png"))
 include_graphics(here("figs/expected_ye_when_maximize_hal_CI.png"))
 ```
 
-```{r ye-ratio-by-ye-min-area, fig.cap="Variation in the mean biomass of \\textbf{YE to halibut} for cells with the \\textbf{lowest YE densities}. Mean YE densities of less than 1 g per 100 hooks have been truncated to this value and the ratios are then calculated for the combinations of cells with the lowest YE densities. Otherwise these ratios are derived in a similar way to the previous figure.", out.width="5.5in"}
-include_graphics(here("figs/expected_ye_when_avoiding_ye_CI.png"))
+```{r ye-ratio-by-ye-min-area, fig.cap="Variation in the mean biomass of \\textbf{YE to halibut} for cells with the \\textbf{lowest YE densities} up to the total area of all cells comprising the CDA. Mean YE densities of less than 1 g per 100 hooks have been truncated to this value and the ratios are then calculated for the combinations of cells with the lowest YE densities. Otherwise these ratios are derived in a similar way to the previous figure.", out.width="5.5in"}
+include_graphics(here("figs/expected_YE_when_avoiding_YE_CI-hbll-est-rock-mud_allcda_filled.png"))
 ```
 
 ```{r hal-ratio-by-hal-max-area, fig.cap="Variation in the mean biomass of \\textbf{halibut to YE} for cells with the \\textbf{highest halibut densities}. Mean halibut densities of less than 1 g per 100 hooks and ratios less than 1 to 1 have been truncated to these values. Note the y-axis now has a log scale to accomodate the very large biomass ratios. Otherwise these ratios are derived in a similar way to the previous figures.", out.width="5.5in"}
