@@ -10,7 +10,7 @@ library(sf)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
-# remotes::install_github("pbs-assess/sdmTMB", ref = "pc-prior") # for faster models
+# remotes::install_github("pbs-assess/sdmTMB") 
 library(sdmTMB)
 # Do we need instructions for installing other dependencies like "pbsmapping"?
 # devtools::install_github("seananderson/ggsidekick")
@@ -174,8 +174,9 @@ haltrawldata <- readRDS("data/halibut-surv-sets-all.rds") %>% filter(survey_abbr
 
 haltrawldata <- left_join(haltrawldata, halsampledata3) %>% mutate(
   density_allsizes = density_kgpm2,
-  ratio_keepers = keeper_mass/sample_mass,
-  prop_sampled = ifelse(catch_weight == 0, 1, ifelse((sample_mass/1000)/catch_weight >1, 1, (sample_mass/1000)/catch_weight)),
+  sample_N = if_else(sample_N > 0, as.double(sample_N), 0, 0),
+  prop_sampled = if_else(catch_weight == 0, 1, if_else((sample_mass/1000)/catch_weight >1, 1, (sample_mass/1000)/catch_weight, 0), 0),
+  ratio_keepers = if_else(sample_mass > 0, keeper_mass/sample_mass, trawl_mean_ratio, missing = trawl_mean_ratio),
   density_kgpm2 = ifelse(catch_weight < min_weight, 0, ifelse(prop_sampled > 0.7 | sample_N > 9, ratio_keepers * density_kgpm2, trawl_mean_ratio * density_kgpm2))
 )
 
@@ -265,6 +266,114 @@ grid_utm <- expand_prediction_grid(grid, years = years) %>%
 # # if we want to predict for HBLL catch rates across full grid
 grid_utm$survey <- "HBLL"
 ```
+
+
+# Check correlations in survey catch
+
+```{r}
+# glimpse(d_ye_plots)
+# glimpse(d_hal_plots) 
+d_hal_plotsN <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
+  # plot observations for last 3 years to ensure sampling in all regions
+  filter(latitude > 50.01 & latitude < 51.4) %>%
+  filter(year %in% c(#2017,
+    2018,2019,2020)) %>%  
+  mutate(
+    # back transform densities into catch per 100 hooks
+    catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
+    max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
+    catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
+    )
+
+d_ye_plotsN <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>%
+  filter(latitude > 50.01 & latitude < 51.4) %>% filter(year %in% c(#2017,
+    2018,2019,2020)) %>% 
+  mutate(
+    # back transform densities into catch per 100 hooks
+    catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight), 
+    max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
+    catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
+    )
+
+ye_obs <- d_ye_plotsN %>% 
+  mutate(catch_count_ye = (catch_count/hook_count)*100, catch_equiv_ye = catch_equiv) %>% 
+  select(X,Y, year_pair, year_true, survey, catch_count_ye, density_ye = density, fishing_event_id, catch_equiv_ye)
+hal_obs <- d_hal_plotsN %>% 
+  mutate(catch_count_hal = (catch_count/hook_count)*100, catch_equiv_hal = catch_equiv) %>% 
+  select(fishing_event_id, catch_count_hal, density_hal = density, catch_equiv_hal)
+catch_compN <- left_join(ye_obs, hal_obs)
+
+
+# glimpse(d_ye_plots)
+# glimpse(d_hal_plots) 
+d_hal_plotsS <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
+  # plot observations for last 3 years to ensure sampling in all regions
+  filter(latitude < 50.01) %>%
+  filter(year %in% c(#2017,
+    2018,2019,2020)) %>%  
+  mutate(
+    # back transform densities into catch per 100 hooks
+    catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
+    max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
+    catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
+    )
+
+d_ye_plotsS <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>%
+  filter(latitude < 50.01)  %>% filter(year %in% c(#2017,
+    2018,2019,2020)) %>% 
+  mutate(
+    # back transform densities into catch per 100 hooks
+    catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight), 
+    max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
+    catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
+    )
+
+ye_obs <- d_ye_plotsS %>% 
+  mutate(catch_count_ye = (catch_count/hook_count)*100, catch_equiv_ye = catch_equiv) %>% 
+  select(X,Y, year_pair, year_true, survey, catch_count_ye, density_ye = density, fishing_event_id, catch_equiv_ye)
+hal_obs <- d_hal_plotsS %>% 
+  mutate(catch_count_hal = (catch_count/hook_count)*100, catch_equiv_hal = catch_equiv) %>% 
+  select(fishing_event_id, catch_count_hal, density_hal = density, catch_equiv_hal)
+catch_compS <- left_join(ye_obs, hal_obs)
+
+
+
+p1 <- ggplot(catch_compN, aes(log(catch_equiv_hal+10), log(catch_equiv_ye+10))) + 
+  geom_smooth(data = filter(catch_compN, survey == "TRAWL"), method = "lm", colour = "grey") +
+  geom_jitter(data = filter(catch_compN, survey == "TRAWL"), alpha=0.5) + 
+  coord_cartesian() + ggtitle("Trawl survey north of 50º latitude")
+
+p2 <-ggplot(catch_compN, aes(log(catch_count_hal+1), log(catch_count_ye+1))) + 
+  geom_smooth(method = "lm", colour = "grey") +
+  geom_jitter(alpha=0.5) + 
+  coord_cartesian()+ ggtitle("HBLL survey north of 50º latitude")
+
+# ggplot(catch_compN, aes(density_hal, density_ye)) + 
+#   geom_smooth(method = "lm", colour = "grey") +
+#   geom_jitter(aes(colour = survey)) + 
+#   coord_cartesian(xlim=c(0, 3))
+
+p3 <-ggplot(catch_compS, aes(log(catch_equiv_hal+10), log(catch_equiv_ye+10))) + 
+  geom_smooth(data = filter(catch_compS, survey == "TRAWL"), method = "lm", colour = "grey") +
+  geom_jitter(data = filter(catch_compS, survey == "TRAWL"), alpha=0.5) + 
+  coord_cartesian() + ggtitle("Trawl survey south of 50º latitude")
+
+p4 <-ggplot(catch_compS, aes(log(catch_count_hal+1), log(catch_count_ye+1))) + 
+  geom_smooth(method = "lm", colour = "grey") +
+  geom_jitter(alpha=0.5) + 
+  coord_cartesian()+ ggtitle("HBLL survey south of 50º latitude")
+
+library(patchwork)
+# p1 + p3 + plot_layout(nrow = 2)
+
+p2 + p4 + plot_layout(nrow = 2)
+# ggplot(catch_compS, aes(density_hal, density_ye)) + 
+#   geom_smooth(method = "lm", colour = "grey") +
+#   geom_jitter(aes(colour = survey)) + 
+#   coord_cartesian(xlim=c(0, 3))
+```
+
+# Make grids
 
 ```{r}
 # make map of grid areas and their overlap
@@ -469,7 +578,7 @@ noncda_gridS_named <- select(noncda_gridS, X, Y, region)
 noncda_gridN_named <- select(noncda_gridN, X, Y, region) 
 cda_grid_named <- select(cda_grid, X, Y, region) 
 
-region_names <- bind_rows(noncda_gridS_named ,noncda_gridN_named, cda_grid_named)
+region_names <- bind_rows(noncda_gridS_named ,noncda_gridN_named, cda_grid_named) %>% distinct()
 full_s_grid <- left_join(full_s_grid1, region_names)
 full_s_grid[is.na(full_s_grid$region), ]$region <- "other"
 saveRDS(full_s_grid, file = "data-generated/full_filled_grid_paired.rds") 
@@ -508,7 +617,7 @@ if (!file.exists(f)) {
     time = "year",
     silent = FALSE,
     anisotropy = TRUE,
-    reml = TRUE,
+    # reml = T, # F is simplier to explain. 
     family = tweedie(link = "log")
   )
   saveRDS(m_halibut, file = f)
@@ -518,52 +627,10 @@ if (!file.exists(f)) {
 ```{r echo = F}
 m_halibut <- readRDS(file = "models/halibut-hybrid-keepable-model-rocky-muddy-400kn.rds")
 m_halibut
-round(AIC(m_halibut))
+# round(AIC(m_halibut))
 # m_halibut_tv <- readRDS(file = "models/halibut-hybrid-keepable-model-allsub-tv-depth-400kn.rds")
 # m_halibut_tv
 # tidy(m_halibut, "ran_pars", conf.int = TRUE)
-```
-
-
-```{r eval = TRUE}
-### Does an AR1 help?
-# f <- paste0("models/halibut-hybrid-keepable-model-hbll-weights-AR1-400kn.rds")
-# if (!file.exists(f)) {
-#   m_halibut2 <- sdmTMB(
-#     formula = density ~ 0 + as.factor(year) + as.factor(survey) + s(any_rock, k = 3) +
-#       depth_scaled + I(depth_scaled^2),
-#     data = d_hal,
-#     spde = mesh400kn,
-#     fields = "AR1",
-#     time = "year",
-#     silent = FALSE,
-#     anisotropy = TRUE,
-#     reml = TRUE,
-#     family = tweedie(link = "log")
-#   )
-#   saveRDS(m_halibut2, file = f)
-# }
-```
-
-```{r echo = F}
-# m_halibut2 <- readRDS(file = "models/halibut-hybrid-keepable-model-hbll-weights-AR1-400kn.rds")
-# # m_halibut2
-# Without it, AIC: 
-# `r round(AIC(m_halibut))` 
-# 
-# With AR1, AIC: 
-# `r round(AIC(m_halibut2))` 
-# 
-# A litte: delta 5 AIC better, but probably not worth the added complexity?
-# For now I'm sticking with independent spatiotemporal random fields.
-# 
-# round(AIC(m_halibut))
-# m_halibut1 <- readRDS(file = "models/halibut-hybrid-keepable-model-rocky-400kn.rds")
-# m_halibut1
-# round(AIC(m_halibut1))
-# m_halibut3 <- readRDS(file = "models/halibut-hybrid-keepable-model-allsub-400kn.rds")
-# m_halibut3
-# round(AIC(m_halibut3))
 ```
 
 
@@ -594,7 +661,7 @@ if (!file.exists(f)) {
     time = "year",
     silent = FALSE,
     anisotropy = TRUE,
-    reml = TRUE,
+    # reml = T, # F is simplier to explain. 
     family = tweedie(link = "log")
   )
   saveRDS(m_ye, file = f)
@@ -610,38 +677,6 @@ m_ye
 ```
 
 `r round(AIC(m_ye))`
-
-Without spatiotemporal fields:
- 
-```{r eval = TRUE, echo = F}
-## Without spatiotemporal fields:
-# f <- "models/yelloweye-hybrid-hbll-mw-weights-sp-only-400kn.rds"
-# if (!file.exists(f)) {
-#   m_ye2 <- sdmTMB(
-#     formula = density ~ 0 + as.factor(year) + as.factor(survey) + 
-#       s(rocky, k = 3) +
-#       s(muddy, k = 3) +
-#       # s(any_rock, k = 3) +
-#       depth_scaled + I(depth_scaled^2),
-#     data = d_ye,
-#     spde = mesh400kn,
-#     spatial_only = T,
-#     time = "year",
-#     silent = FALSE,
-#     anisotropy = TRUE,
-#     reml = TRUE,
-#     family = tweedie(link = "log")
-#   )
-#   saveRDS(m_ye2, file = f)
-# }
-```
-
-```{r echo = F}
-# m_ye2 <- readRDS(file = "models/yelloweye-hybrid-hbll-mw-weights-sp-only-400kn.rds")
-# Spatiotemporal field improve model by `r round(AIC(m_ye) - AIC(m_ye2))` AIC, so stick with that.
-# `r round(AIC(m_ye2))`
-```
-
 
 ```{r warning=F, message=F}
 get_diag(m_ye)
@@ -744,7 +779,7 @@ if (!file.exists(f)) {
 s1 <- "data-generated/filled-keepable-halibut-est-rock-mud-index-all-S-sim-500.rds"
 if (!file.exists(s1)) {
   i_hal_combined <- get_all_sims(m_halibut, newdata = full_s_grid)
-  saveRDS(i_hal_combined, ss)
+  # saveRDS(i_hal_combined, ss)
   
   i_hal_S <- i_hal_combined[[1]] 
   saveRDS(i_hal_S, s1)
@@ -755,16 +790,19 @@ if (!file.exists(s3)) {
   i_hal_cda2 <- i_hal_combined[[3]] 
   saveRDS(i_hal_cda2, s3)
 }
+
 s4 <- "data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"
 if (!file.exists(s4)) {
   i_hal_noncda2N <- i_hal_combined[[4]] 
   saveRDS(i_hal_noncda2N, s4)
 }
+
 s2 <- "data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"
 if (!file.exists(s2)) {
   i_hal_noncda2S <- i_hal_combined[[2]] 
   saveRDS(i_hal_noncda2S, s2)
 }
+
 s5 <- "data-generated/filled-keepable-halibut-est-rock-mud-index-other-sim-500.rds"
 if (!file.exists(s5)) {
   i_hal_other <- i_hal_combined[[5]] 
@@ -775,7 +813,7 @@ if (!file.exists(s5)) {
 
 For just southern outside HBLL 
 
-```{r eval = T, echo=F}
+```{r eval = F, echo=F}
 f <- "data-generated/filled-keepable-halibut-est-rock-mud-index-hbll-S.rds"
 if (!file.exists(f)) {
   
@@ -785,16 +823,23 @@ if (!file.exists(f)) {
     mutate(depth_centred = log(depth) - mean(d_utm$depth_log)) %>%
     mutate(depth_scaled = depth_centred / sd(d_utm$depth_centred)) 
 
-  
   p_hal_Sb <- predict(m_halibut, newdata = hbll_s_grid, return_tmb_object = TRUE)
   saveRDS(p_hal_Sb, "data-generated/filled-keepable-halibut-est-rock-mud-predictions-hbll-S.rds")
 
-  i_hal_Sb <- get_index(p_hal_Sb, bias_correct = F) # bias_correction not working only for full grid
+  i_hal_Sb <- get_index(p_hal_Sb, bias_correct = F) # bias_correction not working for full grid
   saveRDS(i_hal_Sb, f)
 }
+```
 
+```{r  echo=F}
 ss <- "data-generated/filled-keepable-halibut-est-rock-mud-index-hbll-S-sim-500.rds"
 if (!file.exists(ss)) {
+  hbll_s_grid <- readRDS("data-generated/full_hybrid_grid_w_substrate.rds") %>% filter(survey == "HBLL") 
+  hbll_s_grid <- hbll_s_grid[complete.cases(hbll_s_grid), ]
+  hbll_s_grid <- expand_prediction_grid(hbll_s_grid, years = years) %>%
+    mutate(depth_centred = log(depth) - mean(d_utm$depth_log)) %>%
+    mutate(depth_scaled = depth_centred / sd(d_utm$depth_centred)) 
+  
   i_hal_S2b <- get_all_sims(m_halibut, newdata = hbll_s_grid, split_by_region = F)
   saveRDS(i_hal_S2b, ss)
 }
@@ -911,16 +956,19 @@ if (!file.exists(s3)) {
   i_ye_cda2 <- i_ye_combined[[3]] 
   saveRDS(i_ye_cda2, s3)
 }
+
 s4 <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"
 if (!file.exists(s4)) {
   i_ye_noncda2N <- i_ye_combined[[4]] 
   saveRDS(i_ye_noncda2N, s4)
 }
+
 s2 <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"
 if (!file.exists(s2)) {
   i_ye_noncda2S <- i_ye_combined[[2]] 
   saveRDS(i_ye_noncda2S, s2)
 }
+
 s5 <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-other-outside-cda-sim-500.rds"
 if (!file.exists(s5)) {
   i_ye_other <- i_ye_combined[[5]] 
@@ -931,7 +979,8 @@ if (!file.exists(s5)) {
 
 For just southern outside HBLL 
 
-```{r eval = T}
+
+```{r eval = F}
 f <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-hbll-S.rds"
 if (!file.exists(f)) {
   
@@ -948,8 +997,19 @@ if (!file.exists(f)) {
   saveRDS(i_ye_Sb, f)
 }
 
+
+```
+
+```{r  echo=F}
 ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-hbll-S-sim-500.rds"
 if (!file.exists(ss)) {
+  
+  hbll_s_grid <- readRDS("data-generated/full_hybrid_grid_w_substrate.rds") %>% filter(survey == "HBLL")
+  hbll_s_grid <- hbll_s_grid[complete.cases(hbll_s_grid), ]
+  hbll_s_grid <- expand_prediction_grid(hbll_s_grid, years = years) %>%
+    mutate(depth_centred = log(depth) - mean(d_utm$depth_log)) %>%
+    mutate(depth_scaled = depth_centred / sd(d_utm$depth_centred)) 
+  
   i_ye_S2b <- get_all_sims(m_ye, newdata = hbll_s_grid, split_by_region = F)
   saveRDS(i_ye_S2b, ss)
 }
@@ -1054,7 +1114,7 @@ Uses only HBLL S grid and transforms predicted counts from HBLL model into bioma
 ```{r echo=F, message=F, warning=F}
 i_hal_hbll <- readRDS("data-generated/halibut-index-all-S-sim-500.rds")[[1]]
 i_ye_hbll <- readRDS("data-generated/yelloweye-spatial-index-all-S-sim-500.rds")[[1]]
-i_hal <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-hbll-S-sim-500.rds")[[1]]
+i_hal <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-hbll-S-sim-500.rds")[[1]]#[[1]]
 i_ye <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-hbll-S-sim-500.rds")[[1]]
 
 .dat <- bind_rows(mutate(i_hal, Model = "HBLL + trawl (biomass)", Species = "Halibut"),
@@ -1108,23 +1168,23 @@ i_hal_noncdaS <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-in
 i_hal_hbll <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-hbll-S-sim-500.rds")[[1]]
 
 .dat <- bind_rows(
-  mutate(i_hal, Area = "Full combined"),
+  # mutate(i_hal, Area = "Full combined"),
   # mutate(i_hal_hbll, Area = "HBLL grid only"),
   # mutate(i_hal_5A, Area = "5A"),
-  mutate(i_hal_noncdaN, Area = "3CD5A N"),
-  mutate(i_hal_noncdaS, Area = "non-CDA 3CD5A S"),
+  mutate(i_hal_noncdaN, Area ="3CD5A N of 50º"),
+  mutate(i_hal_noncdaS, Area = "non-CDA 3CD5A S of 50º"),
   # mutate(i_hal_noncda, Area = "non-CDA 3CD5A"),
   mutate(i_hal_cda, Area = "CDA")
 )
 
 
-.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A", "non-CDA 3CD5A S","3CD5A N","5A", "Full combined", "HBLL grid only"))
-ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
+.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A S of 50º", "3CD5A N of 50º", "5A", "Full combined", "HBLL grid only"))
+ggplot(.dat, aes(year, est/1000, fill = Area, colour = Area)) + # convert kg to tonnes
   geom_line(size = 1.25) +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, colour = NA) +
+  geom_ribbon(aes(ymin = lwr/1000, ymax = upr/1000), alpha = 0.2, colour = NA) +
   xlab("Year") +
-  ylab("Biomass index") +
-  coord_cartesian(expand = FALSE, ylim = c(0, max(i_hal$upr))) +
+  ylab("Biomass index (landable tonnes)") +
+  coord_cartesian(expand = FALSE, ylim = c(0, max(.dat$upr)/1000)) +
   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
   scale_x_continuous(
     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
@@ -1148,7 +1208,7 @@ i_ye_noncdaS <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-i
 i_ye_hbll <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-hbll-S-sim-500.rds")[[1]]
 
 .dat <- bind_rows(
-  mutate(i_ye, Area = "Full combined"),
+  # mutate(i_ye, Area = "Full combined"),
   # mutate(i_ye_hbll, Area = "HBLL grid only"),
   # mutate(i_ye_5A, Area = "5A"),
   mutate(i_ye_noncdaN, Area = "3CD5A N of 50º"),
@@ -1156,14 +1216,14 @@ i_ye_hbll <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-inde
   mutate(i_ye_cda, Area = "CDA")
 )
 .dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A S of 50º", "3CD5A N of 50º", "5A", "Full combined", "HBLL grid only"))
-ggplot(.dat, aes(year, est, fill = Area, colour = Area)) +
+ggplot(.dat, aes(year, est/1000, fill = Area, colour = Area)) +
   geom_line(size = 1.25) +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, colour = NA) +
+  geom_ribbon(aes(ymin = lwr/1000, ymax = upr/1000), alpha = 0.2, colour = NA) +
   # geom_line(data = .dat1, linetype = 2) +
   xlab("Year") +
-  ylab("Biomass index") +
+  ylab("Biomass index (tonnes)") +
   coord_cartesian(#expand = FALSE, 
-    ylim = c(0, max(i_ye$upr))) +
+    ylim = c(0, max(.dat$upr)/1000)) +
   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
   scale_x_continuous(
     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
@@ -1192,19 +1252,20 @@ i_hal_noncdaS <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-in
   #   est = est / nrow(noncda_grid),
   #   lwr = lwr / nrow(noncda_grid),
   #   upr = upr / nrow(noncda_grid)
-  # ),
-  mutate(i_hal_noncdaN,
-    est = est / (sum(noncda_gridN$area)/ 10000),
-    lwr = lwr / (sum(noncda_gridN$area)/ 10000),
-    upr = upr / (sum(noncda_gridN$area)/ 10000),
-    Area = "non-CDA 3CD5AN"
-  ),
+  # ),  
   mutate(i_hal_noncdaS,
     est = est / (sum(noncda_gridS$area)/ 10000),
     lwr = lwr / (sum(noncda_gridS$area)/ 10000),
     upr = upr / (sum(noncda_gridS$area)/ 10000),
-    Area = "non-CDA 3CD5AS"
+    Area = "non-CDA 3CD5A S of 50º"
   ),
+  mutate(i_hal_noncdaN,
+    est = est / (sum(noncda_gridN$area)/ 10000),
+    lwr = lwr / (sum(noncda_gridN$area)/ 10000),
+    upr = upr / (sum(noncda_gridN$area)/ 10000),
+    Area = "3CD5A N of 50º"
+  ),
+
   mutate(i_hal_cda,
     est = est / (sum(cda_grid$area)/ 10000),
     lwr = lwr / (sum(cda_grid$area)/ 10000),
@@ -1212,6 +1273,8 @@ i_hal_noncdaS <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-in
     Area = "CDA"
   )
 )
+
+.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A S of 50º", "3CD5A N of 50º", "5A", "Full combined", "HBLL grid only"))
 
 ggplot(.dat, aes(year, est)) +
   geom_line(aes(colour = Area), size = 1.5) +
@@ -1238,13 +1301,13 @@ ggsave("figs/filled-keepable-halibut-est-rock-mud-average-index.png", width = 7,
     est = est / (sum(noncda_gridN$area)/ 10000),
     lwr = lwr / (sum(noncda_gridN$area)/ 10000),
     upr = upr / (sum(noncda_gridN$area)/ 10000),
-    Area = "non-CDA 3CD5AN"
+    Area = "3CD5A N of 50º"
   ),
   mutate(i_ye_noncdaS,
     est = est / (sum(noncda_gridS$area)/ 10000),
     lwr = lwr / (sum(noncda_gridS$area)/ 10000),
     upr = upr / (sum(noncda_gridS$area)/ 10000),
-    Area = "non-CDA 3CD5AS"
+    Area = "non-CDA 3CD5A S of 50º"
   ),
   mutate(i_ye_cda,
     est = est / (sum(cda_grid$area)/ 10000),
@@ -1253,6 +1316,8 @@ ggsave("figs/filled-keepable-halibut-est-rock-mud-average-index.png", width = 7,
     Area = "CDA"
   )
 )
+
+.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A S of 50º", "3CD5A N of 50º", "5A", "Full combined", "HBLL grid only"))
 
 
 ggplot(.dat, aes(year, est)) +
@@ -1363,7 +1428,7 @@ ggplot(i_hal_2020 %>% filter(Area %in% c("CDA","5A3CD N of 50º", "non-CDA 3CD5A
     subtitle = "Yelloweye Rockfish (darker bars) vs. Pacific Halibut (paler bars)"
   )
 
-ggsave("figs/filled-hbll-mw-est-rock-mud-estimated-biomass-densities.png", width = 6, height = 4, dpi = 400)
+ggsave("figs/filled-keepable-est-rock-mud-estimated-biomass-densities.png", width = 6, height = 5.5, dpi = 400)
 ```
 
 
@@ -1516,7 +1581,7 @@ ggplot(.dat2, aes(year, ye_per_hal, fill = Area, colour = Area)) +
   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
   scale_fill_brewer(palette = "Set1") +
   scale_colour_brewer(palette = "Set1")
-ggsave("figs/filled-hbll-mw-ye-to-hal-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
+ggsave("figs/filled-keepable-ye-to-hal-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
 
 .dat3 <- .dat %>% filter(Area %in% c(
   "non-CDA 3CD5A S of 50º", "5A3CD N of 50º",
@@ -1537,7 +1602,7 @@ ggplot(.dat3, aes(year, ye_per_hal, fill = Area, colour = Area)) +
   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
   scale_fill_brewer(palette = "Set1") +
   scale_colour_brewer(palette = "Set1")
-ggsave("figs/filled-hbll-mw-ye-to-hal-index-est-rock-mud-NS.png", width = 7, height = 4, dpi = 400)
+ggsave("figs/filled-keepable-ye-to-hal-index-est-rock-mud-NS.png", width = 7, height = 4, dpi = 400)
 
 # ggplot(.dat2, aes(year, hal_per_ye, fill = Area, colour = Area)) +
 #   geom_line() +
@@ -1551,7 +1616,7 @@ ggsave("figs/filled-hbll-mw-ye-to-hal-index-est-rock-mud-NS.png", width = 7, hei
 #   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
 #   scale_fill_brewer(palette = "Set1") +
 #   scale_colour_brewer(palette = "Set1")
-# ggsave("figs/filled-hbll-mw-hal-to-ye-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
+# ggsave("figs/filled-keepable-hal-to-ye-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
 ```
 
 Checking what happens if we use different weights... x 0.6 for smaller halibut
@@ -1565,9 +1630,10 @@ Checking what happens if we use different weights... x 0.6 for smaller halibut
 # hbll_in_cda <- nrow(hbll_cda_grid)/nrow(cda_grid)
 # hbll_in_noncda <- nrow(hbll_noncda_grid)/nrow(noncda_grid)
 
-.datx <- left_join(.i_ye, .i_hal) %>% mutate(
-    ye_per_hal = (yelloweye) / (halibut*0.76), # convert to adam's estimates ye = 1.04
-    hal_per_ye = (halibut*0.76) / (yelloweye)
+# lowest years catch rate in kg per fish caught 
+.datL <- left_join(.i_ye, .i_hal) %>% mutate(
+    ye_per_hal = (yelloweye) / (halibut*0.62), 
+    hal_per_ye = (halibut*0.62) / (yelloweye)
   )  %>% 
   group_by(Area, year) %>%
   summarise(
@@ -1578,31 +1644,49 @@ Checking what happens if we use different weights... x 0.6 for smaller halibut
     upr_hal = quantile(hal_per_ye, 0.975),
     hal_per_ye = mean(hal_per_ye)
   ) 
-.datx <- .datx %>% filter(Area %in% c(
+.datL <- .datL %>% filter(Area %in% c(
   # "non-CDA 3CD5A",
   "non-CDA 3CD5A S of 50º", "5A3CD N of 50º",
   "CDA"))
-# saveRDS(.dat, "data-generated/ratios-yelloweye-to-halibutx.rds")
 
-ggplot(.dat3, aes(year, ye_per_hal, fill = Area, colour = Area)) +
+# highest years catch rate in kg per fish caught 
+.datH <- left_join(.i_ye, .i_hal) %>% mutate(
+    ye_per_hal = (yelloweye) / (halibut*1.26), # convert to adam's estimates ye = 1.04
+    hal_per_ye = (halibut*1.26) / (yelloweye)
+  )  %>% 
+  group_by(Area, year) %>%
+  summarise(
+    lwr = quantile(ye_per_hal, 0.025),
+    upr = quantile(ye_per_hal, 0.975),
+    ye_per_hal = mean(ye_per_hal),
+    lwr_hal = quantile(hal_per_ye, 0.025),
+    upr_hal = quantile(hal_per_ye, 0.975),
+    hal_per_ye = mean(hal_per_ye)
+  ) 
+.datH <- .datH %>% filter(Area %in% c(
+  # "non-CDA 3CD5A",
+  "non-CDA 3CD5A S of 50º", "5A3CD N of 50º",
+  "CDA"))
+
+ggplot(.datH, aes(year, ye_per_hal, fill = Area, colour = Area)) +
   geom_line(aes(linetype = "solid")) +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
-  geom_line(data=.datx, aes(year, ye_per_hal, fill = Area, colour = Area, linetype = "dashed"
+  geom_line(data=.datL, aes(year, ye_per_hal, fill = Area, colour = Area, linetype = "dashed"
   )) +
-  geom_ribbon(data=.datx, aes(ymin = lwr, ymax = upr), alpha = 0.2, colour = NA) +
+  geom_ribbon(data=.datL, aes(ymin = lwr, ymax = upr), alpha = 0.2, colour = NA) +
   xlab("Year") +
   ylab("Estimated yelloweye to halibut biomass ratio") +
-  coord_cartesian(expand = T, ylim = c(0.03, max(.datx$upr))) +
+  coord_cartesian(expand = T, ylim = c(0.03, max(.datL$upr))) +
   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
-  scale_linetype_manual(name = "Halibut size", values= c("dashed", "solid"),
-    label = c("9.5 kg",  "12.45 kg")) +
+  scale_linetype_manual(name = "Halibut", values= c("dashed", "solid"),
+    label = c("lowest landings",  "most landings")) +
   scale_x_continuous(
     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
     breaks = seq(2008, 2020, 2)) + 
   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
   scale_fill_brewer(palette = "Set1") +
   scale_colour_brewer(palette = "Set1")
-ggsave("figs/filled-hbll-mw-ye-to-hal-sizes-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
+ggsave("figs/filled-keepable-ye-to-hal-sizes-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
 # 
 # ggplot(.datx, aes(year, hal_per_ye, fill = Area, colour = Area)) +
 #   geom_line() +
@@ -1616,7 +1700,7 @@ ggsave("figs/filled-hbll-mw-ye-to-hal-sizes-index-est-rock-mud.png", width = 7, 
 #   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
 #   scale_fill_brewer(palette = "Set1") +
 #   scale_colour_brewer(palette = "Set1")
-# ggsave("figs/filled-hbll-mw-halx-to-ye-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
+# ggsave("figs/filled-keepable-halx-to-ye-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
 ```
 
 # Maps
@@ -1625,12 +1709,20 @@ Predictions depicted for HBLL survey grid area that falls within region 5A3CD. "
 
 ## Halibut
 
-2020 predictions with all survey catches in 2019 and 2020
+2020 predictions with all survey catches in 2018 through 2020
+
+HBLL catch is converted to a biomass density by multiplying by the area swept per hook and the average landed biomass per fish caught.
+TRAWL catch is converted to an adjusted biomass density by adjusting for lower catchability in trawl and the average proportion of biomass caught that belongs to "landable" individuals based on either set specific samples or the global mean. 
+
 
 ```{r message=F, echo=F}
 max_map_lat <- 51.4
 min_map_lon <- -130.1
 max_map_lon <- -125
+
+bjs <- tidy(m_halibut)
+# bjs[bjs$term == "as.factor(survey)TRAWL",2]
+# exp(bjs[bjs$term == "as.factor(survey)TRAWL",2])
 
 p_hal2020 <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-predictions-all-S.rds")[[1]] %>%
   # plot observations for last 3 years to ensure sampling in all regions
@@ -1639,14 +1731,15 @@ p_hal2020 <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-predic
 d_hal_plots <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
   # plot observations for last 3 years to ensure sampling in all regions
   filter(latitude < max_map_lat) %>%
-  filter(year %in% c(#2017,2018,
-    2019,2020)) %>%  
+  filter(year %in% c(#2017,
+    2018,2019,2020)) %>%  
   mutate(
+    density_adj = ifelse(survey == "TRAWL", density/exp(bjs[bjs$term == "as.factor(survey)TRAWL",2]), density),
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
     max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
     catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
-    )
+    ) #%>% rename(Survey = survey)
 
 g <- map_predictions(
   pred_data = p_hal2020,
@@ -1654,19 +1747,22 @@ g <- map_predictions(
   # pred_max = quantile(exp(p_hal2020$est), 0.9999, na.rm = T),
   obs_data = d_hal_plots,
   fill_lab = "Predicted kg/ha",
-  size_lab = "Observed catch\nper 100 hook\nequivalent",
   # pred_min = min(exp(p_hal2020$est), na.rm = T),
   # pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
   map_lat_limits = c(48.6, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
-  size_aes = catch_equiv 
-)
+  # col_aes = Survey,
+  size_lab = "Landable\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
+  size_aes = density_adj
+  # size_lab = "Adjusted catch\ncounts", #2018-2020\observed catch\nper 100 hook\nequivalent
+  # size_aes = catch_equiv 
+)+theme(legend.spacing.y = unit(0.1, "cm"))
 g
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/filled-keepable-halibut-2020-predictions-est-rock-mud.png", width = 5.5, height = 4.5, dpi = 400)
+ggsave("figs/filled-keepable-halibut-2020-predictions-est-rock-mud.png", width = 6, height = 5, dpi = 400)
 ```
 
-Close up of CDA with 2018 to 2020 catch
+Close up of CDA 
 ```{r message=F, echo=F}
 max_map_lat2 <- 50.01
 min_map_lon2 <- -127.9
@@ -1682,11 +1778,12 @@ d_hal_plots <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") 
   filter(year %in% c(#2017,
     2018,2019,2020)) %>%  
   mutate(
+    density_adj = ifelse(survey == "TRAWL", density/exp(bjs[bjs$term == "as.factor(survey)TRAWL",2]), density),
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
     max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
     catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
-    )
+    ) 
 
 g <- map_predictions(
   pred_data = p_hal2020,
@@ -1694,12 +1791,15 @@ g <- map_predictions(
   pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
   obs_data = d_hal_plots,
   fill_lab = "Predicted\nkg/ha",
-  size_lab = "2018-2020\nobserved catch\nper 100 hook\nequivalent",
   max_size_obs = 6,
   map_lat_limits = c(48.6, max_map_lat2),
   map_lon_limits = c(min_map_lon2, max_map_lon2),
-  size_aes = catch_equiv 
-) + theme(legend.box = 'horizontal')
+  size_lab = "Landable\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
+  size_aes = density_adj
+  # size_lab = "Adjusted catch\ncounts", #2018-2020\observed catch\nper 100 hook\nequivalent
+  # size_aes = catch_equiv 
+) + theme(legend.box = 'horizontal') +
+    guides(colour = "none") 
 g
 dir.create("figs", showWarnings = FALSE)
 ggsave("figs/filled-keepable-halibut-2020-predictions-est-rock-mud-closeup.png", width = 6.75, height = 5.5, dpi = 400)
@@ -1708,10 +1808,7 @@ ggsave("figs/filled-keepable-halibut-2020-predictions-est-rock-mud-closeup.png",
 ```{r map-predictions-all, message=F, echo=F, warning=F, cache=TRUE}
 p_hal <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-predictions-all-S.rds")
 years <- unique(p_hal$data$year)
-p_hal_d <- p_hal$data #%>%
-#   filter(year %in% years) %>%
-#   mutate(year = as.factor(year))
-# p_hal_d$year <- droplevels(p_hal_d$year)
+p_hal_d <- p_hal$data 
 
 f <- "figs/filled-keepable-halibut-predictions-est-rock-mud.png"
 if (!file.exists(f)) {
@@ -1728,6 +1825,7 @@ d_hal_facet <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") 
         year %in% c(2017, 2018) ~ "2017-2018",
         year %in% c(2019, 2020) ~ "2019-2020"
       ),
+    density_adj = ifelse(survey == "TRAWL", density/exp(bjs[bjs$term == "as.factor(survey)TRAWL",2]), density),
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
     max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
@@ -1740,11 +1838,13 @@ g <- map_predictions(
   pred_max = quantile(exp(p_hal_d$est), 0.99, na.rm = T),
   obs_data = d_hal_facet,
   fill_lab = "Predicted kg/ha",
-  size_lab = "Observed catch\nper 100 hook\nequivalent",
   legend_position = "right",
   map_lat_limits = c(48.6, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
-  size_aes = catch_equiv 
+  size_lab = "Landable\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
+  size_aes = density_adj
+  # size_lab = "Adjusted catch\ncounts", #2018-2020\observed catch\nper 100 hook\nequivalent
+  # size_aes = catch_equiv 
 ) + facet_wrap(~pair_name)
 
 # g <- g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0))
@@ -1759,29 +1859,36 @@ ggsave("figs/filled-keepable-halibut-predictions-est-rock-mud.png", width = 10, 
 2020 predictions with all survey catches in 2019 and 2020
 
 ```{r message=F, echo=F}
+bjye <- tidy(m_ye)
+
 p_ye <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-all-S.rds")[[1]] %>% 
   filter(year == 2020)
 d_ye_plots <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>%
-  filter(latitude < 52.15507)  %>% filter(year %in% c(#2017,2018,
+  filter(latitude < 52.15507)  %>% filter(year %in% c(#2017,
+    2018,
     2019,2020)) %>% 
   mutate(
+    density_adj = ifelse(survey == "TRAWL", density/exp(bjye[bjye$term == "as.factor(survey)TRAWL",2]), density),
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight), 
     max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
     catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
-    )
+    ) 
+
 g <- map_predictions(
   pred_data = p_ye,
   fill_lab = "Predicted kg/ha",
   obs_data = d_ye_plots,  
-  size_lab = "Observed catch\nper 100 hook\nequivalent",
   map_lat_limits = c(48.6, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
-  size_aes = catch_equiv 
-)
+  size_lab = "Observed\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
+  size_aes = density_adj
+  # size_lab = "Observed catch\nper 100 hook\nequivalent",
+  # size_aes = catch_equiv 
+) + theme(legend.spacing.y = unit(0.1, "cm"))
 g
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/filled-keepable-yelloweye-2020-predictions-est-rock-mud.png", width = 5.5, height = 4.5, dpi = 400)
+ggsave("figs/filled-keepable-yelloweye-2020-predictions-est-rock-mud.png", width = 6, height = 5, dpi = 400)
 ```
 
 Close up of CDA with 2018 to 2020 catch
@@ -1797,11 +1904,12 @@ d_ye_plots <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>
   filter(year %in% c(2018,
     2019,2020)) %>%  
   mutate(
+    density_adj = ifelse(survey == "TRAWL", density/exp(bjye[bjye$term == "as.factor(survey)TRAWL",2]), density),
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight), 
     max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
     catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
-    )
+    ) 
 
 g <- map_predictions(
   pred_data = p_ye,
@@ -1809,118 +1917,18 @@ g <- map_predictions(
   pred_max = quantile(exp(p_ye$est), 0.99, na.rm = T),
   fill_lab = "Predicted\nkg/ha",
   obs_data = d_ye_plots,  
-  size_lab = "2018-2020\nobserved catch\nper 100 hook\nequivalent",
   map_lat_limits = c(48.6, max_map_lat2),
   map_lon_limits = c(min_map_lon2, max_map_lon2),
-  size_aes = catch_equiv 
-) + theme(legend.box = 'horizontal')
+  size_lab = "Observed\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
+  size_aes = density_adj
+  # size_lab = "2018-2020\nobserved catch\nper 100 hook\nequivalent",
+  # size_aes = catch_equiv 
+) + theme(legend.box = 'horizontal')+
+    guides(colour = "none") 
 g
 dir.create("figs", showWarnings = FALSE)
 ggsave("figs/filled-keepable-yelloweye-2020-predictions-est-rock-mud-closeup.png", width = 6.75, height = 5.5, dpi = 400)
 ```
-
-```{r}
-# glimpse(d_ye_plots)
-# glimpse(d_hal_plots) 
-d_hal_plotsN <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
-  # plot observations for last 3 years to ensure sampling in all regions
-  filter(latitude > max_map_lat2 & latitude < max_map_lat) %>%
-  filter(year %in% c(#2017,
-    2018,2019,2020)) %>%  
-  mutate(
-    # back transform densities into catch per 100 hooks
-    catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
-    max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
-    catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
-    )
-
-d_ye_plotsN <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>%
-  filter(latitude > max_map_lat2 & latitude < max_map_lat) %>% filter(year %in% c(#2017,
-    2018,2019,2020)) %>% 
-  mutate(
-    # back transform densities into catch per 100 hooks
-    catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight), 
-    max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
-    catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
-    )
-
-
-ye_obs <- d_ye_plotsN %>% 
-  mutate(catch_count_ye = (catch_count/hook_count)*100, catch_equiv_ye = catch_equiv) %>% 
-  select(X,Y, year_pair, year_true, survey, catch_count_ye, density_ye = density, fishing_event_id, catch_equiv_ye)
-hal_obs <- d_hal_plotsN %>% 
-  mutate(catch_count_hal = (catch_count/hook_count)*100, catch_equiv_hal = catch_equiv) %>% 
-  select(fishing_event_id, catch_count_hal, density_hal = density, catch_equiv_hal)
-catch_compN <- left_join(ye_obs, hal_obs)
-
-
-ggplot(catch_compN, aes(log(catch_equiv_hal+1), log(catch_equiv_ye+1))) + 
-  geom_smooth(data = filter(catch_compN, survey == "TRAWL"), method = "lm", colour = "grey") +
-  geom_jitter(data = filter(catch_compN, survey == "TRAWL"), alpha=0.5) + 
-  coord_cartesian() + ggtitle("Trawl survey north of 50º latitude")
-
-ggplot(catch_compN, aes(log(catch_count_hal+1), log(catch_count_ye+1))) + 
-  geom_smooth(method = "lm", colour = "grey") +
-  geom_jitter(alpha=0.5) + 
-  coord_cartesian()+ ggtitle("HBLL survey north of 50º latitude")
-
-# ggplot(catch_compN, aes(density_hal, density_ye)) + 
-#   geom_smooth(method = "lm", colour = "grey") +
-#   geom_jitter(aes(colour = survey)) + 
-#   coord_cartesian(xlim=c(0, 3))
-```
-
-
-```{r}
-# glimpse(d_ye_plots)
-# glimpse(d_hal_plots) 
-d_hal_plotsS <- readRDS("data-generated/halibut-hybrid-model-data.rds") %>%
-  # plot observations for last 3 years to ensure sampling in all regions
-  filter(latitude < max_map_lat2) %>%
-  filter(year %in% c(#2017,
-    2018,2019,2020)) %>%  
-  mutate(
-    # back transform densities into catch per 100 hooks
-    catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
-    max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
-    catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
-    )
-
-d_ye_plotsS <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>%
-  filter(latitude < max_map_lat2)  %>% filter(year %in% c(#2017,
-    2018,2019,2020)) %>% 
-  mutate(
-    # back transform densities into catch per 100 hooks
-    catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight), 
-    max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
-    catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
-    )
-
-
-ye_obs <- d_ye_plotsS %>% 
-  mutate(catch_count_ye = (catch_count/hook_count)*100, catch_equiv_ye = catch_equiv) %>% 
-  select(X,Y, year_pair, year_true, survey, catch_count_ye, density_ye = density, fishing_event_id, catch_equiv_ye)
-hal_obs <- d_hal_plotsS %>% 
-  mutate(catch_count_hal = (catch_count/hook_count)*100, catch_equiv_hal = catch_equiv) %>% 
-  select(fishing_event_id, catch_count_hal, density_hal = density, catch_equiv_hal)
-catch_compS <- left_join(ye_obs, hal_obs)
-
-ggplot(catch_compS, aes(log(catch_equiv_hal+1), log(catch_equiv_ye+1))) + 
-  geom_smooth(data = filter(catch_compS, survey == "TRAWL"), method = "lm", colour = "grey") +
-  geom_jitter(data = filter(catch_compS, survey == "TRAWL"), alpha=0.5) + 
-  coord_cartesian() + ggtitle("Trawl survey south of 50º latitude")
-
-ggplot(catch_compS, aes(log(catch_count_hal+1), log(catch_count_ye+1))) + 
-  geom_smooth(method = "lm", colour = "grey") +
-  geom_jitter(alpha=0.5) + 
-  coord_cartesian()+ ggtitle("HBLL survey south of 50º latitude")
-
-# ggplot(catch_compS, aes(density_hal, density_ye)) + 
-#   geom_smooth(method = "lm", colour = "grey") +
-#   geom_jitter(aes(colour = survey)) + 
-#   coord_cartesian(xlim=c(0, 3))
-```
-
 
 ```{r ye-map-all, cache=TRUE, echo=F, message=F, warning=F}
 p_ye <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-all-S.rds")
@@ -1930,7 +1938,7 @@ p_ye_d <- p_ye$data #%>%
 #   mutate(year = as.factor(year))
 # p_ye_d$year <- droplevels(p_ye_d$year)
 
-f <- "figs/filled-hbll-mw-ye-predictions-est-rock-mud.png"
+f <- "figs/filled-keepable-ye-predictions-est-rock-mud.png"
 if (!file.exists(f)) {
 d_ye_facet <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>%
   filter(latitude < 52.15507) %>% filter(year %in% years) %>% 
@@ -1944,11 +1952,12 @@ d_ye_facet <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>
         year %in% c(2017, 2018) ~ "2017-2018",
         year %in% c(2019, 2020) ~ "2019-2020"
       ),
+    density_adj = ifelse(survey == "TRAWL", density/exp(bjye[bjye$term == "as.factor(survey)TRAWL",2]), density),
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight), 
     max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
     catch_equiv2 = ifelse(catch_equiv < max_count, catch_equiv, max_count)
-    )
+    ) 
 
 g <- map_predictions(
   pred_data = p_ye_d,
@@ -1956,14 +1965,16 @@ g <- map_predictions(
   fill_lab = "Predicted kg/ha",
   pred_min = min(exp(p_ye$data$est), na.rm = T),
   pred_max = quantile(exp(p_ye$data$est), 0.99, na.rm = T),
-  size_lab = "Observed catch\nper 100 hook\nequivalent",
   legend_position = "right",
   map_lat_limits = c(48.6, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
-  size_aes = catch_equiv 
+  size_lab = "Observed\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
+  size_aes = density_adj
+  # size_lab = "Observed catch\nper 100 hook\nequivalent",
+  # size_aes = catch_equiv 
 ) + facet_wrap(~pair_name) 
 # g <- g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0))
-ggsave("figs/filled-hbll-mw-ye-predictions-est-rock-mud.png", width = 10, height = 8, dpi = 200)
+ggsave(f, width = 10, height = 8, dpi = 200)
 }
 ```
 
@@ -1972,12 +1983,12 @@ ggsave("figs/filled-hbll-mw-ye-predictions-est-rock-mud.png", width = 10, height
 
 ```{r message=F}
 # calculate ratio of yelloweye to halibut
-p_ye <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-all-S.rds")
-p_hal <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-predictions-all-S.rds")
-pyd <- p_ye$data %>% rename(ye_est = est)
-phd <- p_hal$data %>%
+p_ye <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-all-S.rds")[[1]]
+p_hal <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-predictions-all-S.rds")[[1]]
+pyd <- p_ye %>% rename(ye_est = est) %>% distinct()
+phd <- p_hal %>%
   rename(hal_est = est) %>%
-  select(hal_est, X, Y, year)
+  select(hal_est, X, Y, year)%>% distinct()
 
 ratio_df <- left_join(pyd, phd) %>% mutate(
   halibut = exp(hal_est), 
@@ -1988,7 +1999,7 @@ ratio_df <- left_join(pyd, phd) %>% mutate(
   hal_per_ye = (halibut*100) / (yelloweye2*100)
   )
 
-ratio_df_2020 <- filter(ratio_df, year == 2020)
+ratio_df_2020 <- filter(ratio_df, year == 2020) 
 ```
 
 ## Ratio of yelloweye to halibut
@@ -2000,7 +2011,9 @@ g <- map_predictions(
   # obs_data = d_ye_plots,
   # size_aes = (catch_count / hook_count) * 100,
   # size_lab = "Halibut caught\nper 100 hooks in 2020",
-  pred_data = filter(ratio_df, year == 2020),
+  map_lat_limits = c(48.6, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon),
+  pred_data = ratio_df_2020,
   pred_min = 0,
   pred_max = max(ratio_df_2020$ye_per_hal),
   # pred_max = max(d_ye$catch_count, na.rm = T)/ mean(d_ye$hook_count, na.rm = T) * 100,
@@ -2009,8 +2022,9 @@ g <- map_predictions(
 g
 
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/filled-hbll-mw-ye-to-halibut-2020-w-hal-catch-est-rock-mud.png", width = 5.5, height = 6, dpi = 400)
-# ggsave("figs/filled-hbll-mw-ye-to-halibut-2020-w-hal-catch-S.pdf", width = 5.5, height = 6, dpi = 400)
+ggsave("figs/filled-keepable-ye-to-halibut-2020-w-hal-catch-est-rock-mud.png", 
+  width = 6, height = 5, dpi = 200)
+# ggsave("figs/filled-keepable-ye-to-halibut-2020-w-hal-catch-S.pdf", width = 5.5, height = 6, dpi = 400)
 ```
 
 ## Ratio of halibut to yelloweye
@@ -2019,22 +2033,22 @@ ggsave("figs/filled-hbll-mw-ye-to-halibut-2020-w-hal-catch-est-rock-mud.png", wi
 
 ```{r message=F, echo=F}
 g <- map_predictions(
-  pred_data = filter(ratio_df, year == 2020),
+  pred_data = ratio_df_2020,
   # obs_data = filter(d_hal, year %in% c(2018, 2019,2020)),
   # size_aes = density,
   # size_lab = "Halibut caught\nper 100 hooks",
+  map_lat_limits = c(48.6, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon),
   pred_min = 0,
   pred_max = max(ratio_df_2020$hal_per_ye, na.rm = T),
-  # viridis_dir = -1,
-  # viridis_na = "black", 
-  # viridis_option = "B",
   fill_aes = hal_per_ye, 
   fill_lab = "Halibut to yelloweye\nbiomass ratio"
 )
 g
 
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/filled-keepable-halibut-to-ye-2020-w-hal-catch-est-rock-mud.png", width = 5.5, height = 6, dpi = 400)
+ggsave("figs/filled-keepable-halibut-to-ye-2020-w-hal-catch-est-rock-mud.png", 
+  width = 6, height = 5, dpi = 200)
 # ggsave("figs/filled-keepable-halibut-to-ye-2020-w-hal-catch-S.pdf", width = 5.5, height = 6, dpi = 400)
 ```
 
@@ -2052,12 +2066,12 @@ p_ye_cda <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predi
 p_hal_noncda <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-predictions-5A3CD-outside-cda.rds")
 p_ye_noncda <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-5A3CD-outside-cda.rds")
 
-p_hal_5A <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-predictions-5A.rds")
-p_ye_5A <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-5A.rds")
+# p_hal_5A <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-predictions-5A.rds")
+# p_ye_5A <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-5A.rds")
 
 py_cda <- p_ye_cda$data %>% rename(ye_est = est)
 py_noncda <- p_ye_noncda$data %>% rename(ye_est = est)
-py_5A <- p_ye_5A$data %>% rename(ye_est = est)
+# py_5A <- p_ye_5A$data %>% rename(ye_est = est)
 
 ph_cda <- p_hal_cda$data %>%
   rename(hal_est = est) %>%
@@ -2065,9 +2079,9 @@ ph_cda <- p_hal_cda$data %>%
 ph_noncda <- p_hal_noncda$data %>%
   rename(hal_est = est) %>%
   select(hal_est, X, Y, year)
-ph_5A <- p_hal_5A$data %>% #View()
-  rename(hal_est = est) %>%
-  select(hal_est, X, Y, year)
+# ph_5A <- p_hal_5A$data %>% #View()
+#   rename(hal_est = est) %>%
+#   select(hal_est, X, Y, year)
 
 
 # round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight)
