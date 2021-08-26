@@ -46,7 +46,12 @@ g_noncdaS <- readRDS(paste0("data-generated/filled", model_type, "-halibut", mod
 
 
 # g_5A <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-5A-sim-500.rds"))[[3]] %>% select(X, Y, year)
+g_cda <- g_cda %>% filter(area == 400) %>% select(-area)
+g_noncdaS <- g_noncdaS %>% filter(area == 400) %>% select(-area)
+g_noncdaN <- g_noncdaN %>% filter(area == 400) %>% select(-area)
+g_noncda <- rbind(g_noncdaN, g_noncdaS)
 
+cda_2020 <- filter(g_cda, year == 2020)
 
 .file <- paste0(model_type, "-50.rds")
 
@@ -117,13 +122,6 @@ if (!file.exists(paste0("data-generated/avoiding_ye_sum", .file))) {
 
 glimpse(.s_hal)
 glimpse(.s_ye)
-
-g_cda <- g_cda %>% filter(area == 400) %>% select(-area)
-g_noncdaS <- g_noncdaS %>% filter(area == 400) %>% select(-area)
-g_noncdaN <- g_noncdaN %>% filter(area == 400) %>% select(-area)
-g_noncda <- rbind(g_noncdaN, g_noncdaS)
-
-cda_2020 <- filter(g_cda, year == 2020)
 
 # .dat <- left_join(.s_ye, .s_hal)
 # left_join was crashing R so trying this
@@ -239,16 +237,7 @@ range(maximize_hal_sum$lwr_mean_hal_ye)
 maximize_hal_sum_cda <- maximize_hal_sum %>% filter(Area == "CDA")
 range(maximize_hal_sum_cda$mean_ye_per_hal)
 
-avoiding_ye_sum$Area <- ordered(avoiding_ye_sum$Area, levels =  c(
-  # "Full combined", "5A",
-  "non-CDA 5A3CD",
-  "5A3CD N of 50º", "non-CDA 5A3CD S of 50º",
-  "CDA"))
-maximize_hal_sum$Area <- ordered(maximize_hal_sum$Area, levels =  c(
-  # "Full combined", "5A",
-  "non-CDA 5A3CD",
-  "5A3CD N of 50º", "non-CDA 5A3CD S of 50º",
-  "CDA"))
+
 
 saveRDS(maximize_hal_sum, paste0("data-generated/maximize_hal_sum", .file))
 saveRDS(avoiding_ye_sum, paste0("data-generated/avoiding_ye_sum", .file))
@@ -268,6 +257,7 @@ areas_to_plot <- c(
 maximize_hal_sum <- readRDS( paste0("data-generated/maximize_hal_sum", .file))
 avoiding_ye_sum <- readRDS( paste0("data-generated/avoiding_ye_sum", .file))
 
+
 # mean_ye_hal
 ggplot(avoiding_ye_sum %>%
     filter(Area %in% areas_to_plot)%>%
@@ -283,6 +273,8 @@ ggplot(avoiding_ye_sum %>%
       , round((nrow(cda_2020))*.5)
       , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
       , round((nrow(cda_2020))*1.5), round((nrow(cda_2020))*1.5)
+      , round((nrow(cda_2020))*2), round((nrow(cda_2020))*10)
+      # , round((nrow(cda_2020))*100), round((nrow(cda_2020))*1000), round((nrow(cda_2020))*10000), round((nrow(cda_2020))*100000)
     ))) +
   geom_line(
     aes(x = ordered*4,
@@ -293,10 +285,9 @@ ggplot(avoiding_ye_sum %>%
     ymax = upr_mean_ye_hal,
     fill = Area), alpha=0.2) +
   scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1), labels = c("0.0001", 0.001, 0.01, 0.1)) +
+  scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
   # scale_x_continuous(breaks = c(0, 500, 1000)) +
-  # coord_cartesian(# expand = F, # xlim = c(0, nrow(cda_2020)/2),
-  #   # ylim = c(0, 0.03)) +
-  #   ylim = c(0, 0.15)) +
+  coord_cartesian(ylim = c(0.00000001, 0.15)) +
   # scale_color_identity(name = "Area",
   #   breaks = c("darkgreen","darkblue", "red"),
   #   labels = c("5A", "5A3CD (non-CDA)", "CDA"),
@@ -310,10 +301,7 @@ ggplot(avoiding_ye_sum %>%
   facet_wrap(~pair_name, ncol = 4)+
   theme(legend.position = c(0.85, 0.2))
 
-# ggsave("figs/expected_YE_when_avoiding_YE_CI.png", width = 4.5, height = 6)
-
-ggsave(paste0("figs/expected_YE_when_avoiding_YE_CI", model_type, "_allcda_filled.png"), width = 6, height = 3.5)
-# ggsave(paste0("figs/expected_YE_when_avoiding_YE_CI", model_type, ".png"), width = 6, height = 3.5)
+ggsave(paste0("figs/expected_YE_when_avoiding_YE_CI", model_type, "_allcda_filled.png"), width = 6.5, height = 3.5)
 
 # flipped ratio
 ggplot(avoiding_ye_sum %>%
@@ -460,8 +448,19 @@ ggsave(paste0("figs/expected_hal_when_maximize_hal_CI", model_type, "_allcda_fil
 areas_to_plot <- c(
   # "Full combined", "5A",
   "non-CDA 5A3CD",
-  "5A3CD N of 50º", "non-CDA 5A3CD S of 50º",
+ "non-CDA 5A3CD S of 50º",  "5A3CD N of 50º",
   "CDA")
+
+
+avoiding_ye_sum$Area <- ordered(avoiding_ye_sum$Area, levels =  c(
+  "CDA", "non-CDA 5A3CD", "5A3CD N of 50º","non-CDA 5A3CD S of 50º"
+))
+
+maximize_hal_sum$Area <- ordered(maximize_hal_sum$Area, levels =  c(
+  "CDA", "non-CDA 5A3CD", "5A3CD N of 50º","non-CDA 5A3CD S of 50º"))
+
+
+
 
 p1 <- ggplot(avoiding_ye_sum %>%
     filter(Area %in% areas_to_plot)%>%
@@ -496,8 +495,8 @@ p1 <- ggplot(avoiding_ye_sum %>%
   #   breaks = c("darkgreen","darkblue", "red"),
   #   labels = c("5A", "5A3CD (non-CDA)", "CDA"),
   #   guide = "legend") +
-  scale_fill_brewer(palette = "Set1", direction = -1) +
-  scale_colour_brewer(palette = "Set1", direction = -1) +
+  scale_fill_brewer(palette = "Set1", direction = 1) +
+  scale_colour_brewer(palette = "Set1", direction = 1) +
   ylab("Mean ratio of YE to halibut") +
   xlab(expression("Total area of cells ("~km^2~")")) +
   ggtitle("Minimizing YE ") +
@@ -537,8 +536,8 @@ p2 <- ggplot(maximize_hal_sum %>%
   #   breaks = c("darkgreen","darkblue", "red"),
   #   labels = c("5A", "5A3CD (non-CDA)", "CDA"),
   #   guide = "legend") +
-  scale_fill_brewer(palette = "Set1", direction = -1) +
-  scale_colour_brewer(palette = "Set1", direction = -1) +
+  scale_fill_brewer(palette = "Set1", direction = 1) +
+  scale_colour_brewer(palette = "Set1", direction = 1) +
   ylab("Mean ratio of YE to halibut") +
   xlab(expression("Total area of cells ("~km^2~")")) +
   ggtitle("Maximizing halibut") +
