@@ -507,7 +507,7 @@ ggsave("figs/map-stitched-grid-overlap.png", width = 5.5, height = 5.5, dpi = 40
 ```
 
 
-Trim prediction grid to cover full outside S HBLL
+Prediction grid that covers full outside S HBLL
 
 ```{r}
 full_s_grid_utm <- grid_utm
@@ -572,7 +572,19 @@ noncda_gridS <- filter(noncda_grid, latitude <= 50)
 noncda_gridS$region <- "non-CDA 3CD5A S"
 ```
 
+Just the HBLL S grid 
+
+```{r message= F}
+hbll_s_grid <- readRDS("data-generated/full_hybrid_grid_w_substrate.rds") %>% filter(survey == "HBLL")
+hbll_s_grid <- hbll_s_grid[complete.cases(hbll_s_grid), ]
+hbll_s_grid <- expand_prediction_grid(hbll_s_grid, years = years) %>%
+    mutate(depth_centred = log(depth) - mean(d_utm$depth_log)) %>%
+    mutate(depth_scaled = depth_centred / sd(d_utm$depth_centred)) 
+```
+
+
 Merge back into one grid with regions
+
 ```{r}
 noncda_gridS_named <- select(noncda_gridS, X, Y, region) 
 noncda_gridN_named <- select(noncda_gridN, X, Y, region) 
@@ -697,6 +709,7 @@ if (!file.exists(f)) {
   saveRDS(i_hal_cda, f)
 }
 
+## duplicates subregions saved in chunk hal-sim-subregions
 # ss <- "data-generated/filled-keepable-halibut-est-rock-mud-index-cda-sim-500.rds"
 # if (!file.exists(ss)) {
 #   i_hal_cda2 <- get_all_sims(m_halibut, newdata = cda_grid)
@@ -708,6 +721,7 @@ For 5A3CD outside CDA
 
 ```{r  echo=F}
 f <- "data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CD-outside-cda.rds"
+
 if (!file.exists(f)) {
   p_hal_noncda <- predict(m_halibut, newdata = noncda_grid, return_tmb_object = TRUE)
   saveRDS(p_hal_noncda, "data-generated/filled-keepable-halibut-est-rock-mud-predictions-5A3CD-outside-cda.rds")
@@ -716,45 +730,37 @@ if (!file.exists(f)) {
   saveRDS(i_hal_noncda, f)
 }
 
-# ss <- "data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"
-# if (!file.exists(ss)) {
-#   i_hal_noncda2 <- get_all_sims(m_halibut, newdata = noncda_grid)
-#   saveRDS(i_hal_noncda2, ss)
-# }
-# ss <- "data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"
-# if (!file.exists(ss)) {
-#   i_hal_noncda2N <- get_all_sims(m_halibut, newdata = noncda_gridN)
-#   saveRDS(i_hal_noncda2N, ss)
-# }
-# ss <- "data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"
-# if (!file.exists(ss)) {
-#   i_hal_noncda2S <- get_all_sims(m_halibut, newdata = noncda_gridS)
-#   saveRDS(i_hal_noncda2S, ss)
-# }
+ss <- "data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"
+
+if (!file.exists(ss)) {
+  i_hal_noncda2 <- get_all_sims(m_halibut, newdata = noncda_grid, split_by_region = F)
+  saveRDS(i_hal_noncda2, ss)
+}
 ```
 
-For area 5A 
+
 
 ```{r eval = F, echo=F}
-f <- "data-generated/filled-keepable-halibut-est-rock-mud-predictions-5A.rds"
-
-if (!file.exists(f)) {
-p_hal_5A <- predict(m_halibut, newdata = s_5A_grid, return_tmb_object = TRUE)
-saveRDS(p_hal_5A, "data-generated/filled-keepable-halibut-est-rock-mud-predictions-5A.rds")
-}
-
-f <- "data-generated/filled-keepable-halibut-est-rock-mud-index-5A.rds"
-if (!file.exists(f)) {
-  p_hal_5A <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-predictions-5A.rds")
-  i_hal_5A <- get_index(p_hal_5A, bias_correct = F)
-  saveRDS(i_hal_5A, f)
-}
-
-# ss <- "data-generated/filled-keepable-halibut-est-rock-mud-index-5A-sim-500.rds"
-# if (!file.exists(ss)) {
-#   i_hal_5A2 <- get_all_sims(m_halibut, newdata = s_5A_grid)
-#   saveRDS(i_hal_5A2, ss)
+### For area 5A 
+# f <- "data-generated/filled-keepable-halibut-est-rock-mud-predictions-5A.rds"
+# 
+# if (!file.exists(f)) {
+# p_hal_5A <- predict(m_halibut, newdata = s_5A_grid, return_tmb_object = TRUE)
+# saveRDS(p_hal_5A, "data-generated/filled-keepable-halibut-est-rock-mud-predictions-5A.rds")
 # }
+# 
+# f <- "data-generated/filled-keepable-halibut-est-rock-mud-index-5A.rds"
+# if (!file.exists(f)) {
+#   p_hal_5A <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-predictions-5A.rds")
+#   i_hal_5A <- get_index(p_hal_5A, bias_correct = F)
+#   saveRDS(i_hal_5A, f)
+# }
+# 
+# # ss <- "data-generated/filled-keepable-halibut-est-rock-mud-index-5A-sim-500.rds"
+# # if (!file.exists(ss)) {
+# #   i_hal_5A2 <- get_all_sims(m_halibut, newdata = s_5A_grid)
+# #   saveRDS(i_hal_5A2, ss)
+# # }
 ```
 
 For entire filled in southern outside HBLL grid including CDA, but excluding RCAs 
@@ -769,7 +775,13 @@ if (!file.exists(f)) {
   saveRDS(i_hal_S, f)
 }
 
-## this takes up a lot of space...
+# have not saved simulated index for this whole area...
+```
+
+For subregions using same batch of simulations
+
+```{r hal-sim-subregions, eval = T, echo=F}
+## this takes up a lot of space and duplicates the components saved below...
 # ss <- "data-generated/filled-keepable-halibut-est-rock-mud-index-list-sim-500.rds"
 # if (!file.exists(ss)) {
 #   i_hal_combined <- get_all_sims(m_halibut, newdata = full_s_grid)
@@ -813,37 +825,27 @@ if (!file.exists(s5)) {
 
 For just southern outside HBLL 
 
-```{r eval = F, echo=F}
-f <- "data-generated/filled-keepable-halibut-est-rock-mud-index-hbll-S.rds"
-if (!file.exists(f)) {
-  
-  hbll_s_grid <- readRDS("data-generated/full_hybrid_grid_w_substrate.rds") %>% filter(survey == "HBLL") 
-  hbll_s_grid <- hbll_s_grid[complete.cases(hbll_s_grid), ]
-  hbll_s_grid <- expand_prediction_grid(hbll_s_grid, years = years) %>%
-    mutate(depth_centred = log(depth) - mean(d_utm$depth_log)) %>%
-    mutate(depth_scaled = depth_centred / sd(d_utm$depth_centred)) 
-
-  p_hal_Sb <- predict(m_halibut, newdata = hbll_s_grid, return_tmb_object = TRUE)
-  saveRDS(p_hal_Sb, "data-generated/filled-keepable-halibut-est-rock-mud-predictions-hbll-S.rds")
-
-  i_hal_Sb <- get_index(p_hal_Sb, bias_correct = F) # bias_correction not working for full grid
-  saveRDS(i_hal_Sb, f)
-}
-```
-
 ```{r  echo=F}
 ss <- "data-generated/filled-keepable-halibut-est-rock-mud-index-hbll-S-sim-500.rds"
 if (!file.exists(ss)) {
-  hbll_s_grid <- readRDS("data-generated/full_hybrid_grid_w_substrate.rds") %>% filter(survey == "HBLL") 
-  hbll_s_grid <- hbll_s_grid[complete.cases(hbll_s_grid), ]
-  hbll_s_grid <- expand_prediction_grid(hbll_s_grid, years = years) %>%
-    mutate(depth_centred = log(depth) - mean(d_utm$depth_log)) %>%
-    mutate(depth_scaled = depth_centred / sd(d_utm$depth_centred)) 
-  
   i_hal_S2b <- get_all_sims(m_halibut, newdata = hbll_s_grid, split_by_region = F)
   saveRDS(i_hal_S2b, ss)
 }
 ```
+
+```{r eval = F, echo=F}
+# # don't think this is needed
+# f <- "data-generated/filled-keepable-halibut-est-rock-mud-index-hbll-S.rds"
+# if (!file.exists(f)) {
+# 
+#   p_hal_Sb <- predict(m_halibut, newdata = hbll_s_grid, return_tmb_object = TRUE)
+#   saveRDS(p_hal_Sb, "data-generated/filled-keepable-halibut-est-rock-mud-predictions-hbll-S.rds")
+# 
+#   i_hal_Sb <- get_index(p_hal_Sb, bias_correct = F) # bias_correction not working for full grid
+#   saveRDS(i_hal_Sb, f)
+# }
+```
+
 
 
 # Yelloweye Rockfish catch predictions and index
@@ -860,6 +862,7 @@ if (!file.exists(f)) {
   saveRDS(i_ye_cda, f)
 }
 
+## duplicates subregions saved in chunk ye-sim-subregions
 # ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-cda-sim-500.rds"
 # if (!file.exists(ss)) {
 #   i_ye_cda2 <- get_all_sims(m_ye, newdata = cda_grid)
@@ -879,42 +882,30 @@ if (!file.exists(f)) {
   saveRDS(i_ye_noncda, f)
 }
 
-# ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"
-# if (!file.exists(ss)) {
-#   i_ye_noncda2 <- get_all_sims(m_ye, newdata = noncda_grid)
-#   saveRDS(i_ye_noncda2, ss)
-# }
-# 
-# ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"
-# if (!file.exists(ss)) {
-#   i_ye_noncda2N <- get_all_sims(m_ye, newdata = noncda_gridN)
-#   saveRDS(i_ye_noncda2N, ss)
-# }
-# 
-# ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"
-# if (!file.exists(ss)) {
-#   i_ye_noncda2S <- get_all_sims(m_ye, newdata = noncda_gridS)
-#   saveRDS(i_ye_noncda2S, ss)
-# }
+ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"
+if (!file.exists(ss)) {
+  i_ye_noncda2 <- get_all_sims(m_ye, newdata = noncda_grid, split_by_region = F)
+  saveRDS(i_ye_noncda2, ss)
+}
 ```
 
-For area 5A 
 
 ```{r eval = F, echo=F}
-f <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A.rds"
-if (!file.exists(f)) {
-  p_ye_5A <- predict(m_ye, newdata = s_5A_grid, return_tmb_object = TRUE)
-  saveRDS(p_ye_5A, "data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-5A.rds")
-
-  i_ye_5A <- get_index(p_ye_5A, bias_correct = F)
-  saveRDS(i_ye_5A, f)
-}
-
-# ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A-sim-500.rds"
-# if (!file.exists(ss)) {
-#   i_ye_5A2 <- get_all_sims(m_ye, newdata = s_5A_grid)
-#   saveRDS(i_ye_5A2, ss)
+# # For area 5A 
+# f <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A.rds"
+# if (!file.exists(f)) {
+#   p_ye_5A <- predict(m_ye, newdata = s_5A_grid, return_tmb_object = TRUE)
+#   saveRDS(p_ye_5A, "data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-5A.rds")
+# 
+#   i_ye_5A <- get_index(p_ye_5A, bias_correct = F)
+#   saveRDS(i_ye_5A, f)
 # }
+# 
+# # ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A-sim-500.rds"
+# # if (!file.exists(ss)) {
+# #   i_ye_5A2 <- get_all_sims(m_ye, newdata = s_5A_grid)
+# #   saveRDS(i_ye_5A2, ss)
+# # }
 ```
 
 For entire filled in southern outside HBLL grid including CDA, but excluding RCAs.
@@ -935,8 +926,12 @@ if (!file.exists(f)) {
 #   i_ye_S2 <- get_all_sims(m_ye, newdata = full_s_grid)
 #   saveRDS(i_ye_S2, ss)
 # }
+```
 
-## this takes up a lot of space...
+For subregions using same batch of simulations
+
+```{r ye-sim-subregions, eval = T, echo=F}
+## this takes up a lot of space and duplicates the components saved below...
 # ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-list-sim-500.rds"
 # if (!file.exists(ss)) {
 #   i_ye_combined <- get_all_sims(m_ye, newdata = full_s_grid)
@@ -978,41 +973,26 @@ if (!file.exists(s5)) {
 ```
 
 For just southern outside HBLL 
-
-
-```{r eval = F}
-f <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-hbll-S.rds"
-if (!file.exists(f)) {
-  
-  hbll_s_grid <- readRDS("data-generated/full_hybrid_grid_w_substrate.rds") %>% filter(survey == "HBLL")
-  hbll_s_grid <- hbll_s_grid[complete.cases(hbll_s_grid), ]
-  hbll_s_grid <- expand_prediction_grid(hbll_s_grid, years = years) %>%
-    mutate(depth_centred = log(depth) - mean(d_utm$depth_log)) %>%
-    mutate(depth_scaled = depth_centred / sd(d_utm$depth_centred)) 
-
-  p_ye_Sb <- predict(m_ye, newdata = hbll_s_grid, return_tmb_object = TRUE)
-  saveRDS(p_ye_Sb, "data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-hbll-S.rds")
-
-  i_ye_Sb <- get_index(p_ye_Sb, bias_correct = F) # bias_correction not working only for full grid
-  saveRDS(i_ye_Sb, f)
-}
-
-
-```
-
-```{r  echo=F}
+```{r eval = T, echo = F}
 ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-hbll-S-sim-500.rds"
 if (!file.exists(ss)) {
-  
-  hbll_s_grid <- readRDS("data-generated/full_hybrid_grid_w_substrate.rds") %>% filter(survey == "HBLL")
-  hbll_s_grid <- hbll_s_grid[complete.cases(hbll_s_grid), ]
-  hbll_s_grid <- expand_prediction_grid(hbll_s_grid, years = years) %>%
-    mutate(depth_centred = log(depth) - mean(d_utm$depth_log)) %>%
-    mutate(depth_scaled = depth_centred / sd(d_utm$depth_centred)) 
   
   i_ye_S2b <- get_all_sims(m_ye, newdata = hbll_s_grid, split_by_region = F)
   saveRDS(i_ye_S2b, ss)
 }
+```
+
+```{r eval = F}
+## not needed right now
+# f <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-hbll-S.rds"
+# if (!file.exists(f)) {
+# 
+#   p_ye_Sb <- predict(m_ye, newdata = hbll_s_grid, return_tmb_object = TRUE)
+#   saveRDS(p_ye_Sb, "data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-hbll-S.rds")
+# 
+#   i_ye_Sb <- get_index(p_ye_Sb, bias_correct = F) # bias_correction not working only for full grid
+#   saveRDS(i_ye_Sb, f)
+# }
 ```
 
 # Model checks 
@@ -1161,7 +1141,7 @@ ggsave("figs/compare-model-indices.png", width = 7, height = 5, dpi = 400)
 # i_hal_5A <- readRDS("data-generated/halibut-index-5A.rds")
 i_hal <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-all-S-sim-500.rds")[[1]]
 i_hal_cda <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-cda-sim-500.rds")[[1]]
-# i_hal_noncda <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds")[[1]]
+i_hal_noncda <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds")[[1]]
 i_hal_noncdaN <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds")[[1]]
 i_hal_noncdaS <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds")[[1]]
 # i_hal_5A <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A-sim-500.rds")[[1]]
@@ -1173,12 +1153,12 @@ i_hal_hbll <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index
   # mutate(i_hal_5A, Area = "5A"),
   mutate(i_hal_noncdaN, Area ="3CD5A N of 50º"),
   mutate(i_hal_noncdaS, Area = "non-CDA 3CD5A S of 50º"),
-  # mutate(i_hal_noncda, Area = "non-CDA 3CD5A"),
+  mutate(i_hal_noncda, Area = "non-CDA 3CD5A"),
   mutate(i_hal_cda, Area = "CDA")
 )
 
 
-.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A S of 50º", "3CD5A N of 50º", "5A", "Full combined", "HBLL grid only"))
+.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º", "Full combined", "HBLL grid only"))
 ggplot(.dat, aes(year, est/1000, fill = Area, colour = Area)) + # convert kg to tonnes
   geom_line(size = 1.25) +
   geom_ribbon(aes(ymin = lwr/1000, ymax = upr/1000), alpha = 0.2, colour = NA) +
@@ -1201,6 +1181,7 @@ ggsave("figs/filled-keepable-halibut-est-rock-mud-index-by-area.png", width = 7,
 ```{r message=F, echo=F}
 i_ye <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-all-S-sim-500.rds")[[1]]
 i_ye_cda <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-cda-sim-500.rds")[[1]]
+i_ye_noncda <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds")[[1]]
 i_ye_noncdaN <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds")[[1]]
 i_ye_noncdaS <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds")[[1]]
 # i_ye_5A <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A-sim-500.rds")[[1]]
@@ -1211,11 +1192,13 @@ i_ye_hbll <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-inde
   # mutate(i_ye, Area = "Full combined"),
   # mutate(i_ye_hbll, Area = "HBLL grid only"),
   # mutate(i_ye_5A, Area = "5A"),
+  mutate(i_ye_noncda, Area = "non-CDA 3CD5A"),
   mutate(i_ye_noncdaN, Area = "3CD5A N of 50º"),
   mutate(i_ye_noncdaS, Area = "non-CDA 3CD5A S of 50º"),
   mutate(i_ye_cda, Area = "CDA")
 )
-.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A S of 50º", "3CD5A N of 50º", "5A", "Full combined", "HBLL grid only"))
+
+.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º"))
 ggplot(.dat, aes(year, est/1000, fill = Area, colour = Area)) +
   geom_line(size = 1.25) +
   geom_ribbon(aes(ymin = lwr/1000, ymax = upr/1000), alpha = 0.2, colour = NA) +
@@ -1242,17 +1225,17 @@ Average predicted catch within the entire court defined area is in red, remainde
 
 ```{r message = F, echo= F}
 i_hal_cda <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-cda-sim-500.rds")[[1]]
-# i_hal_noncda <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds")[[1]]
+i_hal_noncda <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds")[[1]]
 i_hal_noncdaN <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds")[[1]]
 i_hal_noncdaS <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds")[[1]]
 
 .dat <- bind_rows(
-  # mutate(i_hal_noncda,
-  #   Area = "non-CDA 3CD5A",
-  #   est = est / nrow(noncda_grid),
-  #   lwr = lwr / nrow(noncda_grid),
-  #   upr = upr / nrow(noncda_grid)
-  # ),  
+  mutate(i_hal_noncda,
+    est = est / (sum(noncda_grid$area)/ 10000),
+    lwr = lwr / (sum(noncda_grid$area)/ 10000),
+    upr = upr /(sum(noncda_grid$area)/ 10000),
+    Area = "non-CDA 3CD5A"
+  ),
   mutate(i_hal_noncdaS,
     est = est / (sum(noncda_gridS$area)/ 10000),
     lwr = lwr / (sum(noncda_gridS$area)/ 10000),
@@ -1274,7 +1257,7 @@ i_hal_noncdaS <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-in
   )
 )
 
-.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A S of 50º", "3CD5A N of 50º", "5A", "Full combined", "HBLL grid only"))
+.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º"))
 
 ggplot(.dat, aes(year, est)) +
   geom_line(aes(colour = Area), size = 1.5) +
@@ -1297,6 +1280,12 @@ ggsave("figs/filled-keepable-halibut-est-rock-mud-average-index.png", width = 7,
 
 ```{r message = F, echo= F}
 .dat <- bind_rows(
+  mutate(i_ye_noncda,
+    est = est / (sum(noncda_grid$area)/ 10000),
+    lwr = lwr / (sum(noncda_grid$area)/ 10000),
+    upr = upr /(sum(noncda_grid$area)/ 10000),
+    Area = "non-CDA 3CD5A"
+  ),
   mutate(i_ye_noncdaN,
     est = est / (sum(noncda_gridN$area)/ 10000),
     lwr = lwr / (sum(noncda_gridN$area)/ 10000),
@@ -1317,7 +1306,7 @@ ggsave("figs/filled-keepable-halibut-est-rock-mud-average-index.png", width = 7,
   )
 )
 
-.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A S of 50º", "3CD5A N of 50º", "5A", "Full combined", "HBLL grid only"))
+.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º"))
 
 
 ggplot(.dat, aes(year, est)) +
@@ -1343,7 +1332,7 @@ ggsave("figs/filled-keepable-yelloweye-est-rock-mud-average-index.png", width = 
 ```{r}
 i_hal2 <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-all-S-sim-500.rds")[[2]]
 i_hal_cda2 <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-cda-sim-500.rds")[[2]]
-# i_hal_noncda2 <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds")[[2]]
+i_hal_noncda2 <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds")[[2]]
 i_hal_noncda2N <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds")[[2]]
 i_hal_noncda2S <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds")[[2]]
 # i_hal_5A2 <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A-sim-500.rds")[[2]]
@@ -1351,12 +1340,12 @@ i_hal_noncda2S <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-i
 .dat2 <- bind_rows(
   mutate(i_hal2, Area = "Full combined", area_size = (sum(full_s_grid$area)/ 10000)),
   # mutate(i_hal_5A2, Area = "5A", num_cells = nrow(s_5A_grid)),
-  # mutate(i_hal_noncda2, Area = "non-CDA 3CD5A", num_cells = nrow(noncda_grid)),
-  mutate(i_hal_noncda2N, Area = "5A3CD N of 50º", area_size = (sum(noncda_gridN$area)/ 10000)),
+  mutate(i_hal_noncda2, Area = "non-CDA 3CD5A", area_size = (sum(noncda_grid$area)/ 10000)),
+  mutate(i_hal_noncda2N, Area = "3CD5A N of 50º", area_size = (sum(noncda_gridN$area)/ 10000)),
   mutate(i_hal_noncda2S, Area = "non-CDA 3CD5A S of 50º", area_size = (sum(noncda_gridS$area)/ 10000)),
   mutate(i_hal_cda2, Area = "CDA", area_size = (sum(cda_grid$area)/ 10000))
 )
-.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 3CD5A", "5A3CD N of 50º", "non-CDA 3CD5A S of 50º", "5A", "Full combined"))
+.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º", "Full combined"))
 
 i_hal_2020 <- filter(.dat2, year == 2020) #%>% filter(.iteration <= 200)
 
@@ -1375,7 +1364,7 @@ saveRDS(dens_per_hectare, "data-generated/dens_per_hectare.rds")
 ```{r}
 i_ye2 <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-all-S-sim-500.rds")[[2]]
 i_ye_cda2 <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-cda-sim-500.rds")[[2]]
-# i_ye_noncda2 <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds")[[2]]
+i_ye_noncda2 <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds")[[2]]
 i_ye_noncda2N <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds")[[2]]
 i_ye_noncda2S <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds")[[2]]
 # i_ye_5A2 <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A-sim-500.rds")[[2]]
@@ -1383,12 +1372,12 @@ i_ye_noncda2S <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-
 .dat2 <- bind_rows(
   mutate(i_ye2, Area = "Full combined", area_size = (sum(full_s_grid$area)/ 10000)),
   # mutate(i_ye_5A2, Area = "5A", num_cells = nrow(s_5A_grid)),
-  # mutate(i_ye_noncda2, Area = "non-CDA 3CD5A", area_size = (sum(noncda_grid$area)/ 10000)),
-  mutate(i_ye_noncda2N, Area = "5A3CD N of 50º", area_size = (sum(noncda_gridN$area)/ 10000)),
+  mutate(i_ye_noncda2, Area = "non-CDA 3CD5A", area_size = (sum(noncda_grid$area)/ 10000)),
+  mutate(i_ye_noncda2N, Area = "3CD5A N of 50º", area_size = (sum(noncda_gridN$area)/ 10000)),
   mutate(i_ye_noncda2S, Area = "non-CDA 3CD5A S of 50º", area_size = (sum(noncda_gridS$area)/ 10000)),
   mutate(i_ye_cda2, Area = "CDA", area_size = (sum(cda_grid$area)/ 10000))
 )
-.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 3CD5A", "5A3CD N of 50º", "non-CDA 3CD5A S of 50º", "5A", "Full combined"))
+.dat2$Area <- ordered(.dat2$Area, levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º", "Full combined"))
 
 i_ye_2020 <- filter(.dat2, year == 2020)# %>% filter(.iteration <= 200)
 
@@ -1406,21 +1395,21 @@ saveRDS(ye_dens_per_hectare, "data-generated/ye_cdens_per_hectare.rds")
 
 
 ```{r message=F, echo=F}
-ggplot(i_hal_2020 %>% filter(Area %in% c("CDA","5A3CD N of 50º", "non-CDA 3CD5A S of 50º"))) + geom_histogram(aes(.value / area_size, 
+ggplot(i_hal_2020 %>% filter(Area %in% c("CDA","3CD5A N of 50º", "non-CDA 3CD5A S of 50º", "non-CDA 3CD5A"))) + geom_histogram(aes(.value / area_size, 
   fill = Area
   ), alpha = 0.5
   #, fill = "black"
   ) +
-  geom_histogram(data = i_ye_2020 %>% filter(Area %in% c("CDA", "5A3CD N of 50º", "non-CDA 3CD5A S of 50º")), 
+  geom_histogram(data = i_ye_2020 %>% filter(Area %in% c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º")), 
     aes(.value / area_size, fill = Area), alpha = 0.75) +
-  geom_vline(data = dens_per_hectare%>% filter(Area %in% c("CDA", "5A3CD N of 50º", "non-CDA 3CD5A S of 50º")),
+  geom_vline(data = dens_per_hectare%>% filter(Area %in% c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º")),
     aes(xintercept = catch_med,
     colour = Area
     ), linetype = 2, alpha = 0.5
     #, colour = "black"
     ) +
   geom_vline(data = ye_dens_per_hectare %>% 
-      filter(Area %in% c("CDA", "5A3CD N of 50º", "non-CDA 3CD5A S of 50º")), 
+      filter(Area %in% c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º")), 
     aes(xintercept = catch_med, colour = Area), linetype = 2) +
   facet_grid(rows = vars(Area)) + xlab("Mean kg/ha") + ylab("Number of simulations") +
   scale_fill_brewer(palette = "Set1") + scale_colour_brewer(palette = "Set1") + theme(legend.position = "none") +
@@ -1428,7 +1417,7 @@ ggplot(i_hal_2020 %>% filter(Area %in% c("CDA","5A3CD N of 50º", "non-CDA 3CD5A
     subtitle = "Yelloweye Rockfish (darker bars) vs. Pacific Halibut (paler bars)"
   )
 
-ggsave("figs/filled-keepable-est-rock-mud-estimated-biomass-densities.png", width = 6, height = 5.5, dpi = 400)
+ggsave("figs/filled-keepable-est-rock-mud-estimated-biomass-densities.png", width = 6, height = 7, dpi = 400)
 ```
 
 
@@ -1440,15 +1429,14 @@ What proportion of 5A3CD HBLL + trawl survey grid is inside CDA?
 
 ```{r echo=F, message=F, warning=F}
 # clearly wrong at the moment because simulations producing numerator and denominator are not actually the same
-
 hal_ratios <- i_hal_2020 %>%
     select(-area_size, -region) %>%
   pivot_wider(names_from = Area, values_from = .value) %>%
   group_by(.iteration) %>%
-  mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 3CD5A S of 50º` + `5A3CD N of 50º`),
+  mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 3CD5A S of 50º` + `3CD5A N of 50º`),
     CDAtoFull = CDA / (`Full combined`),
-    prop5A3CDN = `5A3CD N of 50º`/(`non-CDA 3CD5A S of 50º` + `5A3CD N of 50º`),
-    prop5A3CDS = `non-CDA 3CD5A S of 50º`/(`non-CDA 3CD5A S of 50º` + `5A3CD N of 50º`)
+    prop5A3CDN = `3CD5A N of 50º`/(`non-CDA 3CD5A S of 50º` + `3CD5A N of 50º`),
+    prop5A3CDS = `non-CDA 3CD5A S of 50º`/(`non-CDA 3CD5A S of 50º` + `3CD5A N of 50º`)
     )
 
 mean_hal_ratios <- hal_ratios %>%
@@ -1479,10 +1467,10 @@ ye_ratios <- i_ye_2020 %>%
   select(-area_size, -region) %>%
   pivot_wider(names_from = Area, values_from = .value) %>%
   group_by(.iteration) %>%
-  mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 3CD5A S of 50º` + `5A3CD N of 50º`),
-    CDAtoFull = CDA / (`Full combined`),
-    prop5A3CDN = `5A3CD N of 50º`/(`non-CDA 3CD5A S of 50º` + `5A3CD N of 50º`),
-    prop5A3CDS = `non-CDA 3CD5A S of 50º`/(`non-CDA 3CD5A S of 50º` + `5A3CD N of 50º`)
+  mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 3CD5A S of 50º` + `3CD5A N of 50º`),
+    # CDAto5A3CD = CDA / (CDA + `non-CDA 3CD5A`),
+    prop5A3CDN = `3CD5A N of 50º`/(`non-CDA 3CD5A S of 50º` + `3CD5A N of 50º`),
+    prop5A3CDS = `non-CDA 3CD5A S of 50º`/(`non-CDA 3CD5A S of 50º` + `3CD5A N of 50º`)
     )
 
 mean_ye_ratios <- ye_ratios %>%
@@ -1519,15 +1507,15 @@ i_ye_noncda2 <- left_join(i_ye_noncda2Nb, i_ye_noncda2Sb) %>% mutate(.value = N 
 .i_ye <- bind_rows(
   # mutate(i_ye2, Area = "Full combined", num_cells = nrow(full_s_grid)),
   # mutate(i_ye_5A2, Area = "5A", num_cells = nrow(s_5A_grid)),
-  mutate(i_ye_noncda2, Area = "non-CDA 3CD5A", num_cells =sum(noncda_gridN$area)/10000 + sum(noncda_gridS$area)/10000),
-  mutate(i_ye_noncda2N, Area = "5A3CD N of 50º", num_cells = sum(noncda_gridN$area)/10000),
+  mutate(i_ye_noncda2, Area = "non-CDA 3CD5A", num_cells = sum(noncda_gridN$area)/10000 + sum(noncda_gridS$area)/10000),
+  mutate(i_ye_noncda2N, Area = "3CD5A N of 50º", num_cells = sum(noncda_gridN$area)/10000),
   mutate(i_ye_noncda2S, Area = "non-CDA 3CD5A S of 50º", num_cells = sum(noncda_gridS$area)/10000),
   mutate(i_ye_cda2, Area = "CDA", num_cells = sum(cda_grid$area)/10000)
 ) %>%   filter(.iteration <= 500) %>%
   rename(yelloweye = .value) 
 
 .i_ye$Area <- ordered(.i_ye$Area, 
-  levels = c("CDA", "non-CDA 3CD5A", "non-CDA 3CD5A S of 50º", "5A3CD N of 50º", "5A", "Full combined"))
+  levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º", "Full combined"))
 
 
 i_hal_noncda2Nb <- i_hal_noncda2N %>% rename(N = .value) %>% select(-region)
@@ -1538,14 +1526,14 @@ i_hal_noncda2 <- left_join(i_hal_noncda2Nb, i_hal_noncda2Sb) %>% mutate(.value =
   # mutate(i_hal2, Area = "Full combined", num_cells = nrow(full_s_grid)),
   # mutate(i_hal_5A2, Area = "5A", num_cells = nrow(s_5A_grid)),
   mutate(i_hal_noncda2, Area = "non-CDA 3CD5A", num_cells =sum(noncda_gridN$area)/10000 + sum(noncda_gridS$area)/10000),
-  mutate(i_hal_noncda2N, Area = "5A3CD N of 50º", num_cells = sum(noncda_gridN$area)/10000),
+  mutate(i_hal_noncda2N, Area = "3CD5A N of 50º", num_cells = sum(noncda_gridN$area)/10000),
   mutate(i_hal_noncda2S, Area = "non-CDA 3CD5A S of 50º", num_cells = sum(noncda_gridS$area)/10000),
   mutate(i_hal_cda2, Area = "CDA", num_cells = sum(cda_grid$area)/10000)
 ) %>% filter(.iteration <= 500) %>%
   rename(halibut = .value)
 
 .i_hal$Area <- ordered(.i_hal$Area, 
-  levels = c("CDA", "non-CDA 3CD5A", "non-CDA 3CD5A S of 50º", "5A3CD N of 50º", "5A", "Full combined"))
+  levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º", "Full combined"))
 
 .dat <- left_join(.i_ye, .i_hal) %>% mutate(
     ye_per_hal = yelloweye / (halibut),
@@ -1569,7 +1557,7 @@ i_hal_noncda2 <- left_join(i_hal_noncda2Nb, i_hal_noncda2Sb) %>% mutate(.value =
   ))
 
 ggplot(.dat2, aes(year, ye_per_hal, fill = Area, colour = Area)) +
-  geom_line() +
+  geom_line(size = 1.5) +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
   xlab("Year") +
   ylab("Estimated yelloweye to halibut biomass ratio") +
@@ -1584,13 +1572,13 @@ ggplot(.dat2, aes(year, ye_per_hal, fill = Area, colour = Area)) +
 ggsave("figs/filled-keepable-ye-to-hal-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
 
 .dat3 <- .dat %>% filter(Area %in% c(
-  "non-CDA 3CD5A S of 50º", "5A3CD N of 50º",
-  # "non-CDA 3CD5A",
+  "non-CDA 3CD5A S of 50º", "3CD5A N of 50º",
+  "non-CDA 3CD5A",
   "CDA"
   ))
 
 ggplot(.dat3, aes(year, ye_per_hal, fill = Area, colour = Area)) +
-  geom_line() +
+  geom_line(size = 1.5) +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
   xlab("Year") +
   ylab("Estimated yelloweye to halibut biomass ratio") +
@@ -1646,7 +1634,7 @@ Checking what happens if we use different weights... x 0.6 for smaller halibut
   ) 
 .datL <- .datL %>% filter(Area %in% c(
   # "non-CDA 3CD5A",
-  "non-CDA 3CD5A S of 50º", "5A3CD N of 50º",
+  "non-CDA 3CD5A S of 50º", "3CD5A N of 50º",
   "CDA"))
 
 # highest years catch rate in kg per fish caught 
@@ -1665,7 +1653,7 @@ Checking what happens if we use different weights... x 0.6 for smaller halibut
   ) 
 .datH <- .datH %>% filter(Area %in% c(
   # "non-CDA 3CD5A",
-  "non-CDA 3CD5A S of 50º", "5A3CD N of 50º",
+  "non-CDA 3CD5A S of 50º", "3CD5A N of 50º",
   "CDA"))
 
 ggplot(.datH, aes(year, ye_per_hal, fill = Area, colour = Area)) +
@@ -1728,6 +1716,7 @@ p_hal2020 <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-predic
   # plot observations for last 3 years to ensure sampling in all regions
   filter(latitude < max_map_lat) %>%
   filter(year == 2020)
+
 d_hal_plots <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
   # plot observations for last 3 years to ensure sampling in all regions
   filter(latitude < max_map_lat) %>%
@@ -1802,7 +1791,7 @@ g <- map_predictions(
     guides(colour = "none") 
 g
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/filled-keepable-halibut-2020-predictions-est-rock-mud-closeup.png", width = 6.75, height = 5.5, dpi = 400)
+ggsave("figs/filled-keepable-halibut-2020-predictions-est-rock-mud-closeup.png", width = 5.5, height = 5, dpi = 400)
 ```
 
 ```{r map-predictions-all, message=F, echo=F, warning=F, cache=TRUE}
@@ -1856,7 +1845,7 @@ ggsave("figs/filled-keepable-halibut-predictions-est-rock-mud.png", width = 10, 
 
 ## Yelloweye Rockfish
 
-2020 predictions with all survey catches in 2019 and 2020
+2020 predictions with all survey catches in 2018 through 2020
 
 ```{r message=F, echo=F}
 bjye <- tidy(m_ye)
@@ -1927,7 +1916,7 @@ g <- map_predictions(
     guides(colour = "none") 
 g
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/filled-keepable-yelloweye-2020-predictions-est-rock-mud-closeup.png", width = 6.75, height = 5.5, dpi = 400)
+ggsave("figs/filled-keepable-yelloweye-2020-predictions-est-rock-mud-closeup.png", width = 5.5, height = 5, dpi = 400)
 ```
 
 ```{r ye-map-all, cache=TRUE, echo=F, message=F, warning=F}
