@@ -155,6 +155,9 @@ load_boundaries <- function(utm_zone) {
 # TODO: we probably want to purge many of these...
 get_diag <- function(m, response = "density",
   variable = "depth_scaled", colour_var = "depth_m", start_year = 2007) {
+
+  # browser()
+
   predictions <- predict(m)
   predictions$residuals <- residuals(m)
 
@@ -253,19 +256,22 @@ map_predictions <- function(
   pred_data = NULL,
   obs_data = NULL,
   fill_aes = exp(est),
+  col_aes = survey,
   pred_min = NULL,
   pred_max = NULL,
   viridis_dir = 1,
   viridis_option = "D",
   viridis_na = "yellow",
   size_aes = (catch_count / hook_count) * 100,
-  obs_col = "white",
+  max_size_obs = 4,
+  obs_col = c("white", "#98FB98"), # "#FFDAB9"), # peach
   title = "",
   size_lab = "Observed fish\nper 100 hooks",
   fill_lab = "Predicted fish\nper 100 hooks",
   map_lat_limits = c(48.6, 51.3),
   map_lon_limits = c(-130.1,-125.1),
   legend_position = c(0.99, 0.99),
+  legend_background = "#404788FF",#"#481567FF", #darkest "#440154FF", #"grey75",
   grey_waters = TRUE) {
   utm_zone9 <- 3156
   # download from:
@@ -376,7 +382,7 @@ map_predictions <- function(
     g <- g +
       geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey99", col = "grey55") +
       theme(
-      legend.key = element_rect(colour = NA, fill = "grey75"),
+      legend.key = element_rect(colour = NA, fill = legend_background),
       panel.background = element_rect(color = NA, size = 1, fill = "grey75"))
 
     # if (!is.null(obs_data)) {
@@ -396,11 +402,14 @@ map_predictions <- function(
       data = obs_data,
       mapping = aes(
         X * 1e5, Y * 1e5,
+        colour = {{col_aes}},
         size = {{size_aes}}
       ), pch = 21,
-      inherit.aes = FALSE, colour = obs_col, alpha = 0.99
+      # colour = "white",
+      inherit.aes = FALSE, alpha = 0.99
     ) +
-      scale_size_area(max_size = 4, n.breaks = 5)
+      scale_colour_manual(name = NULL, values = obs_col) +
+      scale_size_area(max_size = max_size_obs, n.breaks = 5)
   }
 
   g <- g +
@@ -413,10 +422,12 @@ map_predictions <- function(
     ) +
     guides(
       fill = guide_colorbar(order = 1),
-      size = guide_legend(order = 0)
+      size = guide_legend(order = 2, override.aes = list(colour="white")),
+      colour = guide_legend(order = 3)
     ) +
     theme(axis.title = element_blank(),
       legend.box.background = element_rect(color = NA, size = 1, fill = "#ffffff90"),
+      # legend.key.colour = "white",
       legend.position = legend_position,
       legend.justification = c(1, 1)
     )
