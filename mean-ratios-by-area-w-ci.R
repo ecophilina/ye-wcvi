@@ -247,10 +247,11 @@ saveRDS(avoiding_ye_sum, paste0("data-generated/avoiding_ye_sum", .file))
 # chose which areas to plot
 
 areas_to_plot <- c(
-  # "Full combined", "5A",
+  # "Full combined", "5A"
+  "CDA",
   "non-CDA 5A3CD",
-  # "5A3CD N of 50º", "non-CDA 5A3CD S of 50º",
-  "CDA")
+  # "5A3CD N of 50º", "non-CDA 5A3CD S of 50º"
+  )
 
 
 # #### make plots ####
@@ -272,8 +273,10 @@ ggplot(avoiding_ye_sum %>%
       , round((nrow(cda_2020))*.3), round((nrow(cda_2020))*.4)
       , round((nrow(cda_2020))*.5)
       , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1)
-      , round((nrow(cda_2020))*1.5), round((nrow(cda_2020))*1.5)
-      , round((nrow(cda_2020))*2), round((nrow(cda_2020))*10)
+      , round((nrow(cda_2020))*1.5)
+      , round((nrow(cda_2020))*3)
+      , round((nrow(cda_2020))*6)
+      , round((nrow(cda_2020))*10)
       # , round((nrow(cda_2020))*100), round((nrow(cda_2020))*1000), round((nrow(cda_2020))*10000), round((nrow(cda_2020))*100000)
     ))) +
   geom_line(
@@ -285,15 +288,15 @@ ggplot(avoiding_ye_sum %>%
     ymax = upr_mean_ye_hal,
     fill = Area), alpha=0.2) +
   scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1), labels = c("0.0001", 0.001, 0.01, 0.1)) +
-  scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
+  # scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
   # scale_x_continuous(breaks = c(0, 500, 1000)) +
   coord_cartesian(ylim = c(0.00000001, 0.15)) +
   # scale_color_identity(name = "Area",
   #   breaks = c("darkgreen","darkblue", "red"),
   #   labels = c("5A", "5A3CD (non-CDA)", "CDA"),
   #   guide = "legend") +
-  scale_fill_brewer(palette = "Set1", direction = -1) +
-  scale_colour_brewer(palette = "Set1", direction = -1) +
+  scale_fill_brewer(palette = "Set1", direction = 1) +
+  scale_colour_brewer(palette = "Set1", direction = 1) +
   ylab("Mean ratio of YE to halibut") +
   xlab(expression("Total area of cells selected to minimize YE ("~km^2~")")) +
   # facet_wrap(~pair_name, ncol = 2)+
@@ -352,7 +355,7 @@ ggplot(avoiding_ye_sum %>%
 
 # ggsave("figs/expected_hal_when_avoiding_YE_CI.png", width = 4.5, height = 6)
 # ggsave("figs/expected_hal_when_avoiding_YE_CI.png", width = 6, height = 3.5)
-ggsave(paste0("figs/expected_hal_when_avoiding_YE_CI", model_type, "_allcda_filled.png"), width = 6, height = 3.5)
+ggsave(paste0("figs/expected_hal_when_avoiding_YE_CI", model_type, "_allcda_filled.png"), width = 6.5, height = 3.5)
 
 ggplot(maximize_hal_sum %>%
     filter(Area %in% areas_to_plot)%>%
@@ -366,6 +369,9 @@ ggplot(maximize_hal_sum %>%
       , round((nrow(cda_2020))*.4)
       , round((nrow(cda_2020))*.5)
       , round((nrow(cda_2020))*.75), round((nrow(cda_2020))*1), round((nrow(cda_2020))*1.5)
+      , round((nrow(cda_2020))*3)
+      , round((nrow(cda_2020))*6)
+      , round((nrow(cda_2020))*10)
     ))) +
   geom_line(
     aes(x = ordered*4,
@@ -375,7 +381,7 @@ ggplot(maximize_hal_sum %>%
     ymin = lwr_mean_ye_hal,
     ymax = upr_mean_ye_hal,
     fill = Area), alpha=0.2) +
-  scale_x_continuous(breaks = c(0, 500, 1000)) +
+  # scale_x_continuous(breaks = c(0, 500, 1000)) +
   coord_cartesian(# expand = F,
     ylim = c(0, 0.5)
   ) +
@@ -383,8 +389,8 @@ ggplot(maximize_hal_sum %>%
   #   breaks = c("darkgreen","darkblue", "red"),
   #   labels = c("5A", "5A3CD (non-CDA)", "CDA"),
   #   guide = "legend") +
-  scale_fill_brewer(palette = "Set1", direction = -1) +
-  scale_colour_brewer(palette = "Set1", direction = -1) +
+  scale_fill_brewer(palette = "Set1", direction = 1) +
+  scale_colour_brewer(palette = "Set1", direction = 1) +
   ylab("Mean ratio of YE to halibut") +
   xlab("Total area of cells selected to maximize halibut (km2)") +
   # facet_wrap(~pair_name, ncol = 2)+
@@ -393,7 +399,7 @@ ggplot(maximize_hal_sum %>%
   theme(legend.position = c(0.85, 0.2))
 
 # ggsave("figs/expected_YE_when_maximize_hal_CI.png", width = 4.5, height = 6)
-ggsave(paste0("figs/expected_YE_when_maximize_hal_CI", model_type, "_allcda_filled.png"), width = 6, height = 3.5)
+ggsave(paste0("figs/expected_YE_when_maximize_hal_CI", model_type, "_allcda_filled.png"), width = 6.5, height = 3.5)
 
 
 
@@ -440,7 +446,7 @@ ggplot(maximize_hal_sum %>%
   theme(legend.position = c(0.85, 0.2))
 
 # ggsave("figs/expected_hal_when_maximize_hal_CI.png", width = 4.5, height = 6)
-ggsave(paste0("figs/expected_hal_when_maximize_hal_CI", model_type, "_allcda_filled.png"), width = 6, height = 3.5)
+ggsave(paste0("figs/expected_hal_when_maximize_hal_CI", model_type, "_allcda_filled.png"), width = 6.5, height = 3.5)
 
 
 # chose which areas to plot
