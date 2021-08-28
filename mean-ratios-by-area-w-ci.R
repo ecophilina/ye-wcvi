@@ -497,15 +497,12 @@ p1 <- ggplot(avoiding_ye_sum %>%
   scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
   scale_x_log10(breaks = c(10, 100, 1000, 10000, 100000), labels = c(10, 100, 1000, "10000", "100000")) +
   coord_cartesian(ylim = c(0.000001, 0.5)) +
-  # scale_color_identity(name = "Area",
-  #   breaks = c("darkgreen","darkblue", "red"),
-  #   labels = c("5A", "5A3CD (non-CDA)", "CDA"),
-  #   guide = "legend") +
+  # labs(tag="A")+
   scale_fill_brewer(palette = "Set1", direction = 1) +
   scale_colour_brewer(palette = "Set1", direction = 1) +
   ylab("Mean ratio of YE to halibut") +
   xlab(expression("Total area of cells ("~km^2~")")) +
-  ggtitle("Minimizing YE ") +
+  ggtitle("A. Minimizing YE ") +
 theme(legend.position = c(0.35, 0.75))
 
 
@@ -538,15 +535,12 @@ p2 <- ggplot(maximize_hal_sum %>%
   scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
   coord_cartesian(# expand = F,
     ylim = c(0.000001, 0.5)) +
-  # scale_color_identity(name = "Area",
-  #   breaks = c("darkgreen","darkblue", "red"),
-  #   labels = c("5A", "5A3CD (non-CDA)", "CDA"),
-  #   guide = "legend") +
+  # labs(tag="B")+
   scale_fill_brewer(palette = "Set1", direction = 1) +
   scale_colour_brewer(palette = "Set1", direction = 1) +
   ylab("Mean ratio of YE to halibut") +
   xlab(expression("Total area of cells ("~km^2~")")) +
-  ggtitle("Maximizing halibut") +
+  ggtitle("B. Maximizing halibut") +
   theme(legend.position = "none", axis.title.y = element_blank(), axis.text.y = element_blank())
 
 p3 <- ggplot(data.frame(l = "lab", x = 1, y = 1)) +
