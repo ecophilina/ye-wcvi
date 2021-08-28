@@ -81,6 +81,10 @@ These estimates were also simulated 500 times to produce confidence intervals (C
 
 Finally, these cell-specific biomass estimates were used to explore how contrasting fishing strategies, either selection only those cells with the lowest YE densities or only those cells with the highest halibut densitiesm, might affect expected catch ratios for a given total area of each region. 
 
+```{r region-col-key, fig.cap="This map illustrates the sub-regions for which indices will be calculated. CDA in red, area 3CD5A north of 50º in green, and area 3CD5A south of 50º but outside of the CDA in purple.", out.width="5in"}
+include_graphics(here("figs/region-colour-map-3x3.png"))
+```
+
 \clearpage
 
 # Results {#sec:results}
@@ -169,11 +173,11 @@ r2 <- function(x) {
 }
 ```
 
-```{r halibut-preds-all, fig.cap="Model predicted landable Halibut biomass densities (colour) with survey sample densities (circle areas) overlaid. HBLL catch counts are converted to a landable biomass density by multiplying by the area swept per hook and the average landed biomass per fish caught. Trawl survey catch is converted an equvilant value by adjusting for lower catchability in trawl (model estimated) and the average proportion of biomass caught that belongs to landable individuals (set-specific proportions when available, or the global mean when not). The CDA is outlined in red. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="\\textwidth"}
+```{r halibut-preds-all, fig.cap="Model predicted landable Halibut biomass densities (colour) with survey sample densities (circle areas) overlaid. HBLL catch counts were converted to a landable biomass density. Trawl survey catch is converted an equvilant value by adjusting for lower catchability in trawl (model estimated) and the proportion of biomass caught estimated to belong to landable individuals. The CDA is outlined in red. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="\\textwidth"}
 include_graphics(here("figs/filled-keepable-halibut-predictions-est-rock-mud.png"))
 ```
 
-```{r ye-preds-all, fig.cap="Model predicted Yelloweye Rockfish biomass densities (colour) with survey sample densities (circle areas) overlaid. HBLL catch counts are converted to a biomass density by multiplying by the area swept per hook and the average biomass per fish caught in the survey overall years. Trawl survey catch is converted an equvilant value by adjusting for lower catchability in trawl (model estimated). Legend otherwise the same.", out.width="\\textwidth"}
+```{r ye-preds-all, fig.cap="Model predicted Yelloweye Rockfish biomass densities (colour) with survey sample densities (circle areas) overlaid. HBLL catch counts were converted to a biomass density. Trawl survey catch is converted an equvilant value by adjusting for lower catchability in trawl. Legend otherwise the same.", out.width="\\textwidth"}
 include_graphics(here("figs/filled-keepable-ye-predictions-est-rock-mud.png"))
 ```
 
@@ -207,25 +211,30 @@ include_graphics(here("figs/filled-keepable-halibut-to-ye-2020-w-hal-catch-est-r
 include_graphics(here("figs/filled-keepable-halibut-est-rock-mud-index-by-area.png"))
 ```
 
-```{r yelloweye-indexes, fig.cap="Yelloweye Rockfish index of relative abundance through time within various regions. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 simulations.", out.width="6in"}
+```{r yelloweye-indexes, fig.cap="Yelloweye Rockfish index of relative abundance through time within various regions. Legend otherwise the same.", out.width="6in"}
 include_graphics(here("figs/filled-keepable-yelloweye-est-rock-mud-index-by-area.png"))
 ```
 
-```{r halibut-indexes-avg, fig.cap="Average Halibut relative abundance through time in CDA vs. in area 3CD5A but outside CDA.", out.width="6in"}
+```{r halibut-indexes-avg, fig.cap="Average landable Halibut biomass density through time within area 3CD5A outside the CDA versus inside the CDA. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 simulations.", out.width="6in"}
 include_graphics(here("figs/filled-keepable-halibut-est-rock-mud-average-index.png"))
+## or with the N-S split
+# include_graphics(here("figs/filled-keepable-halibut-est-rock-mud-average-index-NS.png"))
 ```
 
-```{r yelloweye-indexes-avg, fig.cap="Average Yelloweye Rockfish relative abundance through time per HBLL and trawl survey grid grid cell in CDA vs. in area 3CD5A but outside CDA.", out.width="6in"}
+```{r yelloweye-indexes-avg, fig.cap="Average YE biomass density through time within area 3CD5A outside the CDA versus inside the CDA. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 simulations.", out.width="6in"}
+# include_graphics(here("figs/filled-keepable-yelloweye-est-rock-mud-average-index-NS.png"))
+## or without the N-S split
 include_graphics(here("figs/filled-keepable-yelloweye-est-rock-mud-average-index.png"))
 ```
 
 ```{r ye-ratio-through-time, fig.cap="Estimated ratio of Yelloweye Rockfish biomass to Halibut biomass through time for combined HBLL and trawl survey grid in CDA vs. in area 3CD5A but outside CDA.", out.width="6in"}
 include_graphics(here("figs/filled-keepable-ye-to-hal-index-est-rock-mud.png"))
+## or with the N-S split
 # include_graphics(here("figs/filled-keepable-ye-to-hal-index-est-rock-mud-NS.png"))
 ```
 
 
-```{r ye-ratio-by-scenario, fig.cap="Spatial and temporal variation in the mean biomass of \\textbf{YE to halibut} for cells with the \\textbf{highest halibut densities}. Mean halibut densities of less than 1 g per 100 hooks have been truncated to this value. The spatial areas underlying mean ratios range from a single 2x2 km grid cell to a max of 50 percent of the cells within the CDA. In the other regions the ratios are calculated across the same number of cells selected to maximize halibut densities. Lines and 95 percent CI are calculated from 500 simulations of the biomass distribution for each species.", out.width="5.5in"}
+```{r ye-ratio-by-scenario, fig.cap="Spatial variation in the mean biomass ratio of \\textbf{YE to halibut} for cells with the \\textbf{highest halibut densities}. Mean halibut densities of less than 1 g per 100 hooks have been truncated to this value. The spatial areas underlying mean ratios range from a single 2x2 km grid cell to a max of 50 percent of the cells within the CDA. In the other regions the ratios are calculated across the same number of cells selected to maximize halibut densities. Lines and 95 percent CI are calculated from 500 simulations of the biomass distribution for each species.", out.width="5.5in"}
 include_graphics(here("figs/expected_ye_to_hal-keepable_both_scenarios_NS.png"))
 ```
 
