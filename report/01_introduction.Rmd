@@ -234,16 +234,16 @@ include_graphics(here("figs/filled-keepable-ye-to-hal-index-est-rock-mud.png"))
 ```
 
 
-```{r ye-ratio-by-scenario, fig.cap="Spatial variation in the mean biomass ratio of \\textbf{YE to halibut} for cells with the \\textbf{highest halibut densities}. Mean halibut densities of less than 1 g per 100 hooks have been truncated to this value. The spatial areas underlying mean ratios range from a single 2x2 km grid cell to a max of 50 percent of the cells within the CDA. In the other regions the ratios are calculated across the same number of cells selected to maximize halibut densities. Lines and 95 percent CI are calculated from 500 simulations of the biomass distribution for each species.", out.width="5.5in"}
+```{r ye-ratio-by-scenario, fig.cap="Spatial variation in the mean biomass ratio of \\textbf{YE to halibut} for cells with the \\textbf{A. the lowest YE densities} or \\textbf{B. the highest halibut densities}. Mean halibut densities of less than 1 g per 100 hooks have been truncated to this value. Note that both axes are log scales. Lines and 95 percent CI are calculated from 500 simulations of the biomass distribution for each species.", out.width="5.5in"}
 include_graphics(here("figs/expected_ye_to_hal-keepable_both_scenarios_NS.png"))
 ```
 
 
-```{r ye-ratio-avoiding-by-year, fig.cap="Spatial and temporal variation in the mean biomass of \\textbf{YE to halibut} for cells with the \\textbf{highest halibut densities}. Mean halibut densities of less than 1 g per 100 hooks have been truncated to this value. The spatial areas underlying mean ratios range from a single 2x2 km grid cell to a max of 50 percent of the cells within the CDA. In the other regions the ratios are calculated across the same number of cells selected to maximize halibut densities. Lines and 95 percent CI are calculated from 500 simulations of the biomass distribution for each species.", out.width="5.5in"}
+```{r ye-ratio-avoiding-by-year, fig.cap="Spatial and temporal variation in the mean biomass of \\textbf{YE to halibut} for cells with the \\textbf{the lowest YE densities}. Mean halibut densities of less than 1 g per 100 hooks have been truncated to this value. The spatial areas underlying mean ratios range from a single 2x2 km grid cell to a max of 1.5 times the area of the CDA. Lines and 95 percent CI are calculated from 500 simulations of the biomass distribution for each species.", out.width="5.5in"}
 include_graphics(here("figs/expected_YE_when_avoiding_YE_CI-keepable_allcda_filled.png"))
 ```
 
-```{r ye-ratio-targetting-by-year, fig.cap="Spatial and temporal variation in the mean biomass of \\textbf{YE to halibut} for cells with the \\textbf{highest halibut densities}. Mean halibut densities of less than 1 g per 100 hooks have been truncated to this value. The spatial areas underlying mean ratios range from a single 2x2 km grid cell to a max of 50 percent of the cells within the CDA. In the other regions the ratios are calculated across the same number of cells selected to maximize halibut densities. Lines and 95 percent CI are calculated from 500 simulations of the biomass distribution for each species.", out.width="5.5in"}
+```{r ye-ratio-targetting-by-year, fig.cap="Spatial and temporal variation in the mean biomass of \\textbf{YE to halibut} for cells with the \\textbf{highest halibut densities}. Mean halibut densities of less than 1 g per 100 hooks have been truncated to this value. The spatial areas underlying mean ratios range from a single 2x2 km grid cell to a max of 1.5 times the area of the CDA. Lines and 95 percent CI are calculated from 500 simulations of the biomass distribution for each species.", out.width="5.5in"}
 include_graphics(here("figs/expected_YE_when_maximize_hal_CI-keepable_allcda_filled.png"))
 ```
 \clearpage
