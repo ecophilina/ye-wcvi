@@ -344,9 +344,13 @@ p1 <- ggplot(catch_compN, aes(log(catch_equiv_hal+10), log(catch_equiv_ye+10))) 
   coord_cartesian() + ggtitle("Trawl survey north of 50º latitude")
 
 p2 <-ggplot(catch_compN, aes(log(catch_count_hal+1), log(catch_count_ye+1))) + 
-  geom_smooth(method = "lm", colour = "grey") +
-  geom_jitter(alpha=0.5) + 
-  coord_cartesian()+ ggtitle("HBLL survey north of 50º latitude")
+  geom_smooth(method = "lm", fill = "#4DAF4A", colour = "#4DAF4A") +
+  geom_jitter(alpha=0.5, colour = "#4DAF4A") +   
+  # coord_cartesian(expand = F, xlim = c(0, log(max(catch_compN$catch_count_hal, na.rm = T)+1))) +
+  xlim(0, log(max(catch_compN$catch_count_hal, na.rm = T)+1)) +
+  ylab("log( YE catch count + 1)") +
+  xlab("log( Halibut catch count + 1)") +
+  coord_cartesian()+ ggtitle("A. HBLL survey north of 50º latitude")
 
 # ggplot(catch_compN, aes(density_hal, density_ye)) + 
 #   geom_smooth(method = "lm", colour = "grey") +
@@ -359,14 +363,22 @@ p3 <-ggplot(catch_compS, aes(log(catch_equiv_hal+10), log(catch_equiv_ye+10))) +
   coord_cartesian() + ggtitle("Trawl survey south of 50º latitude")
 
 p4 <-ggplot(catch_compS, aes(log(catch_count_hal+1), log(catch_count_ye+1))) + 
-  geom_smooth(method = "lm", colour = "grey") +
-  geom_jitter(alpha=0.5) + 
-  coord_cartesian()+ ggtitle("HBLL survey south of 50º latitude")
+  geom_smooth(method = "lm",fill ="#984EA3", colour ="#984EA3") + #"#E41A1C" "#377EB8" "#4DAF4A" "#984EA3"
+  geom_jitter(alpha=0.5, colour ="#984EA3") +   
+  # coord_cartesian(expand = F, xlim = c(0, log(max(catch_compN$catch_count_hal, na.rm = T)+1))) +
+  xlim(0, log(max(catch_compN$catch_count_hal, na.rm = T)+1)) +
+  ylab("log( YE catch count + 1)") +
+  xlab("log( Halibut catch count + 1)") +
+  coord_cartesian()+ ggtitle("B. HBLL survey south of 50º latitude")
 
 library(patchwork)
 # p1 + p3 + plot_layout(nrow = 2)
-
+p2 <-p2 + theme(axis.title.x = element_blank(),  axis.text.x = element_blank(),  axis.ticks.x = element_blank())
 p2 + p4 + plot_layout(nrow = 2)
+
+
+ggsave("figs/hbll-catch-correlations.png", width = 3.5, height = 5.5, dpi = 400)
+
 # ggplot(catch_compS, aes(density_hal, density_ye)) + 
 #   geom_smooth(method = "lm", colour = "grey") +
 #   geom_jitter(aes(colour = survey)) + 
@@ -601,11 +613,11 @@ f <- paste0("figs/region-colour-map-3x3.png")
 if (!file.exists(f)) {
 full_s_grid$region <- ordered(full_s_grid$region, 
   levels = c("CDA", "other", "3CD5A N", "non-CDA 3CD5A S"), 
-  labels = c("CDA", "other", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º"))
+  labels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º"))
 
 g1 <- ggplot(full_s_grid, aes(X,Y, colour = region)) + geom_point() +
   scale_fill_brewer(palette = "Set1") +
-  scale_colour_brewer(palette = "Set1")
+  scale_colour_brewer("Sub-region", palette = "Set1")
 
 leg <- cowplot::get_legend(g1)
 
@@ -613,14 +625,13 @@ g <- map_predictions(
   pred_data = full_s_grid,
   fill_aes = region,
   fill_lab = "Region",
-  map_lat_limits = c(48.6, max_map_lat),
+  map_lat_limits = c(48.6, 51.25),
   map_lon_limits = c(min_map_lon, max_map_lon)
 )+
   scale_fill_brewer(palette = "Set1") +
-  scale_colour_brewer(palette = "Set1", guide = guide_legend()) + 
-  theme(legend.position = c(.8,.8))
-g <- g + leg + patchwork::plot_layout(widths = c(1, 0.5))
-ggsave("figs/region-colour-map-3x3.png", width = 5, height = 3, dpi = 100)
+  scale_colour_brewer(palette = "Set1")
+g <- g + leg + patchwork::plot_layout(widths = c(1, 0.55))
+ggsave("figs/region-colour-map-3x3.png", width = 5, height = 3, dpi = 300)
 }
 ```
 
@@ -1136,38 +1147,44 @@ Uses only HBLL S grid and transforms predicted counts from HBLL model into bioma
 ```{r echo=F, message=F, warning=F}
 i_hal_hbll <- readRDS("data-generated/halibut-index-all-S-sim-500.rds")[[1]]
 i_ye_hbll <- readRDS("data-generated/yelloweye-spatial-index-all-S-sim-500.rds")[[1]]
-i_hal <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-hbll-S-sim-500.rds")[[1]]#[[1]]
+i_hal <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-hbll-S-sim-500.rds")[[1]]
 i_ye <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-hbll-S-sim-500.rds")[[1]]
 
-.dat <- bind_rows(mutate(i_hal, Model = "HBLL + trawl (biomass)", Species = "Halibut"),
-  mutate(i_hal_hbll, Model = "HBLL (counts x mean weight)", Species = "Halibut", 
-    est = est * halmeanweight/ (100 * 0.0024384 * 0.009144 * 10000) , lwr = lwr * halmeanweight/ (100 * 0.0024384 * 0.009144 * 10000) , upr = upr * halmeanweight/ (100 * 0.0024384 * 0.009144 * 10000) ),
-  mutate(i_ye, Model = "HBLL + trawl (biomass)", Species = "Yelloweye"),
-  mutate(i_ye_hbll, Model = "HBLL (counts x mean weight)",  Species = "Yelloweye", 
-    est = est * yemeanweight/ (100 * 0.0024384 * 0.009144 * 10000) , lwr = lwr * yemeanweight/ (100 * 0.0024384 * 0.009144 * 10000) , upr = upr * yemeanweight/ (100 * 0.0024384 * 0.009144 * 10000) )
+.dat <- bind_rows(mutate(i_hal, Model = "B. HBLL + trawl (biomass)", Species = "Halibut"),
+  mutate(i_hal_hbll, Model = "A. HBLL (counts x mean weight)", Species = "Halibut", 
+    est = est * halmeanweight/ (100 * 0.0024384 * 0.009144 * 10000) 
+    , 
+    lwr = lwr * halmeanweight/ (100 * 0.0024384 * 0.009144 * 10000) 
+    , 
+    upr = upr * halmeanweight/ (100 * 0.0024384 * 0.009144 * 10000) 
+    ),
+  mutate(i_ye, Model = "B. HBLL + trawl (biomass)", Species = "Yelloweye"),
+  mutate(i_ye_hbll, Model = "A. HBLL (counts x mean weight)",  Species = "Yelloweye", 
+    est = est * yemeanweight/ (100 * 0.0024384 * 0.009144 * 10000) 
+    , 
+    lwr = lwr * yemeanweight/ (100 * 0.0024384 * 0.009144 * 10000) 
+    , 
+    upr = upr * yemeanweight/ (100 * 0.0024384 * 0.009144 * 10000) 
+    )
 )
-# .dat$Model <- ordered(.dat$Model, levels = c("Halibut HBLL", "Yelloweye HBLL", "Yelloweye hybrid", "Halibut hybrid" ))
 .dat$Species <- ordered(.dat$Species, levels = c("Halibut", "Yelloweye"))
 .dat$year <- as.integer(.dat$year)
 
 ggplot(.dat, aes(year, est/1000, fill = Species, colour = Species)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr/1000, ymax = upr/1000), alpha = 0.2, colour = NA) +
-  # facet_wrap(~Model, nrow = 2, scales = "free") +
-  # geom_line(data = .dat1, linetype = 2) +
   xlab("Year") +
   ylab("Biomass Index (HBLL S grid only)") +
-  # coord_cartesian(expand = FALSE, ylim = c(0, max(i_ye$upr) * 1.04)) +
-  # scale_x_continuous() +
   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
   scale_fill_viridis_d(option = "D", begin = 0.5, end = 0.95) +
   scale_colour_viridis_d(option = "D", begin = 0.5, end = 0.95) +
-  facet_wrap_custom(~Model, nrow = 2, scales = "free_x", scale_overrides = list(
+  facet_wrap_custom(~Model, nrow = 2, scales = "free", scale_overrides = list(
     scale_override(1, scale_x_continuous(breaks = seq(1950, 2050, 2))),
     scale_override(2, scale_x_continuous(
     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
     breaks = seq(2008, 2020, 2)))
-  ))
+  ))+
+    theme(strip.text.x = element_text(angle = 0, hjust = 0))
 
 ggsave("figs/compare-model-indices.png", width = 7, height = 5, dpi = 400)
 ```
@@ -1189,7 +1206,7 @@ i_hal_noncdaS <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-in
 # i_hal_5A <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A-sim-500.rds")[[1]]
 i_hal_hbll <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-hbll-S-sim-500.rds")[[1]]
 
-.dat <- bind_rows(
+.datH <- bind_rows(
   # mutate(i_hal, Area = "Full combined"),
   # mutate(i_hal_hbll, Area = "HBLL grid only"),
   # mutate(i_hal_5A, Area = "5A"),
@@ -1200,13 +1217,14 @@ i_hal_hbll <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index
 )
 
 
-.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º", "Full combined", "HBLL grid only"))
-ggplot(.dat, aes(year, est/1000, fill = Area, colour = Area)) + # convert kg to tonnes
+.datH$Area <- ordered(.datH$Area, levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º", "Full combined", "HBLL grid only"))
+g_i_hal <- ggplot(.datH, aes(year, est/1000, fill = Area, colour = Area)) + # convert kg to tonnes
   geom_line(size = 1.25) +
   geom_ribbon(aes(ymin = lwr/1000, ymax = upr/1000), alpha = 0.2, colour = NA) +
   xlab("Year") +
   ylab("Biomass index (landable tonnes)") +
-  coord_cartesian(expand = FALSE, ylim = c(0, max(.dat$upr)/1000)) +
+  ggtitle("A. Pacific Halibut") +
+  coord_cartesian(expand = FALSE, ylim = c(0, max(.datH$upr)/1000)) +
   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
   scale_x_continuous(
     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
@@ -1214,6 +1232,7 @@ ggplot(.dat, aes(year, est/1000, fill = Area, colour = Area)) + # convert kg to 
   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
   scale_fill_brewer(palette = "Set1") +
   scale_colour_brewer(palette = "Set1")
+g_i_hal
 ggsave("figs/filled-keepable-halibut-est-rock-mud-index-by-area.png", width = 7, height = 4, dpi = 400)
 ```
 
@@ -1241,12 +1260,13 @@ i_ye_hbll <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-inde
 )
 
 .dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º", "Full combined", "HBLL grid only"))
-ggplot(.dat, aes(year, est/1000, fill = Area, colour = Area)) +
+g_i_ye <- ggplot(.dat, aes(year, est/1000, fill = Area, colour = Area)) +
   geom_line(size = 1.25) +
   geom_ribbon(aes(ymin = lwr/1000, ymax = upr/1000), alpha = 0.2, colour = NA) +
   # geom_line(data = .dat1, linetype = 2) +
   xlab("Year") +
   ylab("Biomass index (tonnes)") +
+  ggtitle("B. Yelloweye Rockfish") +
   coord_cartesian(#expand = FALSE, 
     ylim = c(0, max(.dat$upr)/1000)) +
   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
@@ -1256,8 +1276,26 @@ ggplot(.dat, aes(year, est/1000, fill = Area, colour = Area)) +
   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
   scale_fill_brewer(palette = "Set1") +
   scale_colour_brewer(palette = "Set1")
+g_i_ye
 ggsave("figs/filled-keepable-yelloweye-est-rock-mud-index-by-area.png", width = 7, height = 4, dpi = 400)
 ```
+
+
+```{r}
+g_i_hal  <- g_i_hal + theme(
+  axis.title.x = element_blank(),axis.text.x = element_blank(),
+  legend.position = "none")
+g_i_ye <- g_i_ye + 
+  coord_cartesian(ylim = c(0, max(.datH$est)/1000)) +
+  theme(
+      # axis.title.y = element_blank(),axis.text.y = element_blank(),
+      legend.position = c(0.75, 0.75))   
+
+(g_i_hal / g_i_ye) + plot_layout() #guides = 'collect') & theme(legend.position = c(0.8, 0.8))
+
+ggsave("figs/filled-keepable-rock-mud-index-by-area.png", width = 6, height = 7, dpi = 300)
+```
+
 
 ## Estimated average catch through time
 
@@ -1271,7 +1309,7 @@ i_hal_noncda <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-ind
 i_hal_noncdaN <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds")[[1]]
 i_hal_noncdaS <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds")[[1]]
 
-.dat <- bind_rows(
+.datH <- bind_rows(
   mutate(i_hal_noncda,
     est = est / (sum(noncda_grid$area)/ 10000),
     lwr = lwr / (sum(noncda_grid$area)/ 10000),
@@ -1299,9 +1337,9 @@ i_hal_noncdaS <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-in
   )
 )
 
-.dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º"))
+.datH$Area <- ordered(.datH$Area, levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º"))
 
-ggplot(.dat, aes(year, est)) +
+ggplot(.datH, aes(year, est)) +
   geom_line(aes(colour = Area), size = 1.5) +
   geom_ribbon(aes(
     ymin = lwr,
@@ -1317,14 +1355,15 @@ ggplot(.dat, aes(year, est)) +
   scale_colour_brewer(palette = "Set1")
 ggsave("figs/filled-keepable-halibut-est-rock-mud-average-index-NS.png", width = 7, height = 4, dpi = 400)
 
-ggplot(filter(.dat, Area %in% c("CDA", "non-CDA 3CD5A")), aes(year, est)) +
+g_a_hal  <- ggplot(filter(.datH, Area %in% c("CDA", "non-CDA 3CD5A")), aes(year, est)) +
   geom_line(aes(colour = Area), size = 1.5) +
   geom_ribbon(aes(
     ymin = lwr,
     ymax = upr, fill = Area
   ), alpha = 0.2) +
   xlab("Year") +
-  ylab("Biomass density (kg/ha)") +
+  ylim(0, max(.datH$upr)) +
+  ylab("Biomass density (landable kg/ha)") +
   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
   scale_x_continuous(
     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
@@ -1383,12 +1422,13 @@ ggplot(.dat, aes(year, est)) +
   scale_colour_brewer(palette = "Set1")
 ggsave("figs/filled-keepable-yelloweye-est-rock-mud-average-index-NS.png", width = 7, height = 4, dpi = 400)
 
-ggplot(filter(.dat, Area %in% c("CDA", "non-CDA 3CD5A")), aes(year, est)) +
+g_a_ye <- ggplot(filter(.dat, Area %in% c("CDA", "non-CDA 3CD5A")), aes(year, est)) +
   geom_line(aes(colour = Area), size = 1.5) +
   geom_ribbon(aes(
     ymin = lwr,
     ymax = upr, fill = Area
   ), alpha = 0.2) +
+  #
   xlab("Year") +
   ylab("Biomass density (kg/ha)") +
   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
@@ -1398,6 +1438,38 @@ ggplot(filter(.dat, Area %in% c("CDA", "non-CDA 3CD5A")), aes(year, est)) +
   scale_fill_brewer(palette = "Set1") +
   scale_colour_brewer(palette = "Set1")
 ggsave("figs/filled-keepable-yelloweye-est-rock-mud-average-index.png", width = 7, height = 4, dpi = 400)
+```
+
+```{r}
+g_a_hal  <- g_a_hal + theme(
+  axis.title.x = element_blank(),
+  axis.text.x = element_blank(),
+  legend.position = "none")
+g_a_ye <- g_a_ye + 
+  theme(
+      # axis.title.y = element_blank(),
+      # axis.text.y = element_blank(),
+      # axis.ticks.y = element_blank(),
+      legend.position = c(0.75, 0.8))   
+
+(g_a_hal /g_a_ye) + plot_layout() #guides = 'collect') & theme(legend.position = c(0.8, 0.8))
+ggsave("figs/filled-keepable-rock-mud-avg-by-area.png", width = 6, height = 7, dpi = 300)
+# # horizontal orientation
+# g_a_hal  <- g_a_hal + theme(
+#   axis.title.x = element_blank(),
+#   # axis.text.x = element_blank(),
+#   legend.position = "none")
+# g_a_ye <- g_a_ye +  ylim(0, max(.datH$upr)) +
+#   theme(
+#       axis.title = element_blank(),
+#       axis.text.y = element_blank(),
+#       axis.ticks.y = element_blank(),
+#       legend.position = c(0.75, 0.75))   
+
+# (g_a_hal + g_a_ye) + plot_layout() #guides = 'collect') & theme(legend.position = c(0.8, 0.8))
+
+# ggsave("figs/filled-keepable-rock-mud-avg-by-area.png", width = 10, height = 4, dpi = 300)
+
 ```
 
 
@@ -1634,7 +1706,7 @@ ggplot(.dat2, aes(year, ye_per_hal, fill = Area, colour = Area)) +
   geom_line(size = 1.5) +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, colour = NA) +
   xlab("Year") +
-  ylab("Estimated yelloweye to halibut biomass ratio") +
+  ylab("Estimated YE to halibut biomass ratio") +
   coord_cartesian(expand = T, ylim = c(0.03, max(.dat2$upr))) +
   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
   scale_x_continuous(
@@ -1643,7 +1715,7 @@ ggplot(.dat2, aes(year, ye_per_hal, fill = Area, colour = Area)) +
   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
   scale_fill_brewer(palette = "Set1") +
   scale_colour_brewer(palette = "Set1")
-ggsave("figs/filled-keepable-ye-to-hal-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
+ggsave("figs/filled-keepable-ye-to-hal-index-est-rock-mud.png", width = 7, height = 3.4, dpi = 400)
 
 .dat3 <- .dat %>% filter(Area %in% c(
   "non-CDA 3CD5A S of 50º", "3CD5A N of 50º",
@@ -1655,7 +1727,7 @@ ggplot(.dat3, aes(year, ye_per_hal, fill = Area, colour = Area)) +
   geom_line(size = 1.5) +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.2, colour = NA) +
   xlab("Year") +
-  ylab("Estimated yelloweye to halibut biomass ratio") +
+  ylab("Estimated YE to halibut biomass ratio") +
   coord_cartesian(expand = T, ylim = c(0.03, max(.dat3$upr))) +
   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
   scale_x_continuous(
@@ -1681,75 +1753,75 @@ ggsave("figs/filled-keepable-ye-to-hal-index-est-rock-mud-NS.png", width = 7, he
 # ggsave("figs/filled-keepable-hal-to-ye-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
 ```
 
-Checking what happens if we use different weights... x 0.6 for smaller halibut
+
 
 ```{r message=F, echo=F, warning=F}
-# # checking what happens if we use different weights... 1.33x larger for halibut
-# hbll_s_grid <- filter(full_s_grid, survey == "HBLL")
-# hbll_noncda_grid <- filter(noncda_grid, survey == "HBLL")
-# hbll_cda_grid <- filter(cda_grid, survey == "HBLL")
+# # # checking what happens if we use different weights... 1.33x larger for halibut
+# # hbll_s_grid <- filter(full_s_grid, survey == "HBLL")
+# # hbll_noncda_grid <- filter(noncda_grid, survey == "HBLL")
+# # hbll_cda_grid <- filter(cda_grid, survey == "HBLL")
+# # 
+# # hbll_in_cda <- nrow(hbll_cda_grid)/nrow(cda_grid)
+# # hbll_in_noncda <- nrow(hbll_noncda_grid)/nrow(noncda_grid)
 # 
-# hbll_in_cda <- nrow(hbll_cda_grid)/nrow(cda_grid)
-# hbll_in_noncda <- nrow(hbll_noncda_grid)/nrow(noncda_grid)
-
-# lowest years catch rate in kg per fish caught 
-.datL <- left_join(.i_ye, .i_hal) %>% mutate(
-    ye_per_hal = (yelloweye) / (halibut*0.62), 
-    hal_per_ye = (halibut*0.62) / (yelloweye)
-  )  %>% 
-  group_by(Area, year) %>%
-  summarise(
-    lwr = quantile(ye_per_hal, 0.025),
-    upr = quantile(ye_per_hal, 0.975),
-    ye_per_hal = mean(ye_per_hal),
-    lwr_hal = quantile(hal_per_ye, 0.025),
-    upr_hal = quantile(hal_per_ye, 0.975),
-    hal_per_ye = mean(hal_per_ye)
-  ) 
-.datL <- .datL %>% filter(Area %in% c(
-  # "non-CDA 3CD5A",
-  "non-CDA 3CD5A S of 50º", "3CD5A N of 50º",
-  "CDA"))
-
-# highest years catch rate in kg per fish caught 
-.datH <- left_join(.i_ye, .i_hal) %>% mutate(
-    ye_per_hal = (yelloweye) / (halibut*1.26), # convert to adam's estimates ye = 1.04
-    hal_per_ye = (halibut*1.26) / (yelloweye)
-  )  %>% 
-  group_by(Area, year) %>%
-  summarise(
-    lwr = quantile(ye_per_hal, 0.025),
-    upr = quantile(ye_per_hal, 0.975),
-    ye_per_hal = mean(ye_per_hal),
-    lwr_hal = quantile(hal_per_ye, 0.025),
-    upr_hal = quantile(hal_per_ye, 0.975),
-    hal_per_ye = mean(hal_per_ye)
-  ) 
-.datH <- .datH %>% filter(Area %in% c(
-  # "non-CDA 3CD5A",
-  "non-CDA 3CD5A S of 50º", "3CD5A N of 50º",
-  "CDA"))
-
-ggplot(.datH, aes(year, ye_per_hal, fill = Area, colour = Area)) +
-  geom_line(aes(linetype = "solid")) +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
-  geom_line(data=.datL, aes(year, ye_per_hal, fill = Area, colour = Area, linetype = "dashed"
-  )) +
-  geom_ribbon(data=.datL, aes(ymin = lwr, ymax = upr), alpha = 0.2, colour = NA) +
-  xlab("Year") +
-  ylab("Estimated yelloweye to halibut biomass ratio") +
-  coord_cartesian(expand = T, ylim = c(0.03, max(.datL$upr))) +
-  # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
-  scale_linetype_manual(name = "Halibut", values= c("dashed", "solid"),
-    label = c("lowest landings",  "most landings")) +
-  scale_x_continuous(
-    labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
-    breaks = seq(2008, 2020, 2)) + 
-  theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
-  scale_fill_brewer(palette = "Set1") +
-  scale_colour_brewer(palette = "Set1")
-ggsave("figs/filled-keepable-ye-to-hal-sizes-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
+# # lowest years catch rate in kg per fish caught 
+# .datL <- left_join(.i_ye, .i_hal) %>% mutate(
+#     ye_per_hal = (yelloweye) / (halibut*0.62), 
+#     hal_per_ye = (halibut*0.62) / (yelloweye)
+#   )  %>% 
+#   group_by(Area, year) %>%
+#   summarise(
+#     lwr = quantile(ye_per_hal, 0.025),
+#     upr = quantile(ye_per_hal, 0.975),
+#     ye_per_hal = mean(ye_per_hal),
+#     lwr_hal = quantile(hal_per_ye, 0.025),
+#     upr_hal = quantile(hal_per_ye, 0.975),
+#     hal_per_ye = mean(hal_per_ye)
+#   ) 
+# .datL <- .datL %>% filter(Area %in% c(
+#   # "non-CDA 3CD5A",
+#   "non-CDA 3CD5A S of 50º", "3CD5A N of 50º",
+#   "CDA"))
 # 
+# # highest years catch rate in kg per fish caught 
+# .datH <- left_join(.i_ye, .i_hal) %>% mutate(
+#     ye_per_hal = (yelloweye) / (halibut*1.26), # convert to adam's estimates ye = 1.04
+#     hal_per_ye = (halibut*1.26) / (yelloweye)
+#   )  %>% 
+#   group_by(Area, year) %>%
+#   summarise(
+#     lwr = quantile(ye_per_hal, 0.025),
+#     upr = quantile(ye_per_hal, 0.975),
+#     ye_per_hal = mean(ye_per_hal),
+#     lwr_hal = quantile(hal_per_ye, 0.025),
+#     upr_hal = quantile(hal_per_ye, 0.975),
+#     hal_per_ye = mean(hal_per_ye)
+#   ) 
+# .datH <- .datH %>% filter(Area %in% c(
+#   # "non-CDA 3CD5A",
+#   "non-CDA 3CD5A S of 50º", "3CD5A N of 50º",
+#   "CDA"))
+# 
+# ggplot(.datH, aes(year, ye_per_hal, fill = Area, colour = Area)) +
+#   geom_line(aes(linetype = "solid")) +
+#   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
+#   geom_line(data=.datL, aes(year, ye_per_hal, fill = Area, colour = Area, linetype = "dashed"
+#   )) +
+#   geom_ribbon(data=.datL, aes(ymin = lwr, ymax = upr), alpha = 0.2, colour = NA) +
+#   xlab("Year") +
+#   ylab("Estimated yelloweye to halibut biomass ratio") +
+#   coord_cartesian(expand = T, ylim = c(0.03, max(.datL$upr))) +
+#   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
+#   scale_linetype_manual(name = "Halibut", values= c("dashed", "solid"),
+#     label = c("lowest landings",  "most landings")) +
+#   scale_x_continuous(
+#     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
+#     breaks = seq(2008, 2020, 2)) + 
+#   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
+#   scale_fill_brewer(palette = "Set1") +
+#   scale_colour_brewer(palette = "Set1")
+# ggsave("figs/filled-keepable-ye-to-hal-sizes-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
+# # 
 # ggplot(.datx, aes(year, hal_per_ye, fill = Area, colour = Area)) +
 #   geom_line() +
 #   geom_ribbon(aes(ymin = lwr_hal, ymax = upr_hal), alpha = 0.4, colour = NA) +
@@ -2086,7 +2158,9 @@ g
 
 dir.create("figs", showWarnings = FALSE)
 ggsave("figs/filled-keepable-ye-to-halibut-2020-w-hal-catch-est-rock-mud.png", 
-  width = 6, height = 5, dpi = 200)
+  width = 5.5, height = 4.5, dpi = 400
+  # width = 6, height = 5, dpi = 200
+  )
 # ggsave("figs/filled-keepable-ye-to-halibut-2020-w-hal-catch-S.pdf", width = 5.5, height = 6, dpi = 400)
 ```
 
@@ -2111,7 +2185,9 @@ g
 
 dir.create("figs", showWarnings = FALSE)
 ggsave("figs/filled-keepable-halibut-to-ye-2020-w-hal-catch-est-rock-mud.png", 
-  width = 6, height = 5, dpi = 200)
+  width = 5.5, height = 4.5, dpi = 400
+  # width = 6, height = 5, dpi = 200
+  )
 # ggsave("figs/filled-keepable-halibut-to-ye-2020-w-hal-catch-S.pdf", width = 5.5, height = 6, dpi = 400)
 ```
 
