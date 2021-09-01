@@ -307,6 +307,7 @@ include_graphics(here("figs/expected_ye_to_hal-keepable_both_scenarios.png"))
 
 Over the roughly 14-year timespan of this index (2007--2019 for QCS trawl survey area; 2008-2018 for WCVI trawl survey area; 2007--2020 for HBLL), overall landable Halibut biomass has fluctuated from a high of `r round(i_hal[i_hal$year==2014,]$est/1000)` tonnes in 2013-2014 to low of `r round(i_hal[i_hal$year==2018,]$est/1000)` tonnes in 2017-2018 (sum of red and blue in Fig. \@ref(fig:indexes)A), while total YE biomass fluctuated from a high of `r round(i_ye[i_ye$year==2008,]$est/1000)` tonnes in 2013-2014 to low of `r round(i_ye[i_ye$year==2020,]$est/1000)` tonnes in 2017-2018 (sum of red and blue in Fig. \@ref(fig:indexes)B).
 While index trajectories for both species are similar inside versus outside the CDA (Fig. \@ref(fig:indexes-avg)), the difference in the expected species ratio between the CDA and the wider area has been reduced in the most recent years (Fig. \@ref(fig:ye-ratio-through-time)).
+<!-- SA: define a term for 'wider area' much earlier? "3CD5A (that overlaps with the latitudes surveyed by the HBLL) except the CDA" -->
 
 If fishing were to focus only on the 10% of area with the highest halibut densities, the estimated mean ratios of YE to halibut range from `r round(ye_per_hal_cda[1],2)` to `r round(ye_per_hal_cda[2],2)` within the CDA. 
 <!-- Overall, this ratio varies more between years than with total proportion of the CDA targeted for halibut (Fig. \@ref(fig:ye-ratio-targetting-by-year)).  -->
