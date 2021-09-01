@@ -46,7 +46,7 @@ In this report, we explore the potential for spatiotemporal geostatistical model
 
 # Methods {#sec:methods}
 
-We used data collected on the southern outside Hard Bottom Longline survey (HBLL) and the synoptic bottom trawl survey  to estimate the spatial and temporal variation in expected catches of YE and halibut. 
+We used data collected on the southern outside Hard Bottom Longline survey (HBLL) and the synoptic bottom trawl survey to estimate the spatial and temporal variation in expected catches of YE and halibut. 
 The HBLL survey focuses on rockfish habitats, rather than a broader range of habitats and depths that halibut occupy. 
 This survey is usually conducted in alternating years, except that no survey occurred in 2012 and 2013. 
 The synoptic trawl surveys sample soft-bottom habitats, but use trawl gear and record biomass densities, rather than fish counts as on the HBLL. 
@@ -57,10 +57,10 @@ In order to incorporate observations from both survey types into one model, the 
 For YE, we converted HBLL catch counts to biomass using an estimate of mean fish weight (all fish measured across all years on this survey). 
 For halibut, individual fish weights or lengths were not collected and fish smaller than 81.3 cm cannot be kept, so HBLL catch counts were converted to a landable biomass density by multiplying counts by the average total landed biomass per fish caught. 
 These biomass estimates for HBLL catch were further divided by the "area swept" calculation of hook count $\times$ a hook spacing of 0.0024384 km $\times$ an assumed catch radius of 0.009144 km.
-For the trawl survey halibut biomass densities, the estimated density was multiplied by the proportion of biomass caught that belonged to landable individuals at the set-level where at least 10 fish, or greater than 70% by weight of the total catch, were measured.
+For the trawl survey halibut biomass, the estimated densities were multiplied by the proportion of biomass caught that belonged to landable individuals at the set-level where at least 10 fish, or greater than 70% by weight of the total catch, were measured.
 In cases where these criteria were not met, we used the global mean across all sets.
-YE biomass densities from the trawl survey were left unadjusted because the mean weight per fish were nearly identical between the surveys (synoptic surveys = `r round(yemeanweightSYN, 2)` kg; HBLL = `r round(yemeanweightHBLL, 2)` kg kg). <!-- and similar to placeholder value from IFMP that represents mean of landed commercial catch (`r round(yemeanweight, 2)` kg). -->
-All densities were finally converted from kg per kg/km2 to kg per ha for computational reasons. 
+YE biomass densities from the trawl survey were left unadjusted because the mean weight per fish were nearly identical between the surveys (synoptic surveys = `r round(yemeanweightSYN, 2)` kg; HBLL = `r round(yemeanweightHBLL, 2)` kg). <!-- and similar to placeholder value from IFMP that represents mean of landed commercial catch (`r round(yemeanweight, 2)` kg). -->
+Finally, all densities were converted from kg per kg/km2 to kg per ha for computational reasons. 
 
 Next, we fit geostatistical spatiotemporal models to these surveyed biomass densities using the R package sdmTMB <https://github.com/pbs-assess/sdmTMB>. 
 Because these biomass densities include both zeros and positive continuous values, we used a Tweedie distribution to model predicted catches of each species. 
@@ -91,7 +91,12 @@ Finally, cell-specific biomass estimates were used to explore how contrasting fi
 
 TODO A BUNCH OF TECHNICAL STUFF HERE ABOUT FITTING AND CIS. ... simulated 500 times...
 
-```{r region-col-key, fig.cap="This map illustrates the sub-regions for which indices will be calculated. Blue area is not illustrated as it is comprised of the green and purple areas combined.", out.width="4.5in"}
+```{r survey-grid-map, fig.cap="Map of 2 $times$ 2 km grid cells comprising both fishery-independent surveys used in this analysis and the court defined area (CDA) outlined in red. Trawl survey area north of Vancouver Island belongs to the Queen Charlotte Sound Synoptic Survey, while the area west of the island is covered in the West Coast Vancouver Island Synoptic Survey. Cells within these area that are excluded from the trawl survey grid are either protected areas or have been deemed unfishable by trawl gear, often due to rockiness or the presence of corals or sponges.", out.width="4.5in"}
+include_graphics(here("figs/map-stitched-grid-overlap.png"))
+```
+
+
+```{r region-col-key, fig.cap="This map illustrates the filled-in grid and the sub-regions for which indices will be calculated. Blue area is not illustrated as it is comprised of the green and purple areas combined.", out.width="4.5in"}
 include_graphics(here("figs/region-colour-map-3x3.png"))
 ```
 
