@@ -100,7 +100,7 @@ include_graphics(here("figs/map-stitched-grid-overlap.png"))
 include_graphics(here("figs/region-colour-map-3x3.png"))
 ```
 
-```{r hbll-catch, fig.cap="Species correlations within HBLL catch counts. Colours correspond to the sub-regions in Fig. 1 except that catch within the CDA has been included in panel B.", out.width="3in"}
+```{r hbll-catch, fig.cap="Species correlations within HBLL catch counts. Colours correspond to the sub-regions in Fig. 2 except that catch within the CDA has been included in panel B.", out.width="3in"}
 include_graphics(here("figs/hbll-catch-correlations.png"))
 ```
 
@@ -120,27 +120,16 @@ i_hal_noncdaS <- readRDS(here("report-data/filled-keepable-halibut-est-rock-mud-
 
 cda_grid <- readRDS(here("data-generated/filled_cda_grid_paired.rds"))
 noncda_grid <- readRDS(here("data-generated/filled_noncda_grid_paired.rds"))
-# s_5A_grid <- readRDS(here("data-generated/hybrid_5A_grid_paired.rds"))
 full_s_grid <- readRDS(here("data-generated/full_filled_grid_paired.rds"))
-
-# hbll_s_grid <- readRDS(here("data-generated/full_filled_grid_paired.rds"))
-# hbll_noncda_grid <- filter(noncda_grid, survey == "HBLL")
-# hbll_cda_grid <- filter(cda_grid, survey == "HBLL")
-# 
-# hbll_s_grid <- filter(full_s_grid, survey == "HBLL")
-# hbll_noncda_grid <- filter(noncda_grid, survey == "HBLL")
-# hbll_cda_grid <- filter(cda_grid, survey == "HBLL")
 ```
 
 
 ```{r filter-indices}
 i_hal_cda2020 <- filter(i_hal_cda, year == 2020)
 i_hal_noncda2020 <- filter(i_hal_noncda, year == 2020)
-# i_hal_5A2020 <- filter(i_hal_5A, year == 2020)
 i_hal2020 <- filter(i_hal, year == 2020)
 i_ye_cda2020 <- filter(i_ye_cda, year == 2020)
 i_ye_noncda2020 <- filter(i_ye_noncda, year == 2020)
-# i_ye_5A2020 <- filter(i_ye_5A, year == 2020)
 i_ye2020 <- filter(i_ye, year == 2020)
 
 rel_hal <- readRDS(here("data-generated/mean_hal_ratios.rds")) 
@@ -149,12 +138,8 @@ spp_ratios <- readRDS(here("data-generated/ratios-yelloweye-to-halibut.rds"))
 
 rel_hal_3CD5A <- filter(rel_hal, area == "CDAto5A3CD")
 rel_ye_3CD5A <- filter(rel_ye, area == "CDAto5A3CD")
-# rel_hal_full <- filter(rel_hal, area == "CDAtoFull")
-# rel_ye_full <- filter(rel_ye, area == "CDAtoFull")
 
 spp_ratios2020 <- filter(spp_ratios, year == 2020)
-
-# i_hal[i_hal$year==2014,]$est
 ```
 
 
@@ -183,6 +168,7 @@ include_graphics(here("figs/compare-model-indices.png"))
 These models produce biennial estimates of the spatial distribution of biomass density for each species (Figs \@ref(fig:halibut-preds-all) and \@ref(fig:ye-preds-all)). 
 However, we will focus on the predicted spatial variation for the most recent years in our survey data (2018 through 2020 in order to have complete spatial coverage) and prediction for 2019 and 2020 combined (Figs. \@ref(fig:halibut-preds-2020) and \@ref(fig:ye-preds-2020)).
 <!-- SA: clarify? 2019-2020 or 2018-2020; I'm confused here -->
+<!-- PE: This is accurate. It is because we don't have trawl data for the southern area in the 2019-2020 year pairing. In the faceted figure you can see which year pair samples belong to, but for the zoomed in figures I wanted to see how well trawl samples were represented in the south... possibly I should average predications across those final two sets of years for these zoomed in figures and make it 2017-2020 for both?-->
 Due to generally higher biomass densities in the north, zooming in on the area immediately around the CDA (Area 3CD5A south of 50º) is also useful (Figs. \@ref(fig:halibut-preds-2020-closeup) and \@ref(fig:ye-preds-2020-closeup)). 
 The predictions for both species can also be mapped as ratios to identify locations at particular risk of higher YE catch (Fig. \@ref(fig:ye-per-hal-preds-2020)) or locations that are particularly productive for halibut, while minimizing YE catch (Fig. \@ref(fig:hal-per-ye-preds-2020)). 
 
@@ -312,7 +298,7 @@ include_graphics(here("figs/expected_ye_to_hal-keepable_both_scenarios.png"))
 
 Over the roughly 14-year timespan of this index (2007--2019 for QCS trawl survey area; 2008-2018 for WCVI trawl survey area; 2007--2020 for HBLL), overall landable Halibut biomass has fluctuated from a high of `r round(i_hal[i_hal$year==2014,]$est/1000)` tonnes in 2013-2014 to low of `r round(i_hal[i_hal$year==2018,]$est/1000)` tonnes in 2017-2018 (sum of red and blue in Fig. \@ref(fig:indexes)A), while total YE biomass fluctuated from a high of `r round(i_ye[i_ye$year==2008,]$est/1000)` tonnes in 2013-2014 to low of `r round(i_ye[i_ye$year==2020,]$est/1000)` tonnes in 2017-2018 (sum of red and blue in Fig. \@ref(fig:indexes)B).
 While index trajectories for both species are similar inside versus outside the CDA (Fig. \@ref(fig:indexes-avg)), the difference in the expected species ratio in the CDA compared to the non-CDA 3CD5A has been reduced in the most recent years (Fig. \@ref(fig:ye-ratio-through-time)).
-<!-- SA: define a term for 'wider area' much earlier? "3CD5A (that overlaps with the latitudes surveyed by the HBLL) except the CDA" -->
+<!-- SA: define a term for 'wider area' much earlier? "3CD5A (that overlaps with the latitudes surveyed by the HBLL) except the CDA... it is defined in Fig. \@ref(fig:region-col-key), at this late stage in the doc I wanted to translate the technical "non-3CD5A" into what it actually represents... maybe what we should say here is take it back to "the majority of the Groundfish Management Unit Area encompassing the CDA" or something like that? Trying to remind the reader what was covered in the methods and might have been forgotten by this point.-->
 
 If fishing were to focus only on the 10% of area with the highest halibut densities, the estimated mean ratios of YE to halibut range from `r round(ye_per_hal_cda[1],2)` to `r round(ye_per_hal_cda[2],2)` within the CDA. 
 <!-- Overall, this ratio varies more between years than with total proportion of the CDA targeted for halibut (Fig. \@ref(fig:ye-ratio-targetting-by-year)).  -->
@@ -324,7 +310,7 @@ While outside the CDA, a similar approach used to fish the same total area could
 
 \clearpage
 
-```{r indexes, fig.cap="Indices of total (A) landable Halibut and (B) YE biomass through time within various regions (Fig. 1). Blue is the portion of Area 3CD5A that overlaps the HBLL survey (sampled range of Area 3CD5A) and excludes the CDA and RCAs. Purple represents the portion of this area included in the closeup of the CDA. Green is the portion of the blue area not included in purple. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 draws from the joint precision matrix.", out.width="5in"}
+```{r indexes, fig.cap="Indices of total (A) landable Halibut and (B) YE biomass through time within various regions (Fig. 2). Blue is the portion of Area 3CD5A that overlaps the HBLL survey (sampled range of Area 3CD5A) and excludes the CDA and RCAs. Purple represents the portion of this area included in the closeup of the CDA. Green is the portion of the blue area not included in purple. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 draws from the joint precision matrix.", out.width="5in"}
 include_graphics(here("figs/filled-keepable-rock-mud-index-by-area.png"))
 ```
 
