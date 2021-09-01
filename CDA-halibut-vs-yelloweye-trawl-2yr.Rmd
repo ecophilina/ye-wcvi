@@ -253,7 +253,7 @@ substrate <- readRDS(file = f2) %>%
 
 d_utm <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>% 
   filter(latitude < 52.15507) %>%
-  filter(year %in% years) %>% left_join(substrate) # looks like no missing data to worry about
+  filter(year %in% years) %>% left_join(select(substrate, -X, -Y)) # looks like no missing data to worry about
 
 if(sum(is.na(d_utm$muddy))) { stop("Check for missing substrate data before running models.")}
 
@@ -648,7 +648,7 @@ plot(mesh400kn)
 ```{r eval = TRUE}
 d_hal <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
   filter(latitude < 52.15507) %>%
-  filter(year %in% years)%>% left_join(substrate) 
+  filter(year %in% years)%>% left_join(select(substrate, -X, -Y)) 
 f <- paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn.rds")
 if (!file.exists(f)) {
   m_halibut <- sdmTMB(
