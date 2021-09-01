@@ -15,6 +15,7 @@ library(sdmTMB)
 # Do we need instructions for installing other dependencies like "pbsmapping"?
 # devtools::install_github("seananderson/ggsidekick")
 library(ggsidekick) # for fourth_root_power_trans and theme_sleek
+library(here)
 theme_set(ggsidekick::theme_sleek())
 dir.create("data", showWarnings = FALSE)
 dir.create("data-generated", showWarnings = FALSE)
@@ -1047,6 +1048,34 @@ if (!file.exists(ss)) {
 #   saveRDS(i_ye_Sb, f)
 # }
 ```
+
+Just simulated indices for report
+```{r}
+i_ye <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-all-S-sim-500.rds"))[[1]]
+saveRDS(i_ye, here("report-data/filled-keepable-yelloweye-est-rock-mud-index-all-S-sim-500.rds"))
+i_ye_cda <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-cda-sim-500.rds"))[[1]]
+saveRDS(i_ye_cda, here("report-data/filled-keepable-yelloweye-est-rock-mud-index-cda-sim-500.rds"))
+i_ye_noncda <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"))[[1]]
+saveRDS(i_ye_noncda, here("report-data/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"))
+i_ye_noncdaN <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))[[1]]
+saveRDS(i_ye_noncdaN, here("report-data/filled-keepable-yelloweye-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))
+i_ye_noncdaS <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))[[1]]
+saveRDS(i_ye_noncdaS, here("report-data/filled-keepable-yelloweye-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))
+
+
+i_hal <- readRDS(here("data-generated/filled-keepable-halibut-est-rock-mud-index-all-S-sim-500.rds"))[[1]]
+saveRDS(i_hal, here("report-data/filled-keepable-halibut-est-rock-mud-index-all-S-sim-500.rds"))
+i_hal_cda <- readRDS(here("data-generated/filled-keepable-halibut-est-rock-mud-index-cda-sim-500.rds"))[[1]]
+saveRDS(i_hal_cda, here("report-data/filled-keepable-halibut-est-rock-mud-index-cda-sim-500.rds"))
+i_hal_noncda <- readRDS(here("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"))[[1]]
+saveRDS(i_hal_noncda, here("report-data/filled-keepable-halibut-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"))
+i_hal_noncdaN <- readRDS(here("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))[[1]]
+saveRDS(i_hal_noncdaN, here("report-data/filled-keepable-halibut-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))
+i_hal_noncdaS <- readRDS(here("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))[[1]]
+saveRDS(i_hal_noncdaS, here("report-data/filled-keepable-halibut-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))
+```
+
+
 
 # Model checks 
 

@@ -101,17 +101,17 @@ include_graphics(here("figs/hbll-catch-correlations.png"))
 
 
 ```{r}
-i_ye <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-all-S-sim-500.rds"))[[1]]
-i_ye_cda <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-cda-sim-500.rds"))[[1]]
-i_ye_noncda <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"))[[1]]
-i_ye_noncdaN <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))[[1]]
-i_ye_noncdaS <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))[[1]]
+i_ye <- readRDS(here("report-data/filled-keepable-yelloweye-est-rock-mud-index-all-S-sim-500.rds"))
+i_ye_cda <- readRDS(here("report-data/filled-keepable-yelloweye-est-rock-mud-index-cda-sim-500.rds"))
+i_ye_noncda <- readRDS(here("report-data/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"))
+i_ye_noncdaN <- readRDS(here("report-data/filled-keepable-yelloweye-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))
+i_ye_noncdaS <- readRDS(here("report-data/filled-keepable-yelloweye-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))
 
-i_hal <- readRDS(here("data-generated/filled-keepable-halibut-est-rock-mud-index-all-S-sim-500.rds"))[[1]]
-i_hal_cda <- readRDS(here("data-generated/filled-keepable-halibut-est-rock-mud-index-cda-sim-500.rds"))[[1]]
-i_hal_noncda <- readRDS(here("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"))[[1]]
-i_hal_noncdaN <- readRDS(here("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))[[1]]
-i_hal_noncdaS <- readRDS(here("data-generated/filled-keepable-halibut-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))[[1]]
+i_hal <- readRDS(here("report-data/filled-keepable-halibut-est-rock-mud-index-all-S-sim-500.rds"))
+i_hal_cda <- readRDS(here("report-data/filled-keepable-halibut-est-rock-mud-index-cda-sim-500.rds"))
+i_hal_noncda <- readRDS(here("report-data/filled-keepable-halibut-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"))
+i_hal_noncdaN <- readRDS(here("report-data/filled-keepable-halibut-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))
+i_hal_noncdaS <- readRDS(here("report-data/filled-keepable-halibut-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))
 
 cda_grid <- readRDS(here("data-generated/filled_cda_grid_paired.rds"))
 noncda_grid <- readRDS(here("data-generated/filled_noncda_grid_paired.rds"))
