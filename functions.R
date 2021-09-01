@@ -176,6 +176,8 @@ get_diag <- function(m, response = "density",
   print("MSE:")
   print(mean(predictions$residuals^2))
 
+  qqnorm(predictions$residuals);abline(a = 0, b = 1)
+
   plot_map <- function(dat, column = "est") {
     ggplot(dat, aes_string("X", "Y", colour = column)) +
       geom_point(alpha = 1, size = 0.2) +
