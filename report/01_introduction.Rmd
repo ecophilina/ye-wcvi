@@ -10,28 +10,27 @@ options(scipen = 100)
 ```
 
 
-```{r}
-# mean weight data
-# print("Mean Halibut weight from trawl")
+```{r mean-weights}
+# Mean Halibut weight from trawl
 halsampledata <- readRDS(here("data/halibut-surv-samples-all.rds")) %>% filter(survey_abbrev == c("SYN WCVI", "SYN QCS"))
 # halmeanlength <- mean(halsampledata$length, na.rm = T) # 74 cm seems reasonable
 halmeanweightSYN <- mean(halsampledata$weight / 1000, na.rm = T)
 # round(halmeanweightSYN, 2)
 
-# print("Mean Halibut weight from Adam")
+# Mean Halibut weight from Adam
 halmeanweight <- 9.5 # 21 lbs = 9.52 kg 
 
-# print("Mean Yelloweye weight from trawl")
+# Mean Yelloweye weight from trawl
 yesampledata <- readRDS(here("data/yelloweye-surv-samples-all.rds")) %>% filter(survey_abbrev == c("SYN WCVI", "SYN QCS"))
 yemeanweightSYN <- mean(yesampledata$weight / 1000, na.rm = T)
 # round(yemeanweightSYN, 2)
 
-# print("Mean Yelloweye weight from HBLL")
+# Mean Yelloweye weight from HBLL
 yesampledata <- readRDS(here("data/yelloweye-surv-samples-all.rds")) %>% filter(survey_abbrev == c("HBLL OUT S"))
 yemeanweightHBLL <- mean(yesampledata$weight / 1000, na.rm = T)
 # round(yemeanweightHBLL, 2)
 
-# print("Mean Yelloweye weight from Adam")
+# Mean Yelloweye weight from Adam
 yemeanweight <- 3.2 # 7 lbs =3.18 kg  
 ```
 
@@ -234,8 +233,7 @@ include_graphics(here("figs/filled-keepable-rock-mud-avg-by-area.png"))
 
 
 
-```{r}
-# ratio data
+```{r ratio-data}
 cda_2020 <- cda_grid %>% filter(year ==2020) %>% filter(area == 4000000)
 maximize_hal_sum <- readRDS(here("data-generated/maximize_hal_sum-keepable-50.rds"))
 avoiding_ye_sum <- readRDS(here("data-generated/avoiding_ye_sum-keepable-50.rds"))
