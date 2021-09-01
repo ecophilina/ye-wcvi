@@ -500,6 +500,7 @@ g <- ggplot(focal_area_proj) +
       x = convert2utm9(-129.8, 48.8)[1],
       y = convert2utm9(-129.8, 48.8)[2],
       label = "3C") +
+   
   scale_fill_viridis_d(name = "Survey", begin = 0.2, end = 0.5, direction = -1) +
   geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
   geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey99", col = "grey55") +
@@ -507,6 +508,18 @@ g <- ggplot(focal_area_proj) +
       xlim = c(230957.7 + 205000, 1157991 - 385000),
       ylim = c(5366427 + 25000, 6353456 - 590000)
     ) +
+   annotate("text",
+      x = convert2utm9(-126.25, 50.1)[1],
+      y = convert2utm9(-126.25, 50.1)[2],
+      colour = "gray",
+     size = 3.5,
+      label = "Vancouver\nIsland") +
+  annotate("text",
+      x = convert2utm9(-126.1, 51.4)[1],
+      y = convert2utm9(-126.1, 51.4)[2],
+      colour = "gray",
+    size = 5,
+      label = "British\nColumbia") +
   ggsidekick::theme_sleek() + theme(
       legend.key = element_rect(colour = NA, fill = "grey75"),
       axis.title = element_blank(),
