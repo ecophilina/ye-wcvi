@@ -86,7 +86,7 @@ We then calculated expected biomass densities if sampled using HBLL gear for onl
 For halibut, this was an estimate of landable biomass, while for YE it was for total catchable biomass. 
 These estimates were then used to produce maps of expected biomass distributions for each species, as well as the spatial distibution of expected catch ratios between these species.  
 These expected densities were multiplied by the area of survey grid cells (usually 2 x 2 km), and adjacent portions of cells where part falls inside RCAs, to produce overall biomass indices and overall average biomass ratios for different subregions (within the CDA vs. Area 3CD5A outside the CDA, or Area 3CD5A north of 50º vs. Area 3CD5A south of 50º and outside the CDA; Fig. \@ref(fig:region-col-key)). 
-Splitting at 50º separates the areas adjacent to the CDA from those not, as well as accounting for potential ecological or latitudinal variation implied by a positive correlation between HBLL catch counts of Halibut and YE in the S, but not in the N (Fig. \@ref(fig:hbll-catch)). 
+Splitting at 50º separates the areas adjacent to the CDA from those not, as well as accounting for potential ecological or latitudinal variation implied by a positive correlation between HBLL catch counts of Halibut and YE in the south, but not in the north (Fig. \@ref(fig:hbll-catch)). 
 Finally, cell-specific biomass estimates were used to explore how contrasting fishing strategies might affect expected catch ratios for a given total area of each region. We examined two strategies: (1) select cells in order from lowest YE densities to highest or (2) select cells with the highest halibut densities to lowest. 
 
 TODO A BUNCH OF TECHNICAL STUFF HERE ABOUT FITTING AND CIS. ... simulated 500 times...
