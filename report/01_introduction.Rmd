@@ -156,17 +156,19 @@ r2 <- function(x) {
 Estimates from models based on both surveys showed similar patterns for the regions captured by the HBLL survey when compared to estimates from models built on just the HBLL survey data alone (Fig. \@ref(fig:hbll-v-hybrid)).
 Therefore, the general index trends from our combined model does not appear to have been affected substanially by the added complexity and assumptions involved in producing the the combined models. 
 
+The models also estimate the depth preferences of each species (Fig. \@ref(fig:depth-profile)).
+
+
 ```{r hbll-v-hybrid, fig.cap="Comparison of survey indices **for just the HBLL survey domain** from a count-based model using just the HBLL survey and a model of biomass densities based on both HBLL and trawl surveys. The count-based model index (A) has been converted to biomass using the same area swept and mean weights as used to convert the HBLL counts for use in the combined model.", out.width="\\textwidth"}
 include_graphics(here("figs/compare-model-indices.png"))
 ```
 
-The models also estimate the depth preferences of each species (Fig. \@ref(fig:depth-profiles))
 
-```{r depth-profiles, fig.cap="Depth preferences from separate spatiotemporal models for each species. Because peak biomass densities occur in different years for each species, each line represents a different year's estimate with the most recent year having the most opaque line. These estimates are for HBLL survey catches of landable Halibut and all YE for locations with avarage amounts of rocky (9%) and muddy (13%) substrate. Dashed line is at 78 m, the depth of peak YE densities.", out.width="\\textwidth"}
+```{r depth-profile, fig.cap="Depth preferences from separate spatiotemporal models for each species. Because peak biomass densities occur in different years for each species, each line represents a different year's estimate with the most recent year having the most opaque line. These estimates are for HBLL survey catches of landable Halibut and all YE for locations with avarage proportions of rocky (0.09) and muddy (0.13) substrate. Dashed line is at 78 m, the depth of peak YE densities.", out.width="4in"}
 include_graphics(here("figs/depth-profiles.png"))
 ```
 
-```{r substrate-effects, fig.cap="Modelled effects of proportion rocky substrate (A) and proportion muddy (B) for each species. These estimates are for HBLL survey catches of landable Halibut and all YE for locations at the depth at which YE densities peak (78 m) with the remainder of the subsrate classes as either sandy or mixed.", out.width="\\textwidth"}
+```{r substrate, fig.cap="Modelled effects of proportion rocky substrate (A) and proportion muddy (B) for each species. These estimates are for HBLL survey catches of landable Halibut and all YE for locations at the depth at which YE densities peak (78 m) with the remainder of the subsrate classes as either sandy or mixed.", out.width="\\textwidth"}
 include_graphics(here("figs/substrate-effects.png"))
 ```
 
