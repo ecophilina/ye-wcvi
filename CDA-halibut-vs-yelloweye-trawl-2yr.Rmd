@@ -722,13 +722,16 @@ if (!file.exists(f)) {
 }
 ```
 
-### Comparing QQ-plots
-```{r}
 
+### Load saved models
+```{r}
 m_halibut_tweedie <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-tweedie2.rds"))
 m_halibut_bin <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-binomial2.rds"))
 m_halibut_pos <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-gamma2.rds"))
+```
 
+### Comparing QQ-plots
+```{r eval=F}
 r_hal_tw <- residuals(m_halibut_tweedie)
 qq_hal_tw1 <- qqnorm(r_hal_tw)
 r_hal_tw2 <- residuals(m_halibut_tweedie)
@@ -936,10 +939,8 @@ With spatiotemporal fields:
 ```{r echo = F}
 m_ye <- readRDS(file = "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn.rds")
 m_ye
-# tidy(m_ye, "ran_pars", conf.int = TRUE)
+tidy(m_ye, "ran_pars", conf.int = TRUE)
 ```
-
-`r round(AIC(m_ye))`
 
 ```{r warning=F, message=F}
 get_diag(m_ye)
@@ -1030,35 +1031,35 @@ For subregions using same batch of simulations
 # }
 
 s1 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-all-S-sim-500.rds"
-# if (!file.exists(s1)) {
+if (!file.exists(s1)) {
   i_hal_combined <- get_all_sims(fit_obj_bin = m_halibut_bin, fit_obj_pos = m_halibut_pos,  newdata = full_s_grid)
   i_hal_S <- i_hal_combined[[1]] 
   saveRDS(i_hal_S, s1)
-# }
+}
 
 s3 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-cda-sim-500.rds"
-# if (!file.exists(s3)) {
+if (!file.exists(s3)) {
   i_hal_cda2 <- i_hal_combined[[3]] 
   saveRDS(i_hal_cda2, s3)
-# }
+}
 
 s4 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"
-# if (!file.exists(s4)) {
+if (!file.exists(s4)) {
   i_hal_noncda2N <- i_hal_combined[[4]] 
   saveRDS(i_hal_noncda2N, s4)
-# }
+}
 
 s2 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"
-# if (!file.exists(s2)) {
+if (!file.exists(s2)) {
   i_hal_noncda2S <- i_hal_combined[[2]] 
   saveRDS(i_hal_noncda2S, s2)
-# }
+}
 
 s5 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-other-sim-500.rds"
-# if (!file.exists(s5)) {
+if (!file.exists(s5)) {
   i_hal_other <- i_hal_combined[[5]] 
   saveRDS(i_hal_other, s5)
-# }
+}
 ```
 
 For just southern outside HBLL 
@@ -1262,43 +1263,18 @@ saveRDS(i_hal_noncdaS, here("report-data/filled-keepable-halibut-delta-est-rock-
 
 # Model checks 
 
-```{r}
+```{r eval = F}
 p <- predict(m_halibut_tweedie)
-# p1p <-p%>% filter(density >0)
-# 
-# p$resids <- r_hal_tw
-# 
-# off <- p[which(r_hal_tw > 2.4|r_hal_tw < -2.4), ]
-# ggplot(p, aes(density, exp(est), shape = survey)) + geom_point(size = 1) +
-#   geom_abline(a=0, b=1) +
-#   geom_point(data = off, colour = "red")
-# 
 p2 <- predict(m_halibut_bin)
-# p2p <-p2%>% filter(present ==1)
-# 
-# ggplot(p2, aes(density, exp(est), shape = survey)) + geom_point(size = 1) +
-#   geom_abline(a=0, b=1)
-# 
-# p3 <- predict(m_halibut_pos)
-
 p3 <- predict(m_halibut_pos, newdata = m_halibut_bin$data) 
-
 p$est_delta <- log(plogis(p2$est) * exp(p3$est))
-
 plot(est_delta~est, data=p)
 abline(a = 0, b = 1, lty = 2)
-# p3p <-p3%>% filter(present ==1)
-# ggplot(p3, aes(density, exp(est), shape = survey)) + geom_point(size = 1) +
-#   geom_abline(a=0, b=1)
-# 
-# delta_est <- log(plogis(p2p$est) * exp(p3p$est))
-# 
-# plot(delta_est,p1p$est)
 ```
 
 
 
-```{r}
+```{r eval = F}
 p_hal_delta <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-all-S.rds")[[1]] %>% select(X, Y, year, est) %>% rename(est_delta = est)
 
 p_hal_delta_sim <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-all-S-sim2.rds") %>% select(X, Y, year, est) %>% rename(est_delta_sim = est)
@@ -2203,7 +2179,7 @@ g <- map_predictions(
   map_lat_limits = c(48.6, max_map_lat2),
   map_lon_limits = c(min_map_lon2, max_map_lon2),
   size_lab = "Landable\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
-  size_aes = density_adj
+  size_aes = density #_adj
   # size_lab = "Adjusted catch\ncounts", #2018-2020\observed catch\nper 100 hook\nequivalent
   # size_aes = catch_equiv 
 ) + theme(legend.box = 'horizontal') +
@@ -2250,7 +2226,7 @@ g <- map_predictions(
   map_lat_limits = c(48.6, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
   size_lab = "Landable\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
-  size_aes = density_adj
+  size_aes = density #_adj
   # size_lab = "Adjusted catch\ncounts", #2018-2020\observed catch\nper 100 hook\nequivalent
   # size_aes = catch_equiv 
 ) + facet_wrap(~pair_name)
@@ -2290,7 +2266,7 @@ g <- map_predictions(
   map_lat_limits = c(48.6, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
   size_lab = "Observed\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
-  size_aes = density_adj
+  size_aes = density#_adj
   # size_lab = "Observed catch\nper 100 hook\nequivalent",
   # size_aes = catch_equiv 
 ) + theme(legend.spacing.y = unit(0.1, "cm"))
@@ -2328,7 +2304,7 @@ g <- map_predictions(
   map_lat_limits = c(48.6, max_map_lat2),
   map_lon_limits = c(min_map_lon2, max_map_lon2),
   size_lab = "Observed\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
-  size_aes = density_adj
+  size_aes = density#_adj
   # size_lab = "2018-2020\nobserved catch\nper 100 hook\nequivalent",
   # size_aes = catch_equiv 
 ) + theme(legend.box = 'horizontal')+
@@ -2347,7 +2323,7 @@ p_ye_d <- p_ye$data #%>%
 # p_ye_d$year <- droplevels(p_ye_d$year)
 
 f <- "figs/filled-keepable-ye-predictions-est-rock-mud.png"
-if (!file.exists(f)) {
+# if (!file.exists(f)) {
 d_ye_facet <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>%
   filter(latitude < 52.15507) %>% filter(year %in% years) %>% 
   mutate(
@@ -2377,13 +2353,13 @@ g <- map_predictions(
   map_lat_limits = c(48.6, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
   size_lab = "Observed\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
-  size_aes = density_adj
+  size_aes = density#_adj
   # size_lab = "Observed catch\nper 100 hook\nequivalent",
   # size_aes = catch_equiv 
 ) + facet_wrap(~pair_name) 
 # g <- g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0))
 ggsave(f, width = 10, height = 8, dpi = 200)
-}
+# }
 ```
 
 
