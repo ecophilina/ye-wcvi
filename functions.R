@@ -42,7 +42,7 @@ expand_prediction_grid <- function(grid, years) {
 # m_halibut <- readRDS(file = "models/halibut-hybrid-model-rocky-muddy-400kn.rds")
 # i_hal_combined <- get_all_sims(m_halibut, newdata = full_s_grid)
 
-get_all_sims <- function(fit_obj, newdata, sims = 500, level = 0.95,
+get_all_sims <- function(fit_obj = NULL, newdata, fit_obj_bin = NULL, fit_obj_pos = NULL, sims = 500, level = 0.95,
   split_by_region = T,
   area_divisor = 10000, # 10000 for grid area in m2 to biomass/hectare,
   # could be 1000000 for m2 to km2, or 4000000 for m2 to # hooks 2x2 km grid cell
@@ -51,18 +51,25 @@ get_all_sims <- function(fit_obj, newdata, sims = 500, level = 0.95,
   agg_function = function(x) sum(exp(x))){
 
 # browser()
-  pred_obj_unscaled <- predict(fit_obj, newdata = newdata, sims = sims)
-
-  if(any(names(newdata) == "area")){
-  # grid area is currently in m2 so need to convert to same units as the biomass variable
-  newdata$area <- newdata$area / area_divisor
-  p <- apply(pred_obj_unscaled, 2, function(x) x + log(newdata$area))
-  attr(p, "time") <- "year"
-  } else {
-  p <- pred_obj_unscaled
+  if (!is.null(fit_obj)) {
+    pred_obj_unscaled <- predict(fit_obj, newdata = newdata, sims = sims)
+  }
+  if (!is.null(fit_obj_bin) && !is.null(fit_obj_pos)) {
+    pred_obj_unscaled_bin <- predict(fit_obj_bin, newdata = newdata, sims = sims)
+    pred_obj_unscaled_pos <- predict(fit_obj_pos, newdata = newdata, sims = sims)
+    pred_obj_unscaled <- log(plogis(pred_obj_unscaled_bin) * exp(pred_obj_unscaled_pos))
   }
 
-  if (split_by_region){
+  if (any(names(newdata) == "area")) {
+    # grid area is currently in m2 so need to convert to same units as the biomass variable
+    newdata$area <- newdata$area / area_divisor
+    p <- apply(pred_obj_unscaled, 2, function(x) x + log(newdata$area)) # also now `area` arg in get_index_sims()
+    attr(p, "time") <- "year"
+  } else {
+    p <- pred_obj_unscaled
+  }
+
+  if (split_by_region) {
 
     by_region <- list()
 
@@ -122,19 +129,19 @@ get_all_sims <- function(fit_obj, newdata, sims = 500, level = 0.95,
 
   } else {
 
-  i <- get_index_sims(p, return_sims = F, level = level,
-    est_function = est_function, agg_function = agg_function)
+    i <- get_index_sims(p, return_sims = F, level = level,
+      est_function = est_function, agg_function = agg_function)
 
-  if(return_sims){
-  i_sims <- get_index_sims(p, return_sims = T, level = level,
-    est_function = est_function, agg_function = agg_function)
-    return(list(index = i, sims = i_sims, grid = newdata
-      , sim.predictions = p # this takes up a lot of space so if not using it...
-      #, fit_obj = fit_obj
+    if(return_sims){
+      i_sims <- get_index_sims(p, return_sims = T, level = level,
+        est_function = est_function, agg_function = agg_function)
+      return(list(index = i, sims = i_sims, grid = newdata
+        , sim.predictions = p # this takes up a lot of space so if not using it...
+        #, fit_obj = fit_obj
       ))
-  } else {
-    return(i)
-  }
+    } else {
+      return(i)
+    }
   }
 }
 
