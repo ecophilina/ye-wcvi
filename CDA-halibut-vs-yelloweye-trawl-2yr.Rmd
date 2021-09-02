@@ -686,7 +686,7 @@ if (!file.exists(f)) {
 
 f <- paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-binomial.rds")
 if (!file.exists(f)) {
-  d_hal$present <- ifelse(d_hal$density > 1, 1, 0)
+  d_hal$present <- ifelse(d_hal$density > 0, 1, 0)
   m_halibut_bin <- sdmTMB(
     formula = present ~ 0 + as.factor(year) + as.factor(survey) + 
       s(rocky, k = 3) + s(muddy, k = 3) +
