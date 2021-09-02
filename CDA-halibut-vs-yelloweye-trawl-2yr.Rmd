@@ -667,7 +667,7 @@ plot(mesh400kn$mesh, asp = 1, main = "");points(d_utm$X, d_utm$Y, pch = ".")
 d_hal <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
   filter(latitude < 52.15507) %>%
   filter(year %in% years)%>% left_join(select(substrate, -X, -Y)) 
-f <- paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-tweedie.rds")
+f <- paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-tweedie2.rds")
 if (!file.exists(f)) {
   m_halibut_tweedie <- sdmTMB(
     formula = density ~ 0 + as.factor(year) + as.factor(survey) + 
@@ -678,13 +678,13 @@ if (!file.exists(f)) {
     fields = "IID",
     time = "year",
     silent = FALSE,
-    anisotropy = TRUE,
+    # anisotropy = TRUE,
     family = tweedie(link = "log")
   )
   saveRDS(m_halibut_tweedie, file = f)
 }
 
-f <- paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-binomial.rds")
+f <- paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-binomial2.rds")
 if (!file.exists(f)) {
   d_hal$present <- ifelse(d_hal$density > 0, 1, 0)
   m_halibut_bin <- sdmTMB(
@@ -696,13 +696,13 @@ if (!file.exists(f)) {
     fields = "IID",
     time = "year",
     silent = FALSE,
-    anisotropy = TRUE,
+    # anisotropy = TRUE,
     family = binomial(link = "logit")
   )
   saveRDS(m_halibut_bin, file = f)
 }
 
-f <- paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-gamma.rds")
+f <- paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-gamma2.rds")
 if (!file.exists(f)) {
   d_hal_pos <- subset(d_hal, density > 0)
   mesh400kn_pos <- make_mesh(d_hal_pos, c("X", "Y"), n_knots = 400)
@@ -715,29 +715,69 @@ if (!file.exists(f)) {
     fields = "IID",
     time = "year",
     silent = FALSE,
-    anisotropy = TRUE,
+    # anisotropy = TRUE,
     family = Gamma(link = "log")
   )
   saveRDS(m_halibut_pos, file = f)
 }
-
-
 ```
-Comparing model types
+
+### Comparing QQ-plots
 ```{r}
 
-m_halibut_tweedie <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-tweedie.rds"))
-m_halibut_bin <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-binomial.rds"))
-m_halibut_pos <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-gamma.rds"))
+m_halibut_tweedie <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-tweedie2.rds"))
+m_halibut_bin <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-binomial2.rds"))
+m_halibut_pos <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-gamma2.rds"))
 
 r_hal_tw <- residuals(m_halibut_tweedie)
+qq_hal_tw1 <- qqnorm(r_hal_tw)
+r_hal_tw2 <- residuals(m_halibut_tweedie)
+qq_hal_tw2 <- qqnorm(r_hal_tw2)
+r_hal_tw3 <- residuals(m_halibut_tweedie)
+qq_hal_tw3 <- qqnorm(r_hal_tw3)
+
 r_hal_bin <- residuals(m_halibut_bin)
+qq_hal_bin1 <- qqnorm(r_hal_bin)
+r_hal_bin2 <- residuals(m_halibut_bin)
+qq_hal_bin2 <- qqnorm(r_hal_bin2)
+r_hal_bin3 <- residuals(m_halibut_bin)
+qq_hal_bin3 <- qqnorm(r_hal_bin3)
+
 r_hal_pos <- residuals(m_halibut_pos)
+qq_hal_pos1 <- qqnorm(r_hal_pos)
+r_hal_pos2 <- residuals(m_halibut_pos)
+qq_hal_pos2 <- qqnorm(r_hal_pos2)
+r_hal_pos3 <- residuals(m_halibut_pos)
+qq_hal_pos3 <- qqnorm(r_hal_pos3)
+
+
 png("figs/halibut-qq.png", width = 10, height = 3.7, units = "in", res = 200)
 par(mfrow = c(1, 3), mar = c(4, 4, 1, 1), oma = c(1, 1, 1, 1))
-qqnorm(r_hal_tw, main = "Tweedie", asp = 1);qqline(r_hal_tw)
-qqnorm(r_hal_bin, main = "Binomial", asp = 1);qqline(r_hal_bin)
-qqnorm(r_hal_pos, main = "Gamma", asp = 1);qqline(r_hal_pos)
+# qqnorm(r_hal_tw, main = "Tweedie", asp = 1);qqline(r_hal_tw)
+plot(qq_hal_tw3$x, qq_hal_tw3$y, type = "p", col = "#00000050", asp = 1, 
+  xlab = "", ylab = "Sample Quantiles", main = "Tweedie")
+lines(qq_hal_tw1$x, qq_hal_tw1$y, type = "p", col = "#00000050")
+lines(qq_hal_tw2$x, qq_hal_tw2$y, type = "p", col = "#00000050")
+qqline(r_hal_tw)
+qqline(r_hal_tw2)
+qqline(r_hal_tw3)
+
+# qqnorm(r_hal_bin, main = "Binomial", asp = 1);qqline(r_hal_bin)
+plot(qq_hal_bin3$x, qq_hal_bin3$y, type = "p", col = "#00000050", asp = 1, 
+  xlab = "Theoretical Quantiles", ylab = "", main = "Binomial")
+lines(qq_hal_bin1$x, qq_hal_bin1$y, type = "p", col = "#00000050")
+lines(qq_hal_bin2$x, qq_hal_bin2$y, type = "p", col = "#00000050")
+qqline(r_hal_bin)
+qqline(r_hal_bin2)
+qqline(r_hal_bin3)
+# qqnorm(r_hal_pos, main = "Gamma", asp = 1);qqline(r_hal_pos)
+plot(qq_hal_pos3$x, qq_hal_pos3$y, type = "p", col = "#00000050", asp = 1, 
+  xlab = "", ylab = "", main = "Gamma")
+lines(qq_hal_pos1$x, qq_hal_pos1$y, type = "p", col = "#00000050")
+lines(qq_hal_pos2$x, qq_hal_pos2$y, type = "p", col = "#00000050")
+qqline(r_hal_pos)
+qqline(r_hal_pos2)
+qqline(r_hal_pos3)
 dev.off()
 
 
@@ -776,47 +816,27 @@ dev.off()
 #   coord_equal() +
 #   geom_point(data = off, colour = "red")
 # 
-# p <- predict(m_halibut_tweedie)
-# p1p <-p%>% filter(density >0)
-# 
-# p$resids <- r_hal_tw
-# 
-# off <- p[which(r_hal_tw > 2.4|r_hal_tw < -2.4), ]
-# ggplot(p, aes(density, exp(est), shape = survey)) + geom_point(size = 1) +
-#   geom_abline(a=0, b=1) +
-#   geom_point(data = off, colour = "red")
-# 
-# p2 <- predict(m_halibut_bin)
-# p2p <-p2%>% filter(present ==1)
-# 
-# ggplot(p2, aes(density, exp(est), shape = survey)) + geom_point(size = 1) +
-#   geom_abline(a=0, b=1)
-# 
-# p3 <- predict(m_halibut_pos) 
-# p3p <-p3%>% filter(present ==1)
-# ggplot(p3, aes(density, exp(est), shape = survey)) + geom_point(size = 1) +
-#   geom_abline(a=0, b=1)
-# 
-# delta_est <- log(plogis(p2p$est) * exp(p3p$est))
-# 
-# plot(delta_est,p1p$est)
+
 
 ```
 
 
 ```{r echo = F}
-m_halibut_tweedie <- readRDS(file = "models/halibut-hybrid-keepable-model-rocky-muddy-400kn-tweedie.rds")
+# m_halibut_tweedie <- readRDS(file = "models/halibut-hybrid-keepable-model-rocky-muddy-400kn-tweedie.rds")
 m_halibut_tweedie
 # # round(AIC(m_halibut))
 # # m_halibut_tv <- readRDS(file = "models/halibut-hybrid-keepable-model-allsub-tv-depth-400kn.rds")
 # # m_halibut_tv
-# # tidy(m_halibut, "ran_pars", conf.int = TRUE)
+tidy(m_halibut_tweedie, "ran_pars", conf.int = TRUE)
 ```
+
 ```{r}
-m_halibut_bin <- readRDS(file = "models/halibut-hybrid-keepable-model-rocky-muddy-400kn-binomial.rds")
+# m_halibut_bin <- readRDS(file = "models/halibut-hybrid-keepable-model-rocky-muddy-400kn-binomial.rds")
 m_halibut_bin
-m_halibut_pos <- readRDS(file = "models/halibut-hybrid-keepable-model-rocky-muddy-400kn-gamma.rds")
+tidy(m_halibut_bin, "ran_pars", conf.int = TRUE)
+# m_halibut_pos <- readRDS(file = "models/halibut-hybrid-keepable-model-rocky-muddy-400kn-gamma.rds")
 m_halibut_pos
+tidy(m_halibut_pos, "ran_pars", conf.int = TRUE)
 ```
 
 ```{r warning=F, message=F}
@@ -858,14 +878,10 @@ if (!file.exists(f)) {
   )
   saveRDS(m_ye, file = f)
 }
-r_ye0 <- residuals(m_ye)
-png("figs/ye-qq.png", width = 5, height = 4.7, units = "in", res = 200)
-qqnorm(r_ye0, main = "Tweedie");qqline(r_ye0)
-dev.off()
-
-# d_ye$present <- ifelse(d_ye$density > 1, 1, 0)
+# 
+# d_ye$present <- ifelse(d_ye$density > 0, 1, 0)
 # m_ye1 <- sdmTMB(
-#     formula = present ~ 0 + as.factor(year) + as.factor(survey) + 
+#     formula = present ~ 0 + as.factor(year) + as.factor(survey) +
 #       s(rocky, k = 3) +
 #       s(muddy, k = 3) +
 #       depth_scaled + I(depth_scaled^2),
@@ -875,16 +891,15 @@ dev.off()
 #     time = "year",
 #     silent = FALSE,
 #     anisotropy = TRUE,
-#     # reml = T, # F is simplier to explain. 
+#     # reml = T, # F is simplier to explain.
 #     family = binomial(link = "logit")
 #   )
-# r_ye1 <- residuals(m_ye1)
-# qqnorm(r_ye1);qqline(r_ye1)
+# saveRDS(m_ye1, file = "models/yelloweye-hybrid-delta-mw-rocky-muddy-400kn-binomial.rds")
 # 
 # d_ye_pos <- subset(d_ye, density > 0)
 # mesh400kn_pos <- make_mesh(d_ye_pos, c("X", "Y"), n_knots = 400)
 # m_ye2 <- sdmTMB(
-#   formula = density ~ 0 + as.factor(year) + as.factor(survey) + 
+#   formula = density ~ 0 + as.factor(year) + as.factor(survey) +
 #     s(rocky, k = 3) +
 #     s(muddy, k = 3) +
 #     depth_scaled + I(depth_scaled^2),
@@ -894,12 +909,27 @@ dev.off()
 #   time = "year",
 #   silent = FALSE,
 #   anisotropy = TRUE,
-#   # reml = T, # F is simplier to explain. 
+#   # reml = T, # F is simplier to explain.
 #   family = Gamma(link = "log")
 # )
+# saveRDS(m_ye2, file = "models/yelloweye-hybrid-delta-mw-rocky-muddy-400kn-gamma.rds")
+```
+
+```{r}
+m_ye <- readRDS(file = "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn.rds")
+r_ye0 <- residuals(m_ye)
+png("figs/ye-qq.png", width = 5, height = 4.7, units = "in", res = 200)
+qqnorm(r_ye0, main = "Tweedie");qqline(r_ye0)
+dev.off()
+# 
+# r_ye1 <- residuals(m_ye1)
+# qqnorm(r_ye1);qqline(r_ye1)
+# 
 # r_ye2 <- residuals(m_ye2)
 # qqnorm(r_ye2);qqline(r_ye2)
 ```
+
+
 
 With spatiotemporal fields:
 
@@ -936,23 +966,49 @@ if (!file.exists(f)) {
 }
 ```
 
+```{r eval = T, echo=F}
+f <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-all-S-sim2.rds"
+if (!file.exists(f)) {
+
+  p_hal_S_bin <- predict(m_halibut_bin, newdata = full_s_grid, se_fit = F, sims = 500)
+  p_hal_S_pos <- predict(m_halibut_pos, newdata = full_s_grid, se_fit = F, sims = 500)
+  
+  p_hal_S <- full_s_grid
+  
+  p_hal_S_combined <- log(plogis(p_hal_S_bin) * exp(p_hal_S_pos))
+  p_hal_S$est <- apply(p_hal_S_combined, 1, function(x) {median(x)})
+  
+  
+  # p_hal_S_bin_out <- apply(p_hal_S_bin, 1, function(x) {median(x)})
+  # p_hal_S_pos_out <- apply(p_hal_S_pos, 1, function(x) {median(x)})
+  # p_hal_S$est <- log(plogis(p_hal_S_bin_out) * exp(p_hal_S_pos_out))
+  
+# p_hal_S_bin_out <- apply(p_hal_S_bin, 1, function(x) {
+#   data.frame(est = median(x))
+# })
+# p_hal_S_bin_out <- do.call("rbind", p_hal_S_bin_out)
+# p_hal_S_bin_out <- p_hal_S_bin_out[, c("est"), drop = FALSE]
+# 
+# p_hal_S_bin2 <- bind_cols(full_s_grid, p_hal_S_bin_out)
+# 
+# p_hal_S_pos_out <- apply(p_hal_S_pos, 1, function(x) {
+#   data.frame(est = median(x)
+#   )
+# })
+# p_hal_S_pos_out <- do.call("rbind", p_hal_S_pos_out)
+# p_hal_S_pos_out <- p_hal_S_pos_out[, c("est"), drop = FALSE]
+# 
+# p_hal_S_pos2 <- bind_cols(full_s_grid, p_hal_S_pos_out)
+#  
+# p_hal_S$data$est <- log(plogis(p_hal_S_bin2$est) * exp(p_hal_S_pos2$est))
+  
+  saveRDS(p_hal_S, f)
+}
+```
+
 Non-CDA 3CD5A
 
 ```{r  echo=F}
-# f <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-5A3CD-outside-cda.rds"
-# 
-# if (!file.exists(f)) {
-#   p_hal_noncda_bin <- predict(m_halibut_bin, newdata = noncda_grid, return_tmb_object = TRUE)
-#   p_hal_noncda_pos <- predict(m_halibut_pos, newdata = noncda_grid, return_tmb_object = TRUE)
-# 
-#   p_hal_noncda <-  p_hal_noncda_bin
-#   p_hal_noncda$data$est_bin <- p_hal_noncda$data$est
-#   p_hal_noncda$data$est_pos <- p_hal_noncda_pos$data$est
-#   p_hal_noncda$data$est <- log(plogis(p_hal_noncda$data$est_bin) * exp(p_hal_noncda$data$est_pos))
-# 
-#   saveRDS(p_hal_noncda, f)
-# }
-
 ss <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"
 
 if (!file.exists(ss)) {
@@ -962,20 +1018,6 @@ if (!file.exists(ss)) {
 }
 ```
 
-```{r}
-# f <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-cda.rds"
-# if (!file.exists(f)) {
-#   
-#   p_hal_cda_bin <- predict(m_halibut_bin, newdata = cda_grid, return_tmb_object = TRUE)
-#   p_hal_cda_pos <- predict(m_halibut_pos, newdata = cda_grid, return_tmb_object = TRUE) 
-# 
-#   p_hal_cda <-  p_hal_cda_bin
-#   p_hal_cda$data$est_bin <- p_hal_cda$data$est
-#   p_hal_cda$data$est_pos <- p_hal_cda_pos$data$est
-#   p_hal_cda$data$est <- log(plogis(p_hal_cda$data$est_bin) * exp(p_hal_cda$data$est_pos))
-#   saveRDS(p_hal_cda, f)
-# }
-```
 
 For subregions using same batch of simulations
 
@@ -988,35 +1030,35 @@ For subregions using same batch of simulations
 # }
 
 s1 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-all-S-sim-500.rds"
-if (!file.exists(s1)) {
+# if (!file.exists(s1)) {
   i_hal_combined <- get_all_sims(fit_obj_bin = m_halibut_bin, fit_obj_pos = m_halibut_pos,  newdata = full_s_grid)
   i_hal_S <- i_hal_combined[[1]] 
   saveRDS(i_hal_S, s1)
-}
+# }
 
 s3 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-cda-sim-500.rds"
-if (!file.exists(s3)) {
+# if (!file.exists(s3)) {
   i_hal_cda2 <- i_hal_combined[[3]] 
   saveRDS(i_hal_cda2, s3)
-}
+# }
 
 s4 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"
-if (!file.exists(s4)) {
+# if (!file.exists(s4)) {
   i_hal_noncda2N <- i_hal_combined[[4]] 
   saveRDS(i_hal_noncda2N, s4)
-}
+# }
 
 s2 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"
-if (!file.exists(s2)) {
+# if (!file.exists(s2)) {
   i_hal_noncda2S <- i_hal_combined[[2]] 
   saveRDS(i_hal_noncda2S, s2)
-}
+# }
 
 s5 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-other-sim-500.rds"
-if (!file.exists(s5)) {
+# if (!file.exists(s5)) {
   i_hal_other <- i_hal_combined[[5]] 
   saveRDS(i_hal_other, s5)
-}
+# }
 ```
 
 For just southern outside HBLL 
@@ -1219,6 +1261,66 @@ saveRDS(i_hal_noncdaS, here("report-data/filled-keepable-halibut-delta-est-rock-
 ```
 
 # Model checks 
+
+```{r}
+p <- predict(m_halibut_tweedie)
+# p1p <-p%>% filter(density >0)
+# 
+# p$resids <- r_hal_tw
+# 
+# off <- p[which(r_hal_tw > 2.4|r_hal_tw < -2.4), ]
+# ggplot(p, aes(density, exp(est), shape = survey)) + geom_point(size = 1) +
+#   geom_abline(a=0, b=1) +
+#   geom_point(data = off, colour = "red")
+# 
+p2 <- predict(m_halibut_bin)
+# p2p <-p2%>% filter(present ==1)
+# 
+# ggplot(p2, aes(density, exp(est), shape = survey)) + geom_point(size = 1) +
+#   geom_abline(a=0, b=1)
+# 
+# p3 <- predict(m_halibut_pos)
+
+p3 <- predict(m_halibut_pos, newdata = m_halibut_bin$data) 
+
+p$est_delta <- log(plogis(p2$est) * exp(p3$est))
+
+plot(est_delta~est, data=p)
+abline(a = 0, b = 1, lty = 2)
+# p3p <-p3%>% filter(present ==1)
+# ggplot(p3, aes(density, exp(est), shape = survey)) + geom_point(size = 1) +
+#   geom_abline(a=0, b=1)
+# 
+# delta_est <- log(plogis(p2p$est) * exp(p3p$est))
+# 
+# plot(delta_est,p1p$est)
+```
+
+
+
+```{r}
+p_hal_delta <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-all-S.rds")[[1]] %>% select(X, Y, year, est) %>% rename(est_delta = est)
+
+p_hal_delta_sim <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-all-S-sim2.rds") %>% select(X, Y, year, est) %>% rename(est_delta_sim = est)
+
+p_hal_tw <- readRDS("data-generated/filled-keepable-halibut-est-rock-mud-predictions-all-S.rds")[[1]] %>% rename(est_tw = est)
+
+p_hal <- left_join(p_hal_tw, p_hal_delta)
+
+plot(est_delta~est_tw, data = p_hal, alpha=0.5)
+abline(a = 0, b = 1, lty = 2)
+
+p_hal <- left_join(p_hal_tw, p_hal_delta_sim)
+
+plot(est_delta_sim~est_tw, data = p_hal, alpha=0.5)
+abline(a = 0, b = 1, lty = 2)
+
+p_hal <- left_join(p_hal_delta, p_hal_delta_sim)
+
+plot(est_delta_sim~est_delta, data = p_hal, alpha=0.5)
+abline(a = 0, b = 1, lty = 2)
+
+```
 
 ## Check predictions against those from the HBLL-only count model
 
@@ -2025,7 +2127,7 @@ max_map_lat <- 51.4
 min_map_lon <- -130.1
 max_map_lon <- -125
 
-bjs <- tidy(m_halibut)
+bjs <- tidy(m_halibut_tweedie)
 # bjs[bjs$term == "as.factor(survey)TRAWL",2]
 # exp(bjs[bjs$term == "as.factor(survey)TRAWL",2])
 
@@ -2059,7 +2161,7 @@ g <- map_predictions(
   map_lon_limits = c(min_map_lon, max_map_lon),
   # col_aes = Survey,
   size_lab = "Landable\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
-  size_aes = density_adj
+  size_aes = density #_adj
   # size_lab = "Adjusted catch\ncounts", #2018-2020\observed catch\nper 100 hook\nequivalent
   # size_aes = catch_equiv 
 )+theme(legend.spacing.y = unit(0.1, "cm"))
