@@ -721,6 +721,10 @@ if (!file.exists(f)) {
   saveRDS(m_halibut_pos, file = f)
 }
 
+m_halibut_tweedie <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-tweedie.rds"))
+m_halibut_bin <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-binomial.rds"))
+m_halibut_pos <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-gamma.rds"))
+
 r_hal_tw <- residuals(m_halibut_tweedie)
 r_hal_bin <- residuals(m_halibut_bin)
 r_hal_pos <- residuals(m_halibut_pos)
