@@ -164,7 +164,7 @@ get_diag <- function(m, response = "density",
   variable = "depth_scaled", colour_var = "depth_m", start_year = 2007) {
 
   # browser()
-
+  set.seed(100)
   predictions <- predict(m)
   predictions$residuals <- residuals(m)
 
@@ -182,8 +182,11 @@ get_diag <- function(m, response = "density",
   print("")
   print("MSE:")
   print(mean(predictions$residuals^2))
+  qqnorm(predictions$residuals);qqline(predictions$residuals)
 
-  qqnorm(predictions$residuals);abline(a = 0, b = 1)
+  hbll <- filter(predictions, survey == "HBLL")
+  qqnorm(hbll$residuals);qqline(hbll$residuals)
+
 
   plot_map <- function(dat, column = "est") {
     ggplot(dat, aes_string("X", "Y", colour = column)) +
