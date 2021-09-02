@@ -721,6 +721,11 @@ if (!file.exists(f)) {
   saveRDS(m_halibut_pos, file = f)
 }
 
+
+```
+Comparing model types
+```{r}
+
 m_halibut_tweedie <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-tweedie.rds"))
 m_halibut_bin <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-binomial.rds"))
 m_halibut_pos <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-gamma.rds"))
@@ -734,6 +739,7 @@ qqnorm(r_hal_tw, main = "Tweedie", asp = 1);qqline(r_hal_tw)
 qqnorm(r_hal_bin, main = "Binomial", asp = 1);qqline(r_hal_bin)
 qqnorm(r_hal_pos, main = "Gamma", asp = 1);qqline(r_hal_pos)
 dev.off()
+
 
 # off <- d_hal[which(r_hal_tw > 2.2), ]
 # off <- d_hal[which(r_hal_tw > 2.2), ]
@@ -771,17 +777,30 @@ dev.off()
 #   geom_point(data = off, colour = "red")
 # 
 # p <- predict(m_halibut_tweedie)
+# p1p <-p%>% filter(density >0)
 # 
-# p$resids <- r_hal_tw 
+# p$resids <- r_hal_tw
 # 
 # off <- p[which(r_hal_tw > 2.4|r_hal_tw < -2.4), ]
 # ggplot(p, aes(density, exp(est), shape = survey)) + geom_point(size = 1) +
 #   geom_abline(a=0, b=1) +
 #   geom_point(data = off, colour = "red")
 # 
-# p3 <- predict(m_halibut_pos)
+# p2 <- predict(m_halibut_bin)
+# p2p <-p2%>% filter(present ==1)
+# 
+# ggplot(p2, aes(density, exp(est), shape = survey)) + geom_point(size = 1) +
+#   geom_abline(a=0, b=1)
+# 
+# p3 <- predict(m_halibut_pos) 
+# p3p <-p3%>% filter(present ==1)
 # ggplot(p3, aes(density, exp(est), shape = survey)) + geom_point(size = 1) +
-#   geom_abline(a=0, b=1) 
+#   geom_abline(a=0, b=1)
+# 
+# delta_est <- log(plogis(p2p$est) * exp(p3p$est))
+# 
+# plot(delta_est,p1p$est)
+
 ```
 
 
@@ -896,8 +915,8 @@ m_ye
 get_diag(m_ye)
 ```
 
-
-# Pacific Halibut catch predictions and index
+# Catch predictions and indices
+## Pacific Halibut 
 using filled in grid (includes partial cells but not sure how to account for cell area index code) and HBLL gear type
 
 For entire filled in southern outside HBLL grid area including CDA, but excluding RCAs 
@@ -913,7 +932,7 @@ if (!file.exists(f)) {
   p_hal_S$data$est_bin <- p_hal_S$data$est
   p_hal_S$data$est_pos <- p_hal_S_pos$data$est
   p_hal_S$data$est <- log(plogis(p_hal_S$data$est_bin) * exp(p_hal_S$data$est_pos))
-  saveRDS(p_hal_S, "data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-all-S.rds")
+  saveRDS(p_hal_S, f)
 }
 ```
 
@@ -1026,7 +1045,7 @@ if (!file.exists(ss)) {
 ```
 
 
-# Yelloweye Rockfish catch predictions and index
+## Yelloweye Rockfish 
 
 For CDA only 
 
