@@ -757,97 +757,7 @@ get_diag(m_halibut_bin, response = "present")
 get_diag(m_halibut_pos)
 ```
 
-### QQ-plots
 
-```{r eval=F}
-r_hal_tw <- residuals(m_halibut_tweedie)
-qq_hal_tw1 <- qqnorm(r_hal_tw)
-r_hal_tw2 <- residuals(m_halibut_tweedie)
-qq_hal_tw2 <- qqnorm(r_hal_tw2)
-r_hal_tw3 <- residuals(m_halibut_tweedie)
-qq_hal_tw3 <- qqnorm(r_hal_tw3)
-
-r_hal_bin <- residuals(m_halibut_bin)
-qq_hal_bin1 <- qqnorm(r_hal_bin)
-r_hal_bin2 <- residuals(m_halibut_bin)
-qq_hal_bin2 <- qqnorm(r_hal_bin2)
-r_hal_bin3 <- residuals(m_halibut_bin)
-qq_hal_bin3 <- qqnorm(r_hal_bin3)
-
-r_hal_pos <- residuals(m_halibut_pos)
-qq_hal_pos1 <- qqnorm(r_hal_pos)
-r_hal_pos2 <- residuals(m_halibut_pos)
-qq_hal_pos2 <- qqnorm(r_hal_pos2)
-r_hal_pos3 <- residuals(m_halibut_pos)
-qq_hal_pos3 <- qqnorm(r_hal_pos3)
-
-
-png("figs/halibut-qq.png", width = 10, height = 3.7, units = "in", res = 200)
-par(mfrow = c(1, 3), mar = c(4, 4, 1, 1), oma = c(1, 1, 1, 1))
-# qqnorm(r_hal_tw, main = "Tweedie", asp = 1);qqline(r_hal_tw)
-plot(qq_hal_tw3$x, qq_hal_tw3$y, type = "p", col = "#00000050", asp = 1, 
-  xlab = "", ylab = "Sample Quantiles", main = "Tweedie")
-lines(qq_hal_tw1$x, qq_hal_tw1$y, type = "p", col = "#00000050")
-lines(qq_hal_tw2$x, qq_hal_tw2$y, type = "p", col = "#00000050")
-qqline(r_hal_tw)
-qqline(r_hal_tw2)
-qqline(r_hal_tw3)
-
-# qqnorm(r_hal_bin, main = "Binomial", asp = 1);qqline(r_hal_bin)
-plot(qq_hal_bin3$x, qq_hal_bin3$y, type = "p", col = "#00000050", asp = 1, 
-  xlab = "Theoretical Quantiles", ylab = "", main = "Binomial")
-lines(qq_hal_bin1$x, qq_hal_bin1$y, type = "p", col = "#00000050")
-lines(qq_hal_bin2$x, qq_hal_bin2$y, type = "p", col = "#00000050")
-qqline(r_hal_bin)
-qqline(r_hal_bin2)
-qqline(r_hal_bin3)
-# qqnorm(r_hal_pos, main = "Gamma", asp = 1);qqline(r_hal_pos)
-plot(qq_hal_pos3$x, qq_hal_pos3$y, type = "p", col = "#00000050", asp = 1, 
-  xlab = "", ylab = "", main = "Gamma")
-lines(qq_hal_pos1$x, qq_hal_pos1$y, type = "p", col = "#00000050")
-lines(qq_hal_pos2$x, qq_hal_pos2$y, type = "p", col = "#00000050")
-qqline(r_hal_pos)
-qqline(r_hal_pos2)
-qqline(r_hal_pos3)
-dev.off()
-
-
-# off <- d_hal[which(r_hal_tw > 2.2), ]
-# off <- d_hal[which(r_hal_tw > 2.2), ]
-# table(off$survey_abbrev)
-# table(off$present)
-# ggplot(d_hal, aes(X, Y, colour = density, shape = survey)) + geom_point(size = 1) +
-#   facet_wrap(~year) +
-#   scale_color_viridis_c(trans = "sqrt") +
-#   coord_equal() +
-#   geom_point(data = off, colour = "red")
-# 
-# plot(d_hal$depth_scaled);points(off$depth_scaled, col = "red")
-# table(off$year)
-# 
-# d_hal$id <- seq_len(nrow(d_hal))
-# off <- d_hal[which(r_hal_tw > 2.4), ]
-# ggplot(d_hal, aes(id, density, colour = depth_m, shape = survey)) + geom_point() +
-#   geom_point(data = off, pch = 21) +
-#   scale_color_viridis_c(trans = "log10")
-# 
-# plot(d_hal$rocky)
-# plot(d_hal$rocky);points(off$rocky, col = "red")
-# plot(d_hal$muddy);points(off$muddy, col = "red")
-# plot(d_hal$mixed);points(off$mixed, col = "red")
-# plot(d_hal$density);points(off$density, col = "red")
-# plot(d_hal$density);points(d_hal$density[d_hal$survey != "TRAWL"], col = "red");points(off$density, col = "blue")
-# plot(d_ye$density);points(d_ye$density[d_ye$survey != "TRAWL"], col = "red")
-# 
-# d_hal$off <- ifelse(r_hal_tw > 2.5, TRUE, FALSE)
-# d_hal$resids <- r_hal_tw 
-# ggplot(d_hal, aes(X, Y, colour = density, shape = survey)) + geom_point(size = 1) +
-#   facet_wrap(~year) +
-#   scale_color_viridis_c(trans = "sqrt") +
-#   coord_equal() +
-#   geom_point(data = off, colour = "red")
-# 
-```
 
 # Yelloweye Rockfish model
 
@@ -957,11 +867,25 @@ AIC(m_ye0) # worse by > 10 AIC
 get_diag(m_ye)
 ```
 
-### QQ-plots
+# QQ-plots
+
 ```{r}
-r_ye0 <- residuals(m_ye)
-png("figs/ye-qq.png", width = 5, height = 4.7, units = "in", res = 200)
-qqnorm(r_ye0, main = "Tweedie");qqline(r_ye0)
+r_ye <- residuals(m_ye)
+qq_ye1 <- qqnorm(r_ye)
+r_ye2 <- residuals(m_ye)
+qq_ye2 <- qqnorm(r_ye2)
+r_ye3 <- residuals(m_ye)
+qq_ye3 <- qqnorm(r_ye3)
+
+png("figs/ye-qq.png", width = 3, height = 3.25, units = "in", res = 200)
+par(mfrow = c(1, 1), mar = c(4, 4, 2, 0), oma = c(1, 1, 1, 1))
+plot(qq_ye1$x, qq_ye1$y, type = "p", col = "#00000050", asp = 1, 
+  xlab = "Theoretical Quantiles", ylab = "Sample Quantiles", main = "Tweedie\n")
+lines(qq_ye1$x, qq_ye1$y, type = "p", col = "#00000050")
+lines(qq_ye2$x, qq_ye2$y, type = "p", col = "#00000050")
+qqline(r_ye)
+qqline(r_ye2)
+qqline(r_ye3)
 dev.off()
 
 # m_ye1 <- readRDS(file = "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn-binomial.rds")
@@ -972,6 +896,97 @@ dev.off()
 # 
 # r_ye2 <- residuals(m_ye2)
 # qqnorm(r_ye2);qqline(r_ye2)
+```
+
+
+```{r eval=F}
+r_hal_tw <- residuals(m_halibut_tweedie)
+qq_hal_tw1 <- qqnorm(r_hal_tw)
+r_hal_tw2 <- residuals(m_halibut_tweedie)
+qq_hal_tw2 <- qqnorm(r_hal_tw2)
+r_hal_tw3 <- residuals(m_halibut_tweedie)
+qq_hal_tw3 <- qqnorm(r_hal_tw3)
+
+r_hal_bin <- residuals(m_halibut_bin)
+qq_hal_bin1 <- qqnorm(r_hal_bin)
+r_hal_bin2 <- residuals(m_halibut_bin)
+qq_hal_bin2 <- qqnorm(r_hal_bin2)
+r_hal_bin3 <- residuals(m_halibut_bin)
+qq_hal_bin3 <- qqnorm(r_hal_bin3)
+
+r_hal_pos <- residuals(m_halibut_pos)
+qq_hal_pos1 <- qqnorm(r_hal_pos)
+r_hal_pos2 <- residuals(m_halibut_pos)
+qq_hal_pos2 <- qqnorm(r_hal_pos2)
+r_hal_pos3 <- residuals(m_halibut_pos)
+qq_hal_pos3 <- qqnorm(r_hal_pos3)
+
+
+png("figs/halibut-qq.png", width = 6, height = 2.5, units = "in", res = 200)
+par(mfrow = c(1, 3), mar = c(4, 4, 2, 0), oma = c(1, 1, 1, 1))
+# qqnorm(r_hal_tw, main = "Tweedie", asp = 1);qqline(r_hal_tw)
+plot(qq_hal_tw3$x, qq_hal_tw3$y, type = "p", col = "#00000050", asp = 1, 
+  xlab = "", ylab = "Sample Quantiles", main = "Tweedie\n ")
+lines(qq_hal_tw1$x, qq_hal_tw1$y, type = "p", col = "#00000050")
+lines(qq_hal_tw2$x, qq_hal_tw2$y, type = "p", col = "#00000050")
+qqline(r_hal_tw)
+qqline(r_hal_tw2)
+qqline(r_hal_tw3)
+
+# qqnorm(r_hal_bin, main = "Binomial", asp = 1);qqline(r_hal_bin)
+plot(qq_hal_bin3$x, qq_hal_bin3$y, type = "p", col = "#00000050", asp = 1, 
+  xlab = "Theoretical Quantiles", ylab = "", main = "Binomial\n ")
+lines(qq_hal_bin1$x, qq_hal_bin1$y, type = "p", col = "#00000050")
+lines(qq_hal_bin2$x, qq_hal_bin2$y, type = "p", col = "#00000050")
+qqline(r_hal_bin)
+qqline(r_hal_bin2)
+qqline(r_hal_bin3)
+# qqnorm(r_hal_pos, main = "Gamma", asp = 1);qqline(r_hal_pos)
+plot(qq_hal_pos3$x, qq_hal_pos3$y, type = "p", col = "#00000050", asp = 1, 
+  xlab = "", ylab = "", main = "Gamma\n ")
+lines(qq_hal_pos1$x, qq_hal_pos1$y, type = "p", col = "#00000050")
+lines(qq_hal_pos2$x, qq_hal_pos2$y, type = "p", col = "#00000050")
+qqline(r_hal_pos)
+qqline(r_hal_pos2)
+qqline(r_hal_pos3)
+dev.off()
+
+
+# off <- d_hal[which(r_hal_tw > 2.2), ]
+# off <- d_hal[which(r_hal_tw > 2.2), ]
+# table(off$survey_abbrev)
+# table(off$present)
+# ggplot(d_hal, aes(X, Y, colour = density, shape = survey)) + geom_point(size = 1) +
+#   facet_wrap(~year) +
+#   scale_color_viridis_c(trans = "sqrt") +
+#   coord_equal() +
+#   geom_point(data = off, colour = "red")
+# 
+# plot(d_hal$depth_scaled);points(off$depth_scaled, col = "red")
+# table(off$year)
+# 
+# d_hal$id <- seq_len(nrow(d_hal))
+# off <- d_hal[which(r_hal_tw > 2.4), ]
+# ggplot(d_hal, aes(id, density, colour = depth_m, shape = survey)) + geom_point() +
+#   geom_point(data = off, pch = 21) +
+#   scale_color_viridis_c(trans = "log10")
+# 
+# plot(d_hal$rocky)
+# plot(d_hal$rocky);points(off$rocky, col = "red")
+# plot(d_hal$muddy);points(off$muddy, col = "red")
+# plot(d_hal$mixed);points(off$mixed, col = "red")
+# plot(d_hal$density);points(off$density, col = "red")
+# plot(d_hal$density);points(d_hal$density[d_hal$survey != "TRAWL"], col = "red");points(off$density, col = "blue")
+# plot(d_ye$density);points(d_ye$density[d_ye$survey != "TRAWL"], col = "red")
+# 
+# d_hal$off <- ifelse(r_hal_tw > 2.5, TRUE, FALSE)
+# d_hal$resids <- r_hal_tw 
+# ggplot(d_hal, aes(X, Y, colour = density, shape = survey)) + geom_point(size = 1) +
+#   facet_wrap(~year) +
+#   scale_color_viridis_c(trans = "sqrt") +
+#   coord_equal() +
+#   geom_point(data = off, colour = "red")
+# 
 ```
 
 # Catch predictions and indices
@@ -2048,9 +2063,9 @@ max_map_lat <- 51.4
 min_map_lon <- -130.1
 max_map_lon <- -125
 
-bjs <- tidy(m_halibut_tweedie)
-# bjs[bjs$term == "as.factor(survey)TRAWL",2]
-# exp(bjs[bjs$term == "as.factor(survey)TRAWL",2])
+bs <- tidy(m_halibut_tweedie)
+# bs[bs$term == "as.factor(survey)TRAWL",2]
+# exp(bs[bs$term == "as.factor(survey)TRAWL",2])
 
 p_hal2020 <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-all-S.rds")[[1]] %>%
   # plot observations for last 3 years to ensure sampling in all regions
@@ -2063,7 +2078,7 @@ d_hal_plots <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") 
   filter(year %in% c(#2017,
     2018,2019,2020)) %>%  
   mutate(
-    density_adj = ifelse(survey == "TRAWL", density/exp(bjs[bjs$term == "as.factor(survey)TRAWL",2]), density),
+    density_adj = ifelse(survey == "TRAWL", density/exp(bs[bs$term == "as.factor(survey)TRAWL",2]), density),
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
     max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
@@ -2107,7 +2122,7 @@ d_hal_plots <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") 
   filter(year %in% c(#2017,
     2018,2019,2020)) %>%  
   mutate(
-    density_adj = ifelse(survey == "TRAWL", density/exp(bjs[bjs$term == "as.factor(survey)TRAWL",2]), density),
+    density_adj = ifelse(survey == "TRAWL", density/exp(bs[bs$term == "as.factor(survey)TRAWL",2]), density),
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
     max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
@@ -2154,7 +2169,7 @@ d_hal_facet <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") 
         year %in% c(2017, 2018) ~ "2017-2018",
         year %in% c(2019, 2020) ~ "2019-2020"
       ),
-    density_adj = ifelse(survey == "TRAWL", density/exp(bjs[bjs$term == "as.factor(survey)TRAWL",2]), density),
+    density_adj = ifelse(survey == "TRAWL", density/exp(bs[bs$term == "as.factor(survey)TRAWL",2]), density),
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
     max_count = round((max(catch_count, na.rm = T)/mean(hook_count, na.rm = T))*100),
@@ -2344,14 +2359,14 @@ g <- map_predictions(
   map_lon_limits = c(min_map_lon, max_map_lon),
   pred_data = ratio_df_2020,
   pred_min = 0,
-  pred_max = max(ratio_df_2020$ye_per_hal),
+  pred_max = quantile(ratio_df_2020$ye_per_hal, 0.99),
   # pred_max = max(d_ye$catch_count, na.rm = T)/ mean(d_ye$hook_count, na.rm = T) * 100,
   fill_aes = ye_per_hal, fill_lab = "Yelloweye to Halibut\nbiomass ratio"
 )
 g
 
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/filled-keepable-ye-to-halibut-2020-w-hal-catch-est-rock-mud.png", 
+ggsave("figs/filled-ye-to-halibut-2020-keepable-delta.png", 
   width = 5.5, height = 4.5, dpi = 400
   # width = 6, height = 5, dpi = 200
   )
@@ -2378,13 +2393,95 @@ g <- map_predictions(
 g
 
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/filled-keepable-halibut-delta-to-ye-2020-w-hal-catch-est-rock-mud.png", 
+ggsave("figs/filled-halibut-to-ye-2020-keepable-delta.png", 
   width = 5.5, height = 4.5, dpi = 400
   # width = 6, height = 5, dpi = 200
   )
-# ggsave("figs/filled-keepable-halibut-delta-to-ye-2020-w-hal-catch-S.pdf", width = 5.5, height = 6, dpi = 400)
 ```
 
+### Overlay hotspot shape file 
+
+```{r}
+hotspots <- sf::st_read(dsn = "shape-files/Hotspot1820_shape/HD_P18C20.shp",
+    layer = "HD_P18C20", quiet = TRUE)
+hotspots_proj <- sf::st_transform(hotspots, crs = 3156)
+
+g <- map_predictions(
+  map_lat_limits = c(48.6, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon),
+  pred_data = ratio_df_2020,
+  pred_min = 0,
+  pred_max = quantile(ratio_df_2020$ye_per_hal, 0.99),
+  fill_aes = ye_per_hal, fill_lab = "Yelloweye to Halibut\nbiomass ratio"
+) + geom_sf(data = hotspots_proj, colour = "white", fill = NA, size = 0.50)+
+    coord_sf(expand = F,
+      xlim = c(convert2utm9(c(min_map_lon, max_map_lon)[1], 50.0)[1], convert2utm9(c(min_map_lon, max_map_lon)[2], 50.0)[1]),
+      ylim = c(convert2utm9(-130,c(48.6, max_map_lat)[1])[2], convert2utm9(-130, c(48.6, max_map_lat)[2])[2])
+    )
+g
+ggsave("figs/filled-ye-to-halibut-2020-w-hotspots.png", 
+  width = 5.5, height = 4.5, dpi = 400
+  # width = 6, height = 5, dpi = 200
+  )
+```
+
+
+
+# CV maps
+
+```{r message=F, echo=F}
+s_hal <- readRDS(paste0("data-generated/filled-keepable-halibut-delta-est-rock-mud-index-all-S-sim-500.rds"))
+cv_hal <- s_hal[[3]]
+m_hal <- s_hal[[4]]
+cv_hal$cv <- apply(exp(m_hal), 1, function(x) sd(x) / mean(x))
+
+cv_hal2020 <- cv_hal %>% 
+  filter(latitude < max_map_lat) %>%
+  filter(year == 2020)
+
+g <- map_predictions(
+  pred_data = cv_hal2020,
+  fill_aes = cv,
+  fill_lab = "CV",
+  # pred_min = min(exp(p_hal2020$est), na.rm = T),
+  # pred_max = quantile(exp(p_hal2020$est), 0.9999, na.rm = T),
+  # obs_data = d_hal_plots,
+  # pred_min = min(exp(p_hal2020$est), na.rm = T),
+  # pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
+  map_lat_limits = c(48.6, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon)
+)+theme(legend.spacing.y = unit(0.1, "cm"))
+# g
+dir.create("figs", showWarnings = FALSE)
+ggsave("figs/filled-keepable-halibut-delta-2020-CV-rock-mud.png", width = 6, height = 5, dpi = 400)
+```
+
+```{r message=F, echo=F}
+s_ye <- readRDS(paste0("data-generated/filled-keepable-yelloweye-est-rock-mud-index-all-S-sim-500.rds"))
+cv_ye <- s_ye[[3]]
+m_ye <- s_ye[[4]]
+cv_ye$cv <- apply(exp(m_ye), 1, function(x)  sd(x) / mean(x))
+
+cv_ye2020 <- cv_ye %>% 
+  filter(latitude < max_map_lat) %>%
+  filter(year == 2020)
+
+g <- map_predictions(
+  pred_data = cv_ye2020,
+  fill_aes = cv,
+  fill_lab = "CV",
+  # pred_min = min(exp(p_hal2020$est), na.rm = T),
+  # pred_max = quantile(exp(p_hal2020$est), 0.9999, na.rm = T),
+  # obs_data = d_hal_plots,
+  # pred_min = min(exp(p_hal2020$est), na.rm = T),
+  # pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
+  map_lat_limits = c(48.6, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon)
+)+theme(legend.spacing.y = unit(0.1, "cm"))
+# g
+dir.create("figs", showWarnings = FALSE)
+ggsave("figs/filled-ye-2020-CV-rock-mud.png", width = 6, height = 5, dpi = 400)
+```
 
 # Other exploratory plots
 
