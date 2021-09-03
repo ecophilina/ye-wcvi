@@ -722,8 +722,8 @@ if (!file.exists(f)) {
 }
 ```
 
-
 ### Load saved models
+
 ```{r}
 m_halibut_tweedie <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-tweedie2.rds"))
 m_halibut_bin <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-binomial2.rds"))
@@ -731,6 +731,7 @@ m_halibut_pos <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-mudd
 ```
 
 ### Comparing QQ-plots
+
 ```{r eval=F}
 r_hal_tw <- residuals(m_halibut_tweedie)
 qq_hal_tw1 <- qqnorm(r_hal_tw)
@@ -819,25 +820,18 @@ dev.off()
 #   coord_equal() +
 #   geom_point(data = off, colour = "red")
 # 
-
-
 ```
 
 
 ```{r echo = F}
-# m_halibut_tweedie <- readRDS(file = "models/halibut-hybrid-keepable-model-rocky-muddy-400kn-tweedie.rds")
 m_halibut_tweedie
-# # round(AIC(m_halibut))
-# # m_halibut_tv <- readRDS(file = "models/halibut-hybrid-keepable-model-allsub-tv-depth-400kn.rds")
-# # m_halibut_tv
 tidy(m_halibut_tweedie, "ran_pars", conf.int = TRUE)
 ```
 
 ```{r}
-# m_halibut_bin <- readRDS(file = "models/halibut-hybrid-keepable-model-rocky-muddy-400kn-binomial.rds")
 m_halibut_bin
 tidy(m_halibut_bin, "ran_pars", conf.int = TRUE)
-# m_halibut_pos <- readRDS(file = "models/halibut-hybrid-keepable-model-rocky-muddy-400kn-gamma.rds")
+
 m_halibut_pos
 tidy(m_halibut_pos, "ran_pars", conf.int = TRUE)
 ```
@@ -933,11 +927,7 @@ dev.off()
 ```
 
 
-
-With spatiotemporal fields:
-
 ```{r echo = F}
-m_ye <- readRDS(file = "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn.rds")
 m_ye
 tidy(m_ye, "ran_pars", conf.int = TRUE)
 ```
@@ -2003,89 +1993,6 @@ ggsave("figs/filled-keepable-ye-to-hal-index-est-rock-mud-NS.png", width = 7, he
 ```
 
 
-
-```{r message=F, echo=F, warning=F}
-# # # checking what happens if we use different weights... 1.33x larger for halibut
-# # hbll_s_grid <- filter(full_s_grid, survey == "HBLL")
-# # hbll_noncda_grid <- filter(noncda_grid, survey == "HBLL")
-# # hbll_cda_grid <- filter(cda_grid, survey == "HBLL")
-# # 
-# # hbll_in_cda <- nrow(hbll_cda_grid)/nrow(cda_grid)
-# # hbll_in_noncda <- nrow(hbll_noncda_grid)/nrow(noncda_grid)
-# 
-# # lowest years catch rate in kg per fish caught 
-# .datL <- left_join(.i_ye, .i_hal) %>% mutate(
-#     ye_per_hal = (yelloweye) / (halibut*0.62), 
-#     hal_per_ye = (halibut*0.62) / (yelloweye)
-#   )  %>% 
-#   group_by(Area, year) %>%
-#   summarise(
-#     lwr = quantile(ye_per_hal, 0.025),
-#     upr = quantile(ye_per_hal, 0.975),
-#     ye_per_hal = mean(ye_per_hal),
-#     lwr_hal = quantile(hal_per_ye, 0.025),
-#     upr_hal = quantile(hal_per_ye, 0.975),
-#     hal_per_ye = mean(hal_per_ye)
-#   ) 
-# .datL <- .datL %>% filter(Area %in% c(
-#   # "non-CDA 3CD5A",
-#   "non-CDA 3CD5A S of 50º", "3CD5A N of 50º",
-#   "CDA"))
-# 
-# # highest years catch rate in kg per fish caught 
-# .datH <- left_join(.i_ye, .i_hal) %>% mutate(
-#     ye_per_hal = (yelloweye) / (halibut*1.26), # convert to adam's estimates ye = 1.04
-#     hal_per_ye = (halibut*1.26) / (yelloweye)
-#   )  %>% 
-#   group_by(Area, year) %>%
-#   summarise(
-#     lwr = quantile(ye_per_hal, 0.025),
-#     upr = quantile(ye_per_hal, 0.975),
-#     ye_per_hal = mean(ye_per_hal),
-#     lwr_hal = quantile(hal_per_ye, 0.025),
-#     upr_hal = quantile(hal_per_ye, 0.975),
-#     hal_per_ye = mean(hal_per_ye)
-#   ) 
-# .datH <- .datH %>% filter(Area %in% c(
-#   # "non-CDA 3CD5A",
-#   "non-CDA 3CD5A S of 50º", "3CD5A N of 50º",
-#   "CDA"))
-# 
-# ggplot(.datH, aes(year, ye_per_hal, fill = Area, colour = Area)) +
-#   geom_line(aes(linetype = "solid")) +
-#   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.4, colour = NA) +
-#   geom_line(data=.datL, aes(year, ye_per_hal, fill = Area, colour = Area, linetype = "dashed"
-#   )) +
-#   geom_ribbon(data=.datL, aes(ymin = lwr, ymax = upr), alpha = 0.2, colour = NA) +
-#   xlab("Year") +
-#   ylab("Estimated yelloweye to halibut biomass ratio") +
-#   coord_cartesian(expand = T, ylim = c(0.03, max(.datL$upr))) +
-#   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
-#   scale_linetype_manual(name = "Halibut", values= c("dashed", "solid"),
-#     label = c("lowest landings",  "most landings")) +
-#   scale_x_continuous(
-#     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
-#     breaks = seq(2008, 2020, 2)) + 
-#   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
-#   scale_fill_brewer(palette = "Set1") +
-#   scale_colour_brewer(palette = "Set1")
-# ggsave("figs/filled-keepable-ye-to-hal-sizes-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
-# # 
-# ggplot(.datx, aes(year, hal_per_ye, fill = Area, colour = Area)) +
-#   geom_line() +
-#   geom_ribbon(aes(ymin = lwr_hal, ymax = upr_hal), alpha = 0.4, colour = NA) +
-#   xlab("Year") +
-#   ylab("Estimated halibut to yelloweye biomass ratio") +
-#   coord_cartesian(expand = T, ylim = c(2, max(.dat$upr_hal) * 1.04)) +
-#   scale_x_continuous(
-#     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
-#     breaks = seq(2008, 2020, 2)) + 
-#   theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
-#   scale_fill_brewer(palette = "Set1") +
-#   scale_colour_brewer(palette = "Set1")
-# ggsave("figs/filled-keepable-halx-to-ye-index-est-rock-mud.png", width = 7, height = 4, dpi = 400)
-```
-
 # Maps
 
 Predictions depicted for HBLL survey grid area that falls within region 5A3CD. "Court defined area" area is outlined in red. Only 2020 survey catch is included on first two maps, all years of halibut catch are included on the map showing number of Yelloweye Rockfish expected per halibut caught 2020. 
@@ -2447,30 +2354,25 @@ ggsave("figs/filled-keepable-halibut-delta-to-ye-2020-w-hal-catch-est-rock-mud.p
 ### Experiment with accumulation curve
 Solid lines are cumulative halibut catch potential for each addition cell fished in decreasing order of predicted halibut abundance.
 Dashed lines are the cumulative yelloweye catch that might be anticipated for those same cells.
+
 ```{r message=F, echo=F, warning=F}
-p_hal_cda <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-cda.rds")
-p_ye_cda <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-cda.rds")
+p_hal <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-all-S.rds")
+p_ye <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-all-S.rds")
 
-p_hal_noncda <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-5A3CD-outside-cda.rds")
-p_ye_noncda <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-5A3CD-outside-cda.rds")
+p_hal_cda <- filter(p_hal$data, region == "CDA") 
+p_hal_noncda <- filter(p_hal$data, region %in% c("non-CDA 3CD5A S", "3CD5A N")) 
+p_ye_cda <- filter(p_ye$data, region == "CDA") 
+p_ye_noncda <- filter(p_ye$data, region %in% c("non-CDA 3CD5A S", "3CD5A N")) 
 
-# p_hal_5A <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-5A.rds")
-# p_ye_5A <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-5A.rds")
+py_cda <- p_ye_cda %>% rename(ye_est = est)
+py_noncda <- p_ye_noncda %>% rename(ye_est = est)
 
-py_cda <- p_ye_cda$data %>% rename(ye_est = est)
-py_noncda <- p_ye_noncda$data %>% rename(ye_est = est)
-# py_5A <- p_ye_5A$data %>% rename(ye_est = est)
-
-ph_cda <- p_hal_cda$data %>%
+ph_cda <- p_hal_cda %>%
   rename(hal_est = est) %>%
   select(hal_est, X, Y, year)
-ph_noncda <- p_hal_noncda$data %>%
+ph_noncda <- p_hal_noncda %>%
   rename(hal_est = est) %>%
   select(hal_est, X, Y, year)
-# ph_5A <- p_hal_5A$data %>% #View()
-#   rename(hal_est = est) %>%
-#   select(hal_est, X, Y, year)
-
 
 # round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight)
 ratio_cda <- left_join(py_cda, ph_cda) %>% mutate(
