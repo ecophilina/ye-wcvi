@@ -90,7 +90,7 @@ Finally, cell-specific biomass estimates were used to explore how contrasting fi
 
 TODO A BUNCH OF TECHNICAL STUFF HERE ABOUT FITTING AND CIS. ... simulated 500 times...
 
-```{r survey-grid-map, fig.cap="Map of 2 $times$ 2 km grid cells comprising both fishery-independent surveys used in this analysis and the court defined area (CDA) outlined in red. Trawl survey area north of Vancouver Island belongs to the Queen Charlotte Sound Synoptic Survey, while the area west of the island is covered in the West Coast Vancouver Island Synoptic Survey. Cells within these area that are excluded from the trawl survey grid are either protected areas or have been deemed unfishable by trawl gear, often due to rockiness or the presence of corals or sponges.", out.width="4.5in"}
+```{r survey-grid-map, fig.cap="Map of 2x2 km grid cells comprising both fishery-independent surveys used in this analysis and the court defined area (CDA) outlined in red. Trawl survey area north of Vancouver Island belongs to the Queen Charlotte Sound Synoptic Survey, while the area west of the island is covered in the West Coast Vancouver Island Synoptic Survey. Cells within these area that are excluded from the trawl survey grid are either protected areas or have been deemed unfishable by trawl gear, often due to rockiness or the presence of corals or sponges.", out.width="4.5in"}
 include_graphics(here("figs/map-stitched-grid-overlap.png"))
 ```
 
@@ -185,7 +185,6 @@ However, we will focus on the predicted spatial variation for the most recent ye
 Due to generally higher biomass densities in the north, zooming in on the area immediately around the CDA (Area 3CD5A south of 50º) is also useful (Figs. \@ref(fig:halibut-preds-2020-closeup) and \@ref(fig:ye-preds-2020-closeup)). 
 The predictions for both species can also be mapped as ratios to identify locations at particular risk of higher YE catch (Fig. \@ref(fig:ye-per-hal-preds-2020)) or locations that are particularly productive for halibut, while minimizing YE catch (Fig. \@ref(fig:hal-per-ye-preds-2020)). 
 
-equivalent
 
 ```{r halibut-preds-all, fig.cap="Model-predicted landable Halibut biomass densities (colour) with survey sample densities (circle areas) overlaid. HBLL catch counts were converted to a landable biomass density. Trawl survey catch is converted to an equivalent value by adjusting for model-estimated catchability and the proportion of biomass caught estimated to belong to landable individuals. The CDA is outlined in red. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="\\textwidth"}
 include_graphics(here("figs/filled-keepable-halibut-delta-predictions-est-rock-mud.png"))
