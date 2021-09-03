@@ -22,7 +22,7 @@ theme_set(ggsidekick::theme_sleek())
 # model_type <- "-hbll-mw"
 
 model_type <- "-keepable"
-model_vars <- "-est-rock-mud"
+model_vars <- "-delta-est-rock-mud"
 
 # model_vars <- "-new-RW-hbll-ests-w-mud-rock"
 
@@ -54,11 +54,16 @@ s_hal_noncda4N <- readRDS(paste0("data-generated/filled", model_type, "-halibut"
 s_hal_noncda4S <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-5A3CDS-outside-cda-sim-500.rds"))[[4]][,1:50] #116571 vs. 116620 for newdata saved with it?
 # s_hal_5A4 <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-5A-sim-500.rds"))[[4]]
 
+
+model_vars <- "-est-rock-mud" # YE
+
 # i_ye4 <- readRDS(paste0("data-generated/filled", model_type, "-yelloweye", model_vars, "index-all-S-sim-500.rds"))[[4]]
 s_ye_cda4 <- readRDS(paste0("data-generated/filled", model_type, "-yelloweye", model_vars, "-index-cda-sim-500.rds"))[[4]][,1:50]
 s_ye_noncda4N <- readRDS(paste0("data-generated/filled", model_type, "-yelloweye", model_vars, "-index-5A3CDN-outside-cda-sim-500.rds"))[[4]][,1:50]
 s_ye_noncda4S <- readRDS(paste0("data-generated/filled", model_type, "-yelloweye", model_vars, "-index-5A3CDS-outside-cda-sim-500.rds"))[[4]][,1:50]
 # s_ye_5A4 <- readRDS(paste0("data-generated/filled", model_type, "-yelloweye", model_vars, "-index-5A-sim-500.rds"))[[4]]
+
+model_vars <- "-delta-est-rock-mud" # change back to halibut/ version
 
 s_hal_cda4 <- cbind(g_cda, as.data.frame(s_hal_cda4)) %>% filter(area == 400) %>% select(-area)
 s_hal_noncda4N <- bind_cols(g_noncdaN, as.data.frame(s_hal_noncda4N))%>% filter(area == 400) %>% select(-area)
@@ -118,7 +123,7 @@ cda_2020 <- filter(g_cda, year == 2020)
 
 if (!file.exists(paste0("data-generated/avoiding_ye_sum", .file))) {
 
-.s_hal <- readRDS( paste0("data-generated/hal_sims_for_ratios_by_area", model_type, "-50.rds")) #%>% filter()
+.s_hal <- readRDS( paste0("data-generated/hal_sims_for_ratios_by_area", model_type, "-50.rds"))
 .s_ye <- readRDS( paste0("data-generated/ye_sims_for_ratios_by_area", model_type, "-50.rds"))
 
 glimpse(.s_hal)
@@ -432,13 +437,15 @@ ggplot(maximize_hal_sum %>%
   #   ylim = c(0, 1000)
   # ) +
   # scale_x_continuous(breaks = c(0, 500, 1000)) +
-  scale_y_log10() +
+  # scale_y_log10() +
+  scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
+  scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
   # scale_color_identity(name = "Area",
   #   breaks = c("darkgreen","darkblue", "red"),
   #   labels = c("5A", "5A3CD (non-CDA)", "CDA"),
   #   guide = "legend") +
-  scale_fill_brewer(palette = "Set1", direction = -1) +
-  scale_colour_brewer(palette = "Set1", direction = -1) +
+  scale_fill_brewer(palette = "Set1", direction = 1) +
+  scale_colour_brewer(palette = "Set1", direction = 1) +
   ylab("Mean ratio of halibut to YE") +
   xlab("Total area of cells selected to maximize halibut (km2)") +
   # facet_wrap(~pair_name, ncol = 2)+
