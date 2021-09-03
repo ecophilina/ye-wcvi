@@ -111,11 +111,11 @@ i_ye_noncda <- readRDS(here("report-data/filled-keepable-yelloweye-est-rock-mud-
 i_ye_noncdaN <- readRDS(here("report-data/filled-keepable-yelloweye-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))
 i_ye_noncdaS <- readRDS(here("report-data/filled-keepable-yelloweye-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))
 
-i_hal <- readRDS(here("report-data/filled-keepable-halibut-est-rock-mud-index-all-S-sim-500.rds"))
-i_hal_cda <- readRDS(here("report-data/filled-keepable-halibut-est-rock-mud-index-cda-sim-500.rds"))
-i_hal_noncda <- readRDS(here("report-data/filled-keepable-halibut-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"))
-i_hal_noncdaN <- readRDS(here("report-data/filled-keepable-halibut-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))
-i_hal_noncdaS <- readRDS(here("report-data/filled-keepable-halibut-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))
+i_hal <- readRDS(here("report-data/filled-keepable-halibut-delta-est-rock-mud-index-all-S-sim-500.rds"))
+i_hal_cda <- readRDS(here("report-data/filled-keepable-halibut-delta-est-rock-mud-index-cda-sim-500.rds"))
+i_hal_noncda <- readRDS(here("report-data/filled-keepable-halibut-delta-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"))
+i_hal_noncdaN <- readRDS(here("report-data/filled-keepable-halibut-delta-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))
+i_hal_noncdaS <- readRDS(here("report-data/filled-keepable-halibut-delta-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))
 
 cda_grid <- readRDS(here("data-generated/filled_cda_grid_paired.rds"))
 noncda_grid <- readRDS(here("data-generated/filled_noncda_grid_paired.rds"))
@@ -163,13 +163,17 @@ The models also estimate the depth preferences of each species (Fig. \@ref(fig:d
 include_graphics(here("figs/compare-model-indices.png"))
 ```
 
+```{r effect-plots, fig.cap="Modelled quadratic effects of covariates: depth, proportion rocky substrate, and proportion muddy for each species' models. These estimates are for HBLL survey catches of landable Halibut and all YE. The effect of depth is for locations with avarage proportions of rocky (0.09) and muddy (0.13) substrate, and the subsrate effects are at the depth at which YE densities peak (78 m) with the remainder of the subsrate classed as either sandy or mixed.", out.width="\\textwidth"}
+include_graphics(here("figs/effects-delta-allfixed.png"))
+```
+
 
 ```{r depth-profile, fig.cap="Depth preferences from separate spatiotemporal models for each species. Because peak biomass densities occur in different years for each species, each line represents a different year's estimate with the most recent year having the most opaque line. These estimates are for HBLL survey catches of landable Halibut and all YE for locations with avarage proportions of rocky (0.09) and muddy (0.13) substrate. Dashed line is at 78 m, the depth of peak YE densities.", out.width="4in"}
-include_graphics(here("figs/depth-profiles.png"))
+# include_graphics(here("figs/depth-profiles.png"))
 ```
 
 ```{r substrate, fig.cap="Modelled effects of proportion rocky substrate (A) and proportion muddy (B) for each species. These estimates are for HBLL survey catches of landable Halibut and all YE for locations at the depth at which YE densities peak (78 m) with the remainder of the subsrate classes as either sandy or mixed.", out.width="\\textwidth"}
-include_graphics(here("figs/substrate-effects.png"))
+# include_graphics(here("figs/substrate-effects.png"))
 ```
 
 \clearpage
@@ -184,7 +188,7 @@ The predictions for both species can also be mapped as ratios to identify locati
 equivalent
 
 ```{r halibut-preds-all, fig.cap="Model-predicted landable Halibut biomass densities (colour) with survey sample densities (circle areas) overlaid. HBLL catch counts were converted to a landable biomass density. Trawl survey catch is converted to an equivalent value by adjusting for model-estimated catchability and the proportion of biomass caught estimated to belong to landable individuals. The CDA is outlined in red. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="\\textwidth"}
-include_graphics(here("figs/filled-keepable-halibut-predictions-est-rock-mud.png"))
+include_graphics(here("figs/filled-keepable-halibut-delta-predictions-est-rock-mud.png"))
 ```
 
 ```{r ye-preds-all, fig.cap="Model-predicted Yelloweye Rockfish biomass densities (colour) with survey sample densities (circle areas) overlaid. HBLL catch counts were converted to a biomass density. Trawl survey catch is converted to an equivalent value by adjusting for model-estimated catchability. Legend otherwise the same.", out.width="\\textwidth"}
@@ -192,7 +196,7 @@ include_graphics(here("figs/filled-keepable-ye-predictions-est-rock-mud.png"))
 ```
 
 ```{r halibut-preds-2020, fig.cap="Predicted Halibut densities and observed biomass densities for 2018--2020. This is a zoomed-in version of the 2019--2020 predictions, but with 2018 through 2020 survey data included because one of the 2020 surveys was deferred. Legend otherwise the same.", out.width="5.5in"}
-include_graphics(here("figs/filled-keepable-halibut-2020-predictions-est-rock-mud.png"))
+include_graphics(here("figs/filled-keepable-halibut-delta-2020-predictions-est-rock-mud.png"))
 ```
 
 ```{r ye-preds-2020, fig.cap="Predicted Yelloweye Rockfish densities and observed biomass densities for 2018--2020. This is a zoomed-in version of the 2019--2020 predictions, but with 2018 through 2020 survey data included because one of the 2020 surveys was deferred. Legend otherwise the same.", out.width="5.5in"}
@@ -200,7 +204,7 @@ include_graphics(here("figs/filled-keepable-yelloweye-2020-predictions-est-rock-
 ```
 
 ```{r halibut-preds-2020-closeup, fig.cap="Predicted Halibut densities and observed biomass densities for 2018--2020. This is a zoomed-in version of just the area around the CDA. Legend otherwise the same.", out.width="4.5in"}
-include_graphics(here("figs/filled-keepable-halibut-2020-predictions-est-rock-mud-closeup.png"))
+include_graphics(here("figs/filled-keepable-halibut-delta-2020-predictions-est-rock-mud-closeup.png"))
 ```
 
 ```{r ye-preds-2020-closeup, fig.cap="Predicted Yelloweye Rockfish densities and observed biomass densities for 2018--2020. This is a zoomed-in version of just the area around the CDA. Legend otherwise the same.", out.width="4.5in"}
@@ -226,13 +230,13 @@ Meanwhile, we estimated the average YE biomass density inside the CDA to be `r r
 ```{r indexes-avg, fig.cap="Average landable Halibut (A) and YE (B) biomass densities through time within the CDA, versus in the sampled range of area 3CD5A outside the CDA. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 simulations.", out.width="5in"}
 include_graphics(here("figs/filled-keepable-rock-mud-avg-by-area.png"))
 ## or with the N-S split
-# include_graphics(here("figs/filled-keepable-halibut-est-rock-mud-average-index-NS.png"))
+# include_graphics(here("figs/filled-keepable-halibut-delta-est-rock-mud-average-index-NS.png"))
 ```
 
 ```{r halibut-indexes-avg, fig.cap="Average landable Halibut biomass density through time within the CDA, versus in the sampled range of area 3CD5A outside the CDA. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 simulations.", out.width="5in"}
-# include_graphics(here("figs/filled-keepable-halibut-est-rock-mud-average-index.png"))
+# include_graphics(here("figs/filled-keepable-halibut-delta-est-rock-mud-average-index.png"))
 ## or with the N-S split
-# include_graphics(here("figs/filled-keepable-halibut-est-rock-mud-average-index-NS.png"))
+# include_graphics(here("figs/filled-keepable-halibut-delta-est-rock-mud-average-index-NS.png"))
 ```
 
 ```{r ye-indexes-avg, fig.cap="Average YE biomass density through time within the CDA, versus in the sampled range of area 3CD5A outside the CDA. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 simulations.", out.width="5in"}
