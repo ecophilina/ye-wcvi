@@ -62,13 +62,13 @@ YE biomass densities from the trawl survey were left unadjusted because the mean
 Finally, all densities were converted from kg per kg/km2 to kg per ha for computational reasons. 
 
 Next, we fit geostatistical spatiotemporal models to these surveyed biomass densities using the R package sdmTMB <https://github.com/pbs-assess/sdmTMB>. 
-Because these biomass densities include both zeros and positive continuous values, we used a Tweedie distribution to model predicted catches of each species. 
+Because these biomass densities include both zeros and positive continuous values, we used either a Tweedie distribution or a Delta-Gamma approach to model predicted catches of each species. 
 We did not account for hook competition in any of these models because the goal here is to estimate likely catch ratios and not the underlying abundances.
 Furthermore, an investigation into hook competition for YE in the latest outside YE stock assessment found little effect of including it [REF]. 
 For both species, we included quadratic effects of depth, and the proportions of rocky and muddy substrate within 1 km of the sampling location to help account for difference in the habitats targeted by each survey, and a factor for survey type to capture differences in catchability between the two fishing methods. 
 Finally, these models also estimated annual means for years and latent "random fields" representing remaining patterns in spatial and spatiotemporal correlation that were not explicitly modelled by the included covariates. 
 The magnitude of spatiotemporal variation was much higher for Halibut than for YE, but including spatiotemporal variation improved model fit compared to a model with only spatial random fields for both species by over 10 AIC (Akaike Information Criterion) units. 
-For Halibut, including a first-order autoregressive (AR1) correlation between spatiotemporal fields only marginally improved model fit (~5 $\Delta$ AIC), so we used independent spatiotemporal fields for both species.
+<!-- For Halibut, including a first-order autoregressive (AR1) correlation between spatiotemporal fields only marginally improved model fit (~5 $\Delta$ AIC), so we used independent spatiotemporal fields for both species. -->
 **should we add any diagnostic and validation plots?**
 <!-- SA: Yes, perhaps. Do the QQ plots look OK?-->
 <!-- SA: add equations?-->
@@ -163,16 +163,18 @@ The models also estimate the depth preferences of each species (Fig. \@ref(fig:d
 include_graphics(here("figs/compare-model-indices.png"))
 ```
 
-```{r effect-plots, fig.cap="Modelled quadratic effects of covariates: depth, proportion rocky substrate, and proportion muddy for each species' models. These estimates are for HBLL survey catches of landable Halibut and all YE. The effect of depth is for locations with avarage proportions of rocky (0.09) and muddy (0.13) substrate, and the subsrate effects are at the depth at which YE densities peak (78 m) with the remainder of the subsrate classed as either sandy or mixed.", out.width="\\textwidth"}
+```{r effect-plots, fig.cap="Modelled quadratic effects of covariates: depth, proportion rocky substrate, and proportion muddy for each species' models. Because peak biomass densities occur in different years for each species, each line represents a different year's estimate with the most recent year having the most opaque line. These estimates are for HBLL survey catches of landable Halibut and all YE. The effect of depth is for locations with avarage proportions of rocky (0.09) and muddy (0.13) substrate, and the subsrate effects are at the depth at which YE densities peak (78 m) with the remainder of the subsrate classed as either sandy or mixed.", out.width="\\textwidth"}
 include_graphics(here("figs/effects-delta-allfixed.png"))
 ```
 
 
 ```{r depth-profile, fig.cap="Depth preferences from separate spatiotemporal models for each species. Because peak biomass densities occur in different years for each species, each line represents a different year's estimate with the most recent year having the most opaque line. These estimates are for HBLL survey catches of landable Halibut and all YE for locations with avarage proportions of rocky (0.09) and muddy (0.13) substrate. Dashed line is at 78 m, the depth of peak YE densities.", out.width="4in"}
+## these were for tweedie models
 # include_graphics(here("figs/depth-profiles.png"))
 ```
 
 ```{r substrate, fig.cap="Modelled effects of proportion rocky substrate (A) and proportion muddy (B) for each species. These estimates are for HBLL survey catches of landable Halibut and all YE for locations at the depth at which YE densities peak (78 m) with the remainder of the subsrate classes as either sandy or mixed.", out.width="\\textwidth"}
+## these were for tweedie models
 # include_graphics(here("figs/substrate-effects.png"))
 ```
 

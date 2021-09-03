@@ -722,7 +722,7 @@ if (!file.exists(f)) {
 }
 ```
 
-### Load saved models
+## Load saved models
 
 ```{r}
 m_halibut_tweedie <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-tweedie2.rds"))
@@ -730,7 +730,34 @@ m_halibut_bin <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-mudd
 m_halibut_pos <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-gamma2.rds"))
 ```
 
-### Comparing QQ-plots
+## Comparing models
+
+```{r echo = F}
+m_halibut_tweedie
+tidy(m_halibut_tweedie, "ran_pars", conf.int = TRUE)
+```
+
+```{r}
+m_halibut_bin
+tidy(m_halibut_bin, "ran_pars", conf.int = TRUE)
+
+m_halibut_pos
+tidy(m_halibut_pos, "ran_pars", conf.int = TRUE)
+```
+
+```{r warning=F, message=F}
+get_diag(m_halibut_tweedie)
+```
+
+```{r warning=F, message=F}
+get_diag(m_halibut_bin, response = "present")
+```
+
+```{r warning=F, message=F}
+get_diag(m_halibut_pos)
+```
+
+### QQ-plots
 
 ```{r eval=F}
 r_hal_tw <- residuals(m_halibut_tweedie)
@@ -822,32 +849,6 @@ dev.off()
 # 
 ```
 
-
-```{r echo = F}
-m_halibut_tweedie
-tidy(m_halibut_tweedie, "ran_pars", conf.int = TRUE)
-```
-
-```{r}
-m_halibut_bin
-tidy(m_halibut_bin, "ran_pars", conf.int = TRUE)
-
-m_halibut_pos
-tidy(m_halibut_pos, "ran_pars", conf.int = TRUE)
-```
-
-```{r warning=F, message=F}
-get_diag(m_halibut_tweedie)
-```
-
-```{r warning=F, message=F}
-get_diag(m_halibut_bin, response = "present")
-```
-
-```{r warning=F, message=F}
-get_diag(m_halibut_pos)
-```
-
 # Yelloweye Rockfish model
 
 Much less temporal variation, so have confirmed that an AR1 didn't improve model. But what about a spatial-only model?
@@ -875,6 +876,26 @@ if (!file.exists(f)) {
   )
   saveRDS(m_ye, file = f)
 }
+
+f <- "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn-no-anisotropy.rds"
+if (!file.exists(f)) {
+  m_ye0 <- sdmTMB(
+    formula = density ~ 0 + as.factor(year) + as.factor(survey) + 
+      s(rocky, k = 3) +
+      s(muddy, k = 3) +
+      depth_scaled + I(depth_scaled^2),
+    data = d_ye,
+    spde = mesh400kn,
+    fields = "IID",
+    time = "year",
+    silent = FALSE,
+    # anisotropy = TRUE,
+    # reml = T, # F is simplier to explain. 
+    family = tweedie(link = "log")
+  )
+  saveRDS(m_ye0, file = f)
+}
+
 # 
 # d_ye$present <- ifelse(d_ye$density > 0, 1, 0)
 # m_ye1 <- sdmTMB(
@@ -912,28 +933,45 @@ if (!file.exists(f)) {
 # saveRDS(m_ye2, file = "models/yelloweye-hybrid-delta-mw-rocky-muddy-400kn-gamma.rds")
 ```
 
+
+## Load saved models
+
 ```{r}
 m_ye <- readRDS(file = "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn.rds")
+m_ye0 <- readRDS(file = "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn-no-anisotropy.rds")
+```
+
+## Comparing models
+
+```{r echo = F}
+m_ye
+AIC(m_ye)
+tidy(m_ye, "ran_pars", conf.int = TRUE)
+
+print("without anisotropy")
+# m_ye0
+AIC(m_ye0) # worse by > 10 AIC
+```
+
+```{r warning=F, message=F}
+get_diag(m_ye)
+```
+
+### QQ-plots
+```{r}
 r_ye0 <- residuals(m_ye)
 png("figs/ye-qq.png", width = 5, height = 4.7, units = "in", res = 200)
 qqnorm(r_ye0, main = "Tweedie");qqline(r_ye0)
 dev.off()
+
+# m_ye1 <- readRDS(file = "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn-binomial.rds")
+# m_ye2 <- readRDS(file = "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn-gamma.rds")
 # 
 # r_ye1 <- residuals(m_ye1)
 # qqnorm(r_ye1);qqline(r_ye1)
 # 
 # r_ye2 <- residuals(m_ye2)
 # qqnorm(r_ye2);qqline(r_ye2)
-```
-
-
-```{r echo = F}
-m_ye
-tidy(m_ye, "ran_pars", conf.int = TRUE)
-```
-
-```{r warning=F, message=F}
-get_diag(m_ye)
 ```
 
 # Catch predictions and indices
