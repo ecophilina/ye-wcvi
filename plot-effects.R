@@ -28,15 +28,13 @@ p <- p %>% mutate(
     lowCI = exp(est - 1.96 * est_se),
     highCI = exp(est + 1.96 * est_se))
 
-# p$species <- "Halibut"
-# saveRDS(p, here::here(paste0("data-generated/halibut-tv-depth.rds")))
 
-# p$species <- "YE"
+# saveRDS(p, here::here(paste0("data-generated/halibut-tv-depth.rds")))
 # saveRDS(p, here::here(paste0("data-generated/ye-tv-depth.rds")))
 p <- readRDS( here::here(paste0("data-generated/ye-tv-depth.rds")))
-
+p$species <- "YE"
 p2 <- readRDS( here::here(paste0("data-generated/halibut-tv-depth.rds")))
-
+p2$species <- "Halibut"
 p <- bind_rows(p2, p) #%>% filter(year==2008)
 p <-  p %>% rename(Species = species)
 
@@ -252,3 +250,69 @@ ggplot(p,
 # ggsave("halibut-allsub-mixed.png", width = 5, height = 4)
 
 ggsave("ye-mixed-RW.png", width = 5, height = 4)
+
+
+
+p1 <- readRDS( here::here(paste0("data-generated/ye-rocky-2020-ye-peak-depth.rds"))) %>% mutate(Species= "YE")
+p2 <- readRDS( here::here(paste0("data-generated/halibut-rocky-2020-ye-peak-depth.rds"))) %>% mutate(Species= "Halibut")
+
+p1 <- readRDS( here::here(paste0("data-generated/ye-rocky-sim.rds"))) %>% mutate(Species= "YE")
+p2 <- readRDS( here::here(paste0("data-generated/halibut-rocky-sim.rds"))) %>% mutate(Species= "Halibut")
+
+
+p <- bind_rows(p2, p1) %>% filter(survey=="HBLL")
+# p <-  p %>% rename(Species = species)
+
+gg1 <- ggplot(p,
+  aes(rocky, Biomass, fill=Species, colour = Species)) +
+  geom_ribbon(data = filter(p, Species == "Halibut"),aes(
+    ymin = lowCI,
+    ymax = highCI), alpha = 0.05, colour = NA) +
+  geom_ribbon(data = filter(p, Species == "YE"),aes(
+    ymin = lowCI,
+    ymax = highCI), alpha = 0.1, colour = NA) +
+  geom_line(data = filter(p, Species == "Halibut"), size = 1) + #, alpha =0.75
+  geom_line(data = filter(p, Species == "YE"), size = 1) +
+  scale_fill_viridis_d(option = "C", begin = 0, end = 0.7) +
+  scale_colour_viridis_d(option = "C", begin = 0, end = 0.7) +
+  ylab("Biomass density (kg/ha)") +
+  xlab("Proportion rocky") +
+  # guides(alpha = "none") +
+  coord_cartesian(ylim = c(0, quantile(p$highCI, 1)+0.1)) +
+  gfplot::theme_pbs() + theme(legend.position = "none")
+
+
+p3 <- readRDS( here::here(paste0("data-generated/ye-muddy.rds"))) %>% mutate(Species= "YE")
+
+p4 <- readRDS( here::here(paste0("data-generated/halibut-muddy.rds"))) %>% mutate(Species= "Halibut")
+
+p5 <- bind_rows(p3, p4) %>% filter(survey=="HBLL")
+# p <-  p %>% rename(Species = species)
+
+gg2 <- ggplot(p5,
+  aes(muddy, Biomass, fill=Species, colour = Species)) +
+  geom_ribbon(data = filter(p5, Species == "Halibut"),aes(
+    ymin = lowCI,
+    ymax = highCI), alpha = 0.05, colour = NA) +
+  geom_ribbon(data = filter(p5, Species == "YE"),aes(
+    ymin = lowCI,
+    ymax = highCI), alpha = 0.1, colour = NA) +
+  geom_line(data = filter(p5, Species == "Halibut"), size = 1) + #, alpha =0.75
+  geom_line(data = filter(p5, Species == "YE"), size = 1) +
+  scale_fill_viridis_d(option = "C", begin = 0, end = 0.7) +
+  scale_colour_viridis_d(option = "C", begin = 0, end = 0.7) +
+  ylab("Biomass density (kg/ha)") +
+  coord_cartesian(ylim = c(0, quantile(p$highCI, 1)+0.1)) +
+  xlab("Proportion muddy") +
+  gfplot::theme_pbs() + theme(
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = c(0.8,0.8))
+
+# library(patchwork)
+
+gg1 + gg2 + plot_layout()
+
+
+ggsave("figs/substrate-effects.png", width = 6, height = 4)
