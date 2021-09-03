@@ -328,22 +328,48 @@ map_predictions <- function(
 
   if (!is.null(pred_data)) {
     if (is.null(pred_min)) {
+      if (is.null(obs_data)) {
       g <- g + geom_tile(
         data = pred_data,
-        aes(X * 100000, Y * 100000, fill = {{fill_aes}}),
-        width = 2000, height = 2000, colour = NA
+        aes(X * 100000, Y * 100000,
+          colour = {{fill_aes}},
+          fill = {{fill_aes}}), #colour = NA,
+        width = 2000, height = 2000
       ) + scale_fill_viridis_c(
         # trans = ggsidekick::fourth_root_power_trans(),
         trans = "sqrt",
         direction = viridis_dir,
         na.value = viridis_na,
         option = viridis_option
-      )
+      ) + scale_colour_viridis_c(
+        # trans = ggsidekick::fourth_root_power_trans(),
+        trans = "sqrt",
+        direction = viridis_dir,
+        na.value = viridis_na,
+        option = viridis_option
+      )} else{
+        g <- g + geom_tile(
+          data = pred_data,
+          aes(X * 100000, Y * 100000,
+            # colour = {{fill_aes}},
+            fill = {{fill_aes}}), colour = NA,
+          width = 2000, height = 2000
+        ) + scale_fill_viridis_c(
+          # trans = ggsidekick::fourth_root_power_trans(),
+          trans = "sqrt",
+          direction = viridis_dir,
+          na.value = viridis_na,
+          option = viridis_option
+        )
+      }
     } else {
+      if (is.null(obs_data)) {
     g <- g + geom_tile(
       data = pred_data,
-      aes(X * 100000, Y * 100000, fill = {{fill_aes}}),
-      width = 2000, height = 2000, colour = NA
+      aes(X * 100000, Y * 100000,
+        colour = {{fill_aes}},
+        fill = {{fill_aes}}), #colour = NA,
+      width = 2000, height = 2000
     ) + scale_fill_viridis_c(
       # trans = ggsidekick::fourth_root_power_trans(),
       trans = "sqrt",
@@ -351,7 +377,30 @@ map_predictions <- function(
       direction = viridis_dir,
       na.value = viridis_na,
       option = viridis_option
+    ) + scale_colour_viridis_c(
+      # trans = ggsidekick::fourth_root_power_trans(),
+      trans = "sqrt",
+      limits = c(pred_min, pred_max),
+      direction = viridis_dir,
+      na.value = viridis_na,
+      option = viridis_option
     )
+      } else {
+        g <- g + geom_tile(
+          data = pred_data,
+          aes(X * 100000, Y * 100000,
+            # colour = {{fill_aes}},
+            fill = {{fill_aes}}), colour = NA,
+          width = 2000, height = 2000
+        ) + scale_fill_viridis_c(
+          # trans = ggsidekick::fourth_root_power_trans(),
+          trans = "sqrt",
+          limits = c(pred_min, pred_max),
+          direction = viridis_dir,
+          na.value = viridis_na,
+          option = viridis_option
+        )
+      }
     }
   }
   g <- g +
@@ -372,7 +421,7 @@ map_predictions <- function(
     ) +
     geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
     geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey75", col = "grey55") +
-    labs(fill = fill_lab, size = size_lab) +
+    labs(fill = fill_lab, colour = fill_lab, size = size_lab) +
     annotate("text",
       x = convert2utm9(-129.8, 50.7)[1],
       y = convert2utm9(-129.8, 50.7)[2], label = "5A") +
@@ -417,11 +466,15 @@ map_predictions <- function(
         colour = {{col_aes}},
         size = {{size_aes}}
       ), pch = 21,
-      # colour = "white",
       inherit.aes = FALSE, alpha = 0.99
     ) +
       scale_colour_manual(name = NULL, values = obs_col) +
-      scale_size_area(max_size = max_size_obs, n.breaks = 5)
+      scale_size_area(max_size = max_size_obs, n.breaks = 5)+
+      guides(
+        fill = guide_colorbar(order = 1),
+        size = guide_legend(order = 2, override.aes = list(colour="white")),
+        colour = guide_legend(order = 3)
+      )
   }
 
   g <- g +
@@ -431,11 +484,6 @@ map_predictions <- function(
       # ylim = c(5366427 + 25000, 5694150 - 8000) #6353456 - 590000)
       xlim = c(convert2utm9(map_lon_limits[1], 50.0)[1], convert2utm9(map_lon_limits[2], 50.0)[1]),
       ylim = c(convert2utm9(-130, map_lat_limits[1])[2], convert2utm9(-130, map_lat_limits[2])[2])
-    ) +
-    guides(
-      fill = guide_colorbar(order = 1),
-      size = guide_legend(order = 2, override.aes = list(colour="white")),
-      colour = guide_legend(order = 3)
     ) +
     theme(axis.title = element_blank(),
       legend.box.background = element_rect(color = NA, size = 1, fill = "#ffffff90"),
