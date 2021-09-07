@@ -141,7 +141,7 @@ halsampledata2 <- halsampledata %>% select(fishing_event_id, sex, length, weight
   new_weight = if_else(!is.na(weight), as.numeric(weight)/1000,  as.numeric(exp(log_weight)))
 )
 
-ggplot(halsampledata2, aes(weight,est_weight)) + geom_point() + geom_abline(b=1, a=1)
+# ggplot(halsampledata2, aes(weight,est_weight)) + geom_point() + geom_abline(b=1, a=1)
 
 # proportion of trawl halibut biomass that belongs to halibut that were large enough to keep
 small <- filter(halsampledata2, length < 81.3)
@@ -234,7 +234,7 @@ years <- sort(unique(d_ye$year))
 
 Scale covariates for models
 ```{r}
-f <- "grids/norca_grid_w_substrate.rds"
+f <- "grids/norca_grid_w_substrate_expanded.rds"
 
 if(!file.exists(f)) {
   stop("Need to run make-grid.Rmd")
@@ -388,9 +388,139 @@ ggsave("figs/hbll-catch-correlations.png", width = 3.5, height = 5.5, dpi = 400)
 
 # Make grids
 
+Prediction grid that covers full outside S HBLL
+
+```{r}
+full_s_grid_utm <- grid_utm %>% filter(longitude < -124.9)
+
+full_s_grid_sf <- st_as_sf(full_s_grid_utm, coords = c("longitude", "latitude"))
+st_crs(full_s_grid_sf) <- 4326 # set the coordinate reference system
+full_s_grid1 <- sfc_as_cols(full_s_grid_sf, c("longitude", "latitude"))
+st_geometry(full_s_grid1) <- NULL
+
+# saveRDS(full_s_grid, file = "data-generated/full_filled_grid_paired.rds")
+```
+
+Trim prediction grid for area 5A 
+
+```{r}
+s_5A_grid_utm <- filter(grid_utm, latitude < 51.24999 & latitude > 50.5) # trims grid to be just area 5A
+s_5A_grid_sf <- st_as_sf(s_5A_grid_utm, coords = c("longitude", "latitude"))
+st_crs(s_5A_grid_sf) <- 4326 # set the coordinate reference system
+s_5A_grid <- sfc_as_cols(s_5A_grid_sf, c("longitude", "latitude"))
+st_geometry(s_5A_grid) <- NULL
+s_5A_grid$region <- "5A"
+# saveRDS(s_5A_grid, file = "data-generated/filled_5A_grid_paired.rds")
+```
+
+Split area 3CD into areas inside and outside court defined area (CDA)
+
+```{r message= F}
+s_3CD_grid_utm <- filter(grid_utm, latitude < 50.5 & longitude < -124.9) # trims grid to be just area 3CD
+s_3CD_grid_sf <- st_as_sf(s_3CD_grid_utm, coords = c("longitude", "latitude"))
+st_crs(s_3CD_grid_sf) <- 4326 # set the coordinate reference system
+# s_grid_sf
+
+focal_area <- sf::st_read(dsn = "shape-files/taaqwiihak_areaVer2.shp", layer = "taaqwiihak_areaVer2")
+focal_area <- sf::st_transform(focal_area, crs = 4326)
+
+intersected <- sf::st_intersects(s_3CD_grid_sf, focal_area)
+
+cda_grid_sf <- s_3CD_grid_sf[which(lengths(intersected) > 0), ]
+noncda_3CD_grid_sf <- s_3CD_grid_sf[which(lengths(intersected) == 0), ]
+
+cda_grid <- sfc_as_cols(cda_grid_sf, c("longitude", "latitude"))
+noncda_3CD_grid <- sfc_as_cols(noncda_3CD_grid_sf, c("longitude", "latitude"))
+st_geometry(cda_grid) <- NULL
+st_geometry(noncda_3CD_grid) <- NULL
+cda_grid$region <- "CDA"
+noncda_3CD_grid$region <- "non-CDA 3CD"
+# saveRDS(cda_grid, file = "data-generated/filled_cda_grid_paired.rds")
+# saveRDS(noncda_3CD_grid, file = "data-generated/filled_noncda_3CD_grid_paired.rds")
+```
+
+Area 3CD5A outside CDA 
+
+```{r message= F}
+noncda_grid <- bind_rows(noncda_3CD_grid, s_5A_grid)
+
+noncda_grid$region <- "non-CDA 3CD5A"
+# saveRDS(noncda_grid, file = "data-generated/filled_noncda_grid_paired.rds")
+
+noncda_gridN <- filter(noncda_grid, latitude > 50)
+noncda_gridN$region <- "3CD5A N"
+
+noncda_gridS <- filter(noncda_grid, latitude <= 50)
+noncda_gridS$region <- "non-CDA 3CD5A S"
+```
+
+Just the HBLL S grid 
+
+```{r message= F}
+hbll_s_grid <- readRDS("data-generated/full_hybrid_grid_w_substrate.rds") %>% 
+  filter(survey == "HBLL")
+hbll_s_grid <- hbll_s_grid[complete.cases(hbll_s_grid), ]
+hbll_s_grid <- expand_prediction_grid(hbll_s_grid, years = years) %>%
+    mutate(depth_centred = log(depth) - mean(d_utm$depth_log)) %>%
+    mutate(depth_scaled = depth_centred / sd(d_utm$depth_centred)) 
+```
+
+
+Merge back into one grid with regions
+
+```{r }
+noncda_gridS_named <- select(noncda_gridS, X, Y, region) 
+noncda_gridN_named <- select(noncda_gridN, X, Y, region) 
+cda_grid_named <- select(cda_grid, X, Y, region) 
+
+region_names <- bind_rows(noncda_gridS_named ,noncda_gridN_named, cda_grid_named) %>% distinct()
+full_s_grid <- left_join(full_s_grid1, region_names)
+
+# remove two partial cells within the Scott Islands RCA
+full_s_grid <- full_s_grid %>% filter(!(latitude < 50.85 & latitude > 50.75 & longitude > -128.94 & longitude < -128.7))
+
+full_s_grid[is.na(full_s_grid$region), ]$region <- "other"
+# saveRDS(full_s_grid, file = "data-generated/full_filled_grid_paired.rds") 
+```
+
+```{r}
+f <- paste0("figs/region-colour-map-3x3.png")
+if (!file.exists(f)) {
+full_s_grid2 <- full_s_grid  
+  
+full_s_grid2$region <- ordered(full_s_grid2$region, 
+  levels = c("CDA", "other", "3CD5A N", "non-CDA 3CD5A S"), 
+  labels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º"))
+
+g1 <- ggplot(full_s_grid2, aes(X,Y, colour = region)) + geom_point() +
+  scale_fill_brewer(palette = "Set1") +
+  scale_colour_brewer("Sub-region", palette = "Set1")
+
+leg <- cowplot::get_legend(g1)
+
+min_map_lat <- 48.3
+# max_map_lat <- 51.4
+min_map_lon <- -130.1
+max_map_lon <- -124.85
+
+g <- map_predictions(
+  pred_data = full_s_grid2,
+  fill_aes = region,
+  fill_lab = "Region",
+  map_lat_limits = c(min_map_lat, 51.25),
+  map_lon_limits = c(min_map_lon, max_map_lon)
+)+ theme(legend.position = "none") +
+  scale_fill_brewer(palette = "Set1") +
+  scale_colour_brewer(palette = "Set1")
+g <- g + leg + patchwork::plot_layout(widths = c(1, 0.55))
+ggsave("figs/region-colour-map-3x3-expanded.png", width = 5, height = 3, dpi = 300)
+}
+```
+
+### Make map of grids
 ```{r}
 # make map of grid areas and their overlap
-f <- "figs/map-stitched-grid-overlap.png"
+f <- "figs/map-stitched-grid-overlap-expanded.png"
 
 if (!file.exists(f)) {
 coast_gshhg_proj <- readRDS("data-generated/coast_gshhg.rds")
@@ -421,6 +551,9 @@ library(PBSmapping) # needs this for some reason
   bound3Dnorth <- fortify(majorbound) %>%
     filter(PID %in% c(4)) %>%
     filter(X > 200 & X < 600 & Y > 5550)
+  bound3Csouth <- fortify(majorbound) %>%
+    filter(PID %in% c(3)) %>%
+    filter(X > 200 & X < 900 & Y < 5420) #%>%
 
   
 hbll_s_grid <- readRDS(here::here("grids/hbll_s_grid.rds"))
@@ -465,13 +598,35 @@ trawl_sf_grid <- trawl_sf_grid[unlist(keep)]
 trawl_sf2 <- st_as_sf(trawl_sf_grid)
 trawl_sf2$source_data <- "TRAWL"
 
+# full_s_grid_utm <- grid_utm
+# full_s_grid_sf <- st_as_sf(full_s_grid_utm, coords = c("longitude", "latitude"))
+# st_crs(full_s_grid_sf) <- 4326 # set the coordinate reference system
+# 
+# full_s_grid_sf2 <- st_transform(full_s_grid_sf, crs = 3156)
+# full_sf_grid <- sf::st_make_grid(x = full_s_grid_sf2,
+#   offset = st_bbox(hbll_sf)[c("xmin", "ymin")]+ c(-1000, -1000),
+#   cellsize=c(2000, 2000))
+# keep <- st_intersects(full_s_grid_sf2, full_sf_grid)
+# full_sf_grid <- full_sf_grid[unlist(keep)]
+# full_sf_grid2 <- st_as_sf(full_sf_grid)
+
+
 g <- ggplot(focal_area_proj) +
-  # geom_tile(data=grid_utm,  aes(X* 100000, Y* 100000, fill = source_data), 
-  #   alpha = 0.75, width = 2000, height = 2000) +
+  # geom_sf(data=full_sf_grid2, fill = "white", colour = NA, alpha = 0.9) +
+  geom_tile(data = full_s_grid, aes(X * 100000, Y * 100000),
+        # colour = "white", fill = "white", #colour = NA,
+        colour = "grey85", fill = "grey85", #colour = NA,
+        width = 2000, height = 2000) +
+  # geom_sf(data=full_sf_grid2, fill = "grey90", colour = NA, alpha = 0.9) +
   geom_sf(data=trawl_sf2,  aes(fill = source_data), colour = NA,
     alpha = 0.9) +
   geom_sf(data=hbll_sf2,  aes(fill = source_data), colour = NA,
-    alpha = 0.8) +
+    alpha = 0.7) +
+  geom_line( # add major management region boundaries
+      data = bound3Csouth,
+      aes(X * 1e3, Y * 1e3), colour = "grey20", lty = 1,
+      inherit.aes = F
+    ) +
    geom_line( # add major management region boundaries
       data = bound3Cnorth,
       aes(X * 1e3, Y * 1e3), colour = "grey20", lty = 1,
@@ -500,154 +655,56 @@ g <- ggplot(focal_area_proj) +
       x = convert2utm9(-129.8, 48.8)[1],
       y = convert2utm9(-129.8, 48.8)[2],
       label = "3C") +
-   
   scale_fill_viridis_d(name = "Survey", begin = 0.2, end = 0.5, direction = -1) +
   geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
   geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey99", col = "grey55") +
   coord_sf(
-      xlim = c(230957.7 + 205000, 1157991 - 385000),
-      ylim = c(5366427 + 25000, 6353456 - 590000)
+      # xlim = c(230957.7 + 205000, 1157991 - 385000),
+      # ylim = c(5366427 + 25000, 6353456 - 590000)
+      xlim = c(230957.7 + 205000, 1157991 - 370000),
+      ylim = c(5366427 + 2000, 6353456 - 590000)
     ) +
    annotate("text",
       x = convert2utm9(-126.25, 50.1)[1],
       y = convert2utm9(-126.25, 50.1)[2],
-      colour = "gray",
+      colour = "gray65",
      size = 3.5,
       label = "Vancouver\nIsland") +
   annotate("text",
       x = convert2utm9(-126.1, 51.4)[1],
       y = convert2utm9(-126.1, 51.4)[2],
-      colour = "gray",
+      colour = "gray65",
     size = 5,
       label = "British\nColumbia") +
   ggsidekick::theme_sleek() + theme(
-      legend.key = element_rect(colour = NA, fill = "grey75"),
+      panel.grid.major = element_line(colour = "grey60", size = 0.3),
+      legend.key = element_rect(colour = NA, fill = "grey70"),
       axis.title = element_blank(),
       legend.box.background = element_rect(color = NA, size = 1, fill = "#ffffff90"),
       legend.position = c(0.99, 0.99),
       legend.justification = c(1, 1),
-      panel.background = element_rect(color = NA, size = 1, fill = "grey75")) 
+      panel.background = element_rect(color = NA, size = 1, fill = "grey70")) 
 
-ggsave("figs/map-stitched-grid-overlap.png", width = 5.5, height = 5.5, dpi = 400)
+ggsave("figs/map-stitched-grid-overlap-expanded2.png", width = 5.5, height = 5.5, dpi = 400)
 }
 ```
 
 
-Prediction grid that covers full outside S HBLL
+```{r eval = F}
+full_s_grid2 <- filter(full_s_grid, area < 4000000)
+full_s_grid3 <- filter(full_s_grid, latitude < 50.85 & latitude > 50.75 & longitude > -128.94 & longitude < -128.7)
 
-```{r}
-full_s_grid_utm <- grid_utm
-full_s_grid_sf <- st_as_sf(full_s_grid_utm, coords = c("longitude", "latitude"))
-st_crs(full_s_grid_sf) <- 4326 # set the coordinate reference system
-full_s_grid1 <- sfc_as_cols(full_s_grid_sf, c("longitude", "latitude"))
-st_geometry(full_s_grid1) <- NULL
+full_s_grid3$area/1000000
 
-# saveRDS(full_s_grid, file = "data-generated/full_filled_grid_paired.rds")
+ggplot() + geom_point(data = filter(full_s_grid, 
+    latitude < 50.9 & latitude > 50.5 & longitude > -128.99 & longitude < -128.5
+    ), aes(longitude, latitude),
+        colour = "grey85", fill = "grey85") +
+  geom_point(data = filter(full_s_grid, 
+    latitude < 50.85 & latitude > 50.75 & longitude > -128.94 & longitude < -128.7
+    ), aes(longitude, latitude))
 ```
 
-Trim prediction grid for area 5A 
-
-```{r}
-s_5A_grid_utm <- filter(grid_utm, latitude < 51.24999 & latitude > 50.5) # trims grid to be just area 5A
-s_5A_grid_sf <- st_as_sf(s_5A_grid_utm, coords = c("longitude", "latitude"))
-st_crs(s_5A_grid_sf) <- 4326 # set the coordinate reference system
-s_5A_grid <- sfc_as_cols(s_5A_grid_sf, c("longitude", "latitude"))
-st_geometry(s_5A_grid) <- NULL
-s_5A_grid$region <- "5A"
-saveRDS(s_5A_grid, file = "data-generated/filled_5A_grid_paired.rds")
-```
-
-Split area 3CD into areas inside and outside court defined area (CDA)
-
-```{r message= F}
-s_3CD_grid_utm <- filter(grid_utm, latitude < 50.5) # trims grid to be just area 3CD
-s_3CD_grid_sf <- st_as_sf(s_3CD_grid_utm, coords = c("longitude", "latitude"))
-st_crs(s_3CD_grid_sf) <- 4326 # set the coordinate reference system
-# s_grid_sf
-
-focal_area <- sf::st_read(dsn = "shape-files/taaqwiihak_areaVer2.shp", layer = "taaqwiihak_areaVer2")
-focal_area <- sf::st_transform(focal_area, crs = 4326)
-
-intersected <- sf::st_intersects(s_3CD_grid_sf, focal_area)
-
-cda_grid_sf <- s_3CD_grid_sf[which(lengths(intersected) > 0), ]
-noncda_3CD_grid_sf <- s_3CD_grid_sf[which(lengths(intersected) == 0), ]
-
-cda_grid <- sfc_as_cols(cda_grid_sf, c("longitude", "latitude"))
-noncda_3CD_grid <- sfc_as_cols(noncda_3CD_grid_sf, c("longitude", "latitude"))
-st_geometry(cda_grid) <- NULL
-st_geometry(noncda_3CD_grid) <- NULL
-cda_grid$region <- "CDA"
-noncda_3CD_grid$region <- "non-CDA 3CD"
-saveRDS(cda_grid, file = "data-generated/filled_cda_grid_paired.rds")
-saveRDS(noncda_3CD_grid, file = "data-generated/filled_noncda_3CD_grid_paired.rds")
-```
-
-Area 3CD5A outside CDA 
-
-```{r message= F}
-noncda_grid <- bind_rows(noncda_3CD_grid, s_5A_grid)
-
-noncda_grid$region <- "non-CDA 3CD5A"
-saveRDS(noncda_grid, file = "data-generated/filled_noncda_grid_paired.rds")
-
-noncda_gridN <- filter(noncda_grid, latitude > 50)
-noncda_gridN$region <- "3CD5A N"
-
-noncda_gridS <- filter(noncda_grid, latitude <= 50)
-noncda_gridS$region <- "non-CDA 3CD5A S"
-```
-
-Just the HBLL S grid 
-
-```{r message= F}
-hbll_s_grid <- readRDS("data-generated/full_hybrid_grid_w_substrate.rds") %>% filter(survey == "HBLL")
-hbll_s_grid <- hbll_s_grid[complete.cases(hbll_s_grid), ]
-hbll_s_grid <- expand_prediction_grid(hbll_s_grid, years = years) %>%
-    mutate(depth_centred = log(depth) - mean(d_utm$depth_log)) %>%
-    mutate(depth_scaled = depth_centred / sd(d_utm$depth_centred)) 
-```
-
-
-Merge back into one grid with regions
-
-```{r }
-noncda_gridS_named <- select(noncda_gridS, X, Y, region) 
-noncda_gridN_named <- select(noncda_gridN, X, Y, region) 
-cda_grid_named <- select(cda_grid, X, Y, region) 
-
-region_names <- bind_rows(noncda_gridS_named ,noncda_gridN_named, cda_grid_named) %>% distinct()
-full_s_grid <- left_join(full_s_grid1, region_names)
-full_s_grid[is.na(full_s_grid$region), ]$region <- "other"
-saveRDS(full_s_grid, file = "data-generated/full_filled_grid_paired.rds") 
-```
-
-```{r}
-f <- paste0("figs/region-colour-map-3x3.png")
-if (!file.exists(f)) {
-full_s_grid$region <- ordered(full_s_grid$region, 
-  levels = c("CDA", "other", "3CD5A N", "non-CDA 3CD5A S"), 
-  labels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º"))
-
-g1 <- ggplot(full_s_grid, aes(X,Y, colour = region)) + geom_point() +
-  scale_fill_brewer(palette = "Set1") +
-  scale_colour_brewer("Sub-region", palette = "Set1")
-
-leg <- cowplot::get_legend(g1)
-
-g <- map_predictions(
-  pred_data = full_s_grid,
-  fill_aes = region,
-  fill_lab = "Region",
-  map_lat_limits = c(48.6, 51.25),
-  map_lon_limits = c(min_map_lon, max_map_lon)
-)+
-  scale_fill_brewer(palette = "Set1") +
-  scale_colour_brewer(palette = "Set1")
-g <- g + leg + patchwork::plot_layout(widths = c(1, 0.55))
-ggsave("figs/region-colour-map-3x3.png", width = 5, height = 3, dpi = 300)
-}
-```
 
 # Make relatively finescale mesh
 
@@ -848,7 +905,6 @@ if (!file.exists(f)) {
 
 ```{r}
 m_ye <- readRDS(file = "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn.rds")
-m_ye0 <- readRDS(file = "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn-no-anisotropy.rds")
 ```
 
 ## Comparing models
@@ -859,6 +915,8 @@ AIC(m_ye)
 tidy(m_ye, "ran_pars", conf.int = TRUE)
 
 print("without anisotropy")
+
+m_ye0 <- readRDS(file = "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn-no-anisotropy.rds")
 # m_ye0
 AIC(m_ye0) # worse by > 10 AIC
 ```
@@ -1010,45 +1068,6 @@ if (!file.exists(f)) {
 }
 ```
 
-```{r eval = T, echo=F}
-f <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-all-S-sim2.rds"
-if (!file.exists(f)) {
-
-  p_hal_S_bin <- predict(m_halibut_bin, newdata = full_s_grid, se_fit = F, sims = 500)
-  p_hal_S_pos <- predict(m_halibut_pos, newdata = full_s_grid, se_fit = F, sims = 500)
-  
-  p_hal_S <- full_s_grid
-  
-  p_hal_S_combined <- log(plogis(p_hal_S_bin) * exp(p_hal_S_pos))
-  p_hal_S$est <- apply(p_hal_S_combined, 1, function(x) {median(x)})
-  
-  
-  # p_hal_S_bin_out <- apply(p_hal_S_bin, 1, function(x) {median(x)})
-  # p_hal_S_pos_out <- apply(p_hal_S_pos, 1, function(x) {median(x)})
-  # p_hal_S$est <- log(plogis(p_hal_S_bin_out) * exp(p_hal_S_pos_out))
-  
-# p_hal_S_bin_out <- apply(p_hal_S_bin, 1, function(x) {
-#   data.frame(est = median(x))
-# })
-# p_hal_S_bin_out <- do.call("rbind", p_hal_S_bin_out)
-# p_hal_S_bin_out <- p_hal_S_bin_out[, c("est"), drop = FALSE]
-# 
-# p_hal_S_bin2 <- bind_cols(full_s_grid, p_hal_S_bin_out)
-# 
-# p_hal_S_pos_out <- apply(p_hal_S_pos, 1, function(x) {
-#   data.frame(est = median(x)
-#   )
-# })
-# p_hal_S_pos_out <- do.call("rbind", p_hal_S_pos_out)
-# p_hal_S_pos_out <- p_hal_S_pos_out[, c("est"), drop = FALSE]
-# 
-# p_hal_S_pos2 <- bind_cols(full_s_grid, p_hal_S_pos_out)
-#  
-# p_hal_S$data$est <- log(plogis(p_hal_S_bin2$est) * exp(p_hal_S_pos2$est))
-  
-  saveRDS(p_hal_S, f)
-}
-```
 
 Non-CDA 3CD5A
 
@@ -1133,64 +1152,6 @@ if (!file.exists(ss)) {
 
 ## Yelloweye Rockfish 
 
-For CDA only 
-
-```{r eval = TRUE, echo=F}
-f <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-cda.rds"
-if (!file.exists(f)) {
-  p_ye_cda <- predict(m_ye, newdata = cda_grid, return_tmb_object = TRUE)
-  saveRDS(p_ye_cda, "data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-cda.rds")
-
-  i_ye_cda <- get_index(p_ye_cda, bias_correct = F)
-  saveRDS(i_ye_cda, f)
-}
-
-## duplicates subregions saved in chunk ye-sim-subregions
-# ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-cda-sim-500.rds"
-# if (!file.exists(ss)) {
-#   i_ye_cda2 <- get_all_sims(m_ye, newdata = cda_grid)
-#   saveRDS(i_ye_cda2, ss)
-# }
-```
-
-For 5A3CD outside CDA 
-
-```{r eval = T, echo=F}
-f <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda.rds"
-if (!file.exists(f)) {
-  p_ye_noncda <- predict(m_ye, newdata = noncda_grid, return_tmb_object = TRUE)
-  saveRDS(p_ye_noncda, "data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-5A3CD-outside-cda.rds")
-
-  i_ye_noncda <- get_index(p_ye_noncda, bias_correct = F)
-  saveRDS(i_ye_noncda, f)
-}
-
-ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"
-if (!file.exists(ss)) {
-  i_ye_noncda2 <- get_all_sims(m_ye, newdata = noncda_grid, split_by_region = F)
-  saveRDS(i_ye_noncda2, ss)
-}
-```
-
-
-```{r eval = F, echo=F}
-# # For area 5A 
-# f <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A.rds"
-# if (!file.exists(f)) {
-#   p_ye_5A <- predict(m_ye, newdata = s_5A_grid, return_tmb_object = TRUE)
-#   saveRDS(p_ye_5A, "data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-5A.rds")
-# 
-#   i_ye_5A <- get_index(p_ye_5A, bias_correct = F)
-#   saveRDS(i_ye_5A, f)
-# }
-# 
-# # ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A-sim-500.rds"
-# # if (!file.exists(ss)) {
-# #   i_ye_5A2 <- get_all_sims(m_ye, newdata = s_5A_grid)
-# #   saveRDS(i_ye_5A2, ss)
-# # }
-```
-
 For entire filled in southern outside HBLL grid including CDA, but excluding RCAs.
 This is roughly equivilant to entire southern outside yelloweye stock.  
 
@@ -1210,6 +1171,53 @@ if (!file.exists(f)) {
 #   saveRDS(i_ye_S2, ss)
 # }
 ```
+
+For 5A3CD outside CDA 
+
+```{r eval = T, echo=F}
+s0 <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"
+
+if (!file.exists(s0)) {
+  i_ye_noncda <- get_all_sims(m_ye, newdata = noncda_grid, split_by_region = F)
+  saveRDS(i_ye_noncda, s0)
+}
+
+# f <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda.rds"
+# if (!file.exists(f)) {
+#   p_ye_noncda <- predict(m_ye, newdata = noncda_grid, return_tmb_object = TRUE)
+#   saveRDS(p_ye_noncda, "data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-5A3CD-outside-cda.rds")
+# 
+#   i_ye_noncda <- get_index(p_ye_noncda, bias_correct = F)
+#   saveRDS(i_ye_noncda, f)
+# }
+# 
+# ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"
+# if (!file.exists(ss)) {
+#   i_ye_noncda2 <- get_all_sims(m_ye, newdata = noncda_grid, split_by_region = F)
+#   saveRDS(i_ye_noncda2, ss)
+# }
+```
+
+
+```{r eval = TRUE, echo=F}
+## For CDA only 
+# f <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-cda.rds"
+# if (!file.exists(f)) {
+#   p_ye_cda <- predict(m_ye, newdata = cda_grid, return_tmb_object = TRUE)
+#   saveRDS(p_ye_cda, "data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-cda.rds")
+# 
+#   i_ye_cda <- get_index(p_ye_cda, bias_correct = F)
+#   saveRDS(i_ye_cda, f)
+# }
+# 
+# ## duplicates subregions saved in chunk ye-sim-subregions
+# # ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-cda-sim-500.rds"
+# # if (!file.exists(ss)) {
+# #   i_ye_cda2 <- get_all_sims(m_ye, newdata = cda_grid)
+# #   saveRDS(i_ye_cda2, ss)
+# # }
+```
+
 
 For subregions using same batch of simulations
 
@@ -1252,7 +1260,6 @@ if (!file.exists(s5)) {
   i_ye_other <- i_ye_combined[[5]] 
   saveRDS(i_ye_other, s5)
 }
-
 ```
 
 For just southern outside HBLL 
@@ -1278,7 +1285,7 @@ if (!file.exists(ss)) {
 # }
 ```
 
-Just simulated indices for report
+# Just simulated indices for report
 ```{r}
 i_ye <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-all-S-sim-500.rds"))[[1]]
 saveRDS(i_ye, here("report-data/filled-keepable-yelloweye-est-rock-mud-index-all-S-sim-500.rds"))
@@ -1315,6 +1322,46 @@ plot(est_delta~est, data=p)
 abline(a = 0, b = 1, lty = 2)
 ```
 
+
+```{r eval = F, echo=F}
+f <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-all-S-sim2.rds"
+if (!file.exists(f)) {
+
+  p_hal_S_bin <- predict(m_halibut_bin, newdata = full_s_grid, se_fit = F, sims = 500)
+  p_hal_S_pos <- predict(m_halibut_pos, newdata = full_s_grid, se_fit = F, sims = 500)
+  
+  p_hal_S <- full_s_grid
+  
+  p_hal_S_combined <- log(plogis(p_hal_S_bin) * exp(p_hal_S_pos))
+  p_hal_S$est <- apply(p_hal_S_combined, 1, function(x) {median(x)})
+  
+  
+  # p_hal_S_bin_out <- apply(p_hal_S_bin, 1, function(x) {median(x)})
+  # p_hal_S_pos_out <- apply(p_hal_S_pos, 1, function(x) {median(x)})
+  # p_hal_S$est <- log(plogis(p_hal_S_bin_out) * exp(p_hal_S_pos_out))
+  
+# p_hal_S_bin_out <- apply(p_hal_S_bin, 1, function(x) {
+#   data.frame(est = median(x))
+# })
+# p_hal_S_bin_out <- do.call("rbind", p_hal_S_bin_out)
+# p_hal_S_bin_out <- p_hal_S_bin_out[, c("est"), drop = FALSE]
+# 
+# p_hal_S_bin2 <- bind_cols(full_s_grid, p_hal_S_bin_out)
+# 
+# p_hal_S_pos_out <- apply(p_hal_S_pos, 1, function(x) {
+#   data.frame(est = median(x)
+#   )
+# })
+# p_hal_S_pos_out <- do.call("rbind", p_hal_S_pos_out)
+# p_hal_S_pos_out <- p_hal_S_pos_out[, c("est"), drop = FALSE]
+# 
+# p_hal_S_pos2 <- bind_cols(full_s_grid, p_hal_S_pos_out)
+#  
+# p_hal_S$data$est <- log(plogis(p_hal_S_bin2$est) * exp(p_hal_S_pos2$est))
+  
+  saveRDS(p_hal_S, f)
+}
+```
 
 
 ```{r eval = F}
@@ -1516,7 +1563,8 @@ g_i_hal <- ggplot(.datH, aes(year, est/1000, fill = Area, colour = Area)) + # co
   xlab("Year") +
   ylab("Biomass index (landable tonnes)") +
   ggtitle("A. Pacific Halibut") +
-  coord_cartesian(expand = FALSE, ylim = c(0, max(.datH$upr)/1000)) +
+  coord_cartesian( #expand = FALSE, 
+    ylim = c(0, max(.datH$upr)/1000)) +
   # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
   scale_x_continuous(
     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
@@ -1578,7 +1626,8 @@ g_i_hal  <- g_i_hal + theme(
   axis.title.x = element_blank(),axis.text.x = element_blank(),
   legend.position = "none")
 g_i_ye <- g_i_ye + 
-  coord_cartesian(ylim = c(0, max(.datH$est)/1000)) +
+  coord_cartesian(#expand =F, 
+    ylim = c(0, max(.datH$est)/1000)) +
   theme(
       # axis.title.y = element_blank(),axis.text.y = element_blank(),
       legend.position = c(0.75, 0.75))   
@@ -2004,7 +2053,8 @@ ggplot(.dat2, aes(year, ye_per_hal, fill = Area, colour = Area)) +
   scale_x_continuous(
     labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
     breaks = seq(2008, 2020, 2)) + 
-  theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
+  theme(legend.position = c(0.75, 0.8),
+    plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
   scale_fill_brewer(palette = "Set1") +
   scale_colour_brewer(palette = "Set1")
 ggsave("figs/filled-keepable-ye-to-hal-index-est-rock-mud.png", width = 7, height = 3.4, dpi = 400)
@@ -2058,18 +2108,33 @@ HBLL catch is converted to a biomass density by multiplying by the area swept pe
 TRAWL catch is converted to an adjusted biomass density by adjusting for lower catchability in trawl and the average proportion of biomass caught that belongs to "landable" individuals based on either set specific samples or the global mean. 
 
 
-```{r message=F, echo=F}
+```{r echo=F}
+# set map boundaries
+# min_map_lat <- 48.3
 max_map_lat <- 51.4
 min_map_lon <- -130.1
-max_map_lon <- -125
+# max_map_lon <- -124.9
+min_map_lat2 <- 48.6
+max_map_lat2 <- 50.01
+min_map_lon2 <- -127.9
+max_map_lon2 <- -125.2
+
+
+min_map_lat <- 48.3
+max_map_lon <- -124.85
 
 bs <- tidy(m_halibut_tweedie)
 # bs[bs$term == "as.factor(survey)TRAWL",2]
 # exp(bs[bs$term == "as.factor(survey)TRAWL",2])
+bjye <- tidy(m_ye)
+```
 
+
+```{r message=F, echo=F}
 p_hal2020 <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-all-S.rds")[[1]] %>%
   # plot observations for last 3 years to ensure sampling in all regions
   filter(latitude < max_map_lat) %>%
+  filter(!(latitude < 50.85 & latitude > 50.75 & longitude > -128.94 & longitude < -128.7)) %>% 
   filter(year == 2020)
 
 d_hal_plots <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
@@ -2087,31 +2152,27 @@ d_hal_plots <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") 
 
 g <- map_predictions(
   pred_data = p_hal2020,
-  # pred_min = min(exp(p_hal2020$est), na.rm = T),
-  # pred_max = quantile(exp(p_hal2020$est), 0.9999, na.rm = T),
+  pred_min = 0, #min(exp(p_hal2020$est), na.rm = T),
+  pred_max = quantile(exp(p_hal2020$est), 0.995, na.rm = T),
   obs_data = d_hal_plots,
   fill_lab = "Predicted kg/ha",
   # pred_min = min(exp(p_hal2020$est), na.rm = T),
   # pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
-  map_lat_limits = c(48.6, max_map_lat),
+  map_lat_limits = c(min_map_lat , max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
   # col_aes = Survey,
-  size_lab = "Landable\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
+  size_lab = "Landable kg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
   size_aes = density #_adj
   # size_lab = "Adjusted catch\ncounts", #2018-2020\observed catch\nper 100 hook\nequivalent
   # size_aes = catch_equiv 
 )+theme(legend.spacing.y = unit(0.1, "cm"))
 g
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/filled-keepable-halibut-delta-2020-predictions-est-rock-mud.png", width = 6, height = 5, dpi = 400)
+ggsave("figs/filled-keepable-halibut-delta-2020-predictions-est-rock-mud.png", width = 6, height = 5.5, dpi = 400)
 ```
 
 Close up of CDA 
 ```{r message=F, echo=F}
-max_map_lat2 <- 50.01
-min_map_lon2 <- -127.9
-max_map_lon2 <- -125.2
-
 p_hal2020 <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-all-S.rds")[[1]] %>%
   # plot observations for last 3 years to ensure sampling in all regions
   filter(latitude < max_map_lat2) %>%
@@ -2131,12 +2192,12 @@ d_hal_plots <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") 
 
 g <- map_predictions(
   pred_data = p_hal2020,
-  pred_min = min(exp(p_hal2020$est), na.rm = T),
-  pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
+  pred_min = 0, #min(exp(p_hal2020$est), na.rm = T),
+  pred_max = quantile(exp(p_hal2020$est), 0.995, na.rm = T), #max(exp(p_hal2020$est)), #
   obs_data = d_hal_plots,
   fill_lab = "Predicted\nkg/ha",
   max_size_obs = 6,
-  map_lat_limits = c(48.6, max_map_lat2),
+  map_lat_limits = c(min_map_lat2, max_map_lat2),
   map_lon_limits = c(min_map_lon2, max_map_lon2),
   size_lab = "Landable\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
   size_aes = density #_adj
@@ -2155,7 +2216,7 @@ years <- unique(p_hal$data$year)
 p_hal_d <- p_hal$data 
 
 f <- "figs/filled-keepable-halibut-delta-predictions-est-rock-mud.png"
-if (!file.exists(f)) {
+# if (!file.exists(f)) {
   
 d_hal_facet <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
   filter(latitude < 52.15507) %>% filter(year %in% years) %>% 
@@ -2178,12 +2239,12 @@ d_hal_facet <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") 
 
 g <- map_predictions(
   pred_data = p_hal_d,
-  pred_min = min(exp(p_hal_d$est), na.rm = T),
-  pred_max = quantile(exp(p_hal_d$est), 0.99, na.rm = T),
+  pred_min = 0, #min(exp(p_hal_d$est), na.rm = T),
+  pred_max = quantile(exp(p_hal_d$est), 0.995, na.rm = T),
   obs_data = d_hal_facet,
-  fill_lab = "Predicted kg/ha",
+  fill_lab = "Predicted\nkg/ha",
   legend_position = "right",
-  map_lat_limits = c(48.6, max_map_lat),
+  map_lat_limits = c(min_map_lat, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
   size_lab = "Landable\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
   size_aes = density #_adj
@@ -2194,7 +2255,7 @@ g <- map_predictions(
 # g <- g + theme(legend.position = c(0.35, 0), legend.justification = c(0,0))
 
 ggsave("figs/filled-keepable-halibut-delta-predictions-est-rock-mud.png", width = 10, height = 8, dpi = 200)
-}
+# }
 ```
 
 
@@ -2203,9 +2264,8 @@ ggsave("figs/filled-keepable-halibut-delta-predictions-est-rock-mud.png", width 
 2020 predictions with all survey catches in 2018 through 2020
 
 ```{r message=F, echo=F}
-bjye <- tidy(m_ye)
-
 p_ye <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-all-S.rds")[[1]] %>% 
+  filter(!(latitude < 50.85 & latitude > 50.75 & longitude > -128.94 & longitude < -128.7)) %>% 
   filter(year == 2020)
 d_ye_plots <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>%
   filter(latitude < 52.15507)  %>% filter(year %in% c(#2017,
@@ -2221,18 +2281,20 @@ d_ye_plots <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>
 
 g <- map_predictions(
   pred_data = p_ye,
-  fill_lab = "Predicted kg/ha",
+  pred_min = 0,
+  pred_max = quantile(exp(p_ye$est), 0.995),
+  fill_lab = "Predicted kg/ha", #\n
   obs_data = d_ye_plots,  
-  map_lat_limits = c(48.6, max_map_lat),
+  map_lat_limits = c(min_map_lat, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
-  size_lab = "Observed\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
+  size_lab = "Observed kg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
   size_aes = density#_adj
   # size_lab = "Observed catch\nper 100 hook\nequivalent",
   # size_aes = catch_equiv 
 ) + theme(legend.spacing.y = unit(0.1, "cm"))
 g
 dir.create("figs", showWarnings = FALSE)
-ggsave("figs/filled-keepable-yelloweye-2020-predictions-est-rock-mud.png", width = 6, height = 5, dpi = 400)
+ggsave("figs/filled-keepable-yelloweye-2020-predictions-est-rock-mud.png", width = 6, height = 5.5, dpi = 400)
 ```
 
 Close up of CDA with 2018 to 2020 catch
@@ -2257,11 +2319,11 @@ d_ye_plots <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>
 
 g <- map_predictions(
   pred_data = p_ye,
-  pred_min = min(exp(p_ye$est), na.rm = T),
-  pred_max = quantile(exp(p_ye$est), 0.99, na.rm = T),
+  pred_min = 0, #min(exp(p_ye$est), na.rm = T),
+  pred_max = quantile(exp(p_ye$est), 0.995, na.rm = T),
   fill_lab = "Predicted\nkg/ha",
   obs_data = d_ye_plots,  
-  map_lat_limits = c(48.6, max_map_lat2),
+  map_lat_limits = c(min_map_lat2, max_map_lat2),
   map_lon_limits = c(min_map_lon2, max_map_lon2),
   size_lab = "Observed\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
   size_aes = density#_adj
@@ -2306,11 +2368,11 @@ d_ye_facet <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>
 g <- map_predictions(
   pred_data = p_ye_d,
   obs_data = d_ye_facet,
-  fill_lab = "Predicted kg/ha",
-  pred_min = min(exp(p_ye$data$est), na.rm = T),
-  pred_max = quantile(exp(p_ye$data$est), 0.99, na.rm = T),
+  fill_lab = "Predicted\nkg/ha",
+  pred_min = 0, #min(exp(p_ye$data$est), na.rm = T),
+  pred_max = quantile(exp(p_ye$data$est), 0.995, na.rm = T),
   legend_position = "right",
-  map_lat_limits = c(48.6, max_map_lat),
+  map_lat_limits = c(min_map_lat, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
   size_lab = "Observed\nkg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
   size_aes = density#_adj
@@ -2355,11 +2417,11 @@ g <- map_predictions(
   # obs_data = d_ye_plots,
   # size_aes = (catch_count / hook_count) * 100,
   # size_lab = "Halibut caught\nper 100 hooks in 2020",
-  map_lat_limits = c(48.6, max_map_lat),
+  map_lat_limits = c(48.4, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
   pred_data = ratio_df_2020,
   pred_min = 0,
-  pred_max = quantile(ratio_df_2020$ye_per_hal, 0.99),
+  pred_max = quantile(ratio_df_2020$ye_per_hal, 0.995),
   # pred_max = max(d_ye$catch_count, na.rm = T)/ mean(d_ye$hook_count, na.rm = T) * 100,
   fill_aes = ye_per_hal, fill_lab = "Yelloweye to Halibut\nbiomass ratio"
 )
@@ -2370,7 +2432,6 @@ ggsave("figs/filled-ye-to-halibut-2020-keepable-delta.png",
   width = 5.5, height = 4.5, dpi = 400
   # width = 6, height = 5, dpi = 200
   )
-# ggsave("figs/filled-keepable-ye-to-halibut-2020-w-hal-catch-S.pdf", width = 5.5, height = 6, dpi = 400)
 ```
 
 ## Ratio of halibut to yelloweye
@@ -2383,40 +2444,43 @@ g <- map_predictions(
   # obs_data = filter(d_hal, year %in% c(2018, 2019,2020)),
   # size_aes = density,
   # size_lab = "Halibut caught\nper 100 hooks",
-  map_lat_limits = c(48.6, max_map_lat),
+  map_lat_limits = c(48.4, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
   pred_min = 0,
-  pred_max = max(ratio_df_2020$hal_per_ye, na.rm = T),
+  pred_max = quantile(ratio_df_2020$hal_per_ye, 0.995),
   fill_aes = hal_per_ye, 
   fill_lab = "Halibut to yelloweye\nbiomass ratio"
 )
 g
 
-dir.create("figs", showWarnings = FALSE)
 ggsave("figs/filled-halibut-to-ye-2020-keepable-delta.png", 
   width = 5.5, height = 4.5, dpi = 400
   # width = 6, height = 5, dpi = 200
   )
 ```
 
-### Overlay hotspot shape file 
+# Overlay hotspot shape file 
 
-```{r}
+```{r message=F, echo=F}
 hotspots <- sf::st_read(dsn = "shape-files/Hotspot1820_shape/HD_P18C20.shp",
     layer = "HD_P18C20", quiet = TRUE)
 hotspots_proj <- sf::st_transform(hotspots, crs = 3156)
+```
 
+```{r message=F, echo=F}
+
+min_map_lat3 <- 48.4
 g <- map_predictions(
-  map_lat_limits = c(48.6, max_map_lat),
+  map_lat_limits = c(min_map_lat, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
   pred_data = ratio_df_2020,
   pred_min = 0,
-  pred_max = quantile(ratio_df_2020$ye_per_hal, 0.99),
+  pred_max = quantile(ratio_df_2020$ye_per_hal, 0.995),
   fill_aes = ye_per_hal, fill_lab = "Yelloweye to Halibut\nbiomass ratio"
 ) + geom_sf(data = hotspots_proj, colour = "white", fill = NA, size = 0.50)+
     coord_sf(expand = F,
       xlim = c(convert2utm9(c(min_map_lon, max_map_lon)[1], 50.0)[1], convert2utm9(c(min_map_lon, max_map_lon)[2], 50.0)[1]),
-      ylim = c(convert2utm9(-130,c(48.6, max_map_lat)[1])[2], convert2utm9(-130, c(48.6, max_map_lat)[2])[2])
+      ylim = c(convert2utm9(-130,c(min_map_lat3 , max_map_lat)[1])[2], convert2utm9(-130, c(min_map_lat3, max_map_lat)[2])[2])
     )
 g
 ggsave("figs/filled-ye-to-halibut-2020-w-hotspots.png", 
@@ -2425,6 +2489,51 @@ ggsave("figs/filled-ye-to-halibut-2020-w-hotspots.png",
   )
 ```
 
+```{r message=F, echo=F}
+g <- map_predictions(
+  pred_data = ratio_df_2020,
+  map_lat_limits = c(min_map_lat3, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon),
+  pred_min = 0,
+  pred_max = quantile(ratio_df_2020$hal_per_ye, 0.995),
+  fill_aes = hal_per_ye, 
+  fill_lab = "Halibut to yelloweye\nbiomass ratio"
+)+ geom_sf(data = hotspots_proj, colour = "white", fill = NA, size = 0.50)+
+    coord_sf(expand = F,
+      xlim = c(convert2utm9(c(min_map_lon, max_map_lon)[1], 50.0)[1], convert2utm9(c(min_map_lon, max_map_lon)[2], 50.0)[1]),
+      ylim = c(convert2utm9(-130,c(min_map_lat3, max_map_lat)[1])[2], convert2utm9(-130, c(min_map_lat3, max_map_lat)[2])[2])
+    )
+g
+ggsave("figs/filled-halibut-to-ye-2020-w-hotspots.png", 
+  width = 5.5, height = 4.5, dpi = 400
+  # width = 6, height = 5, dpi = 200
+  )
+```
+
+
+```{r message=F, echo=F}
+p_ye <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-all-S.rds")[[1]] %>% 
+  filter(year == 2020)
+
+g <- map_predictions(
+  pred_data = p_ye,
+  fill_lab = "Predicted kg/ha", 
+  map_lat_limits = c(min_map_lat3, max_map_lat),
+  pred_min = 0,
+  pred_max = quantile(exp(p_ye$est), 0.995),
+  map_lon_limits = c(min_map_lon, max_map_lon)
+) + geom_sf(data = hotspots_proj, colour = "white", fill = NA, size = 0.50)+
+    coord_sf(expand = F,
+      xlim = c(convert2utm9(c(min_map_lon, max_map_lon)[1], 50.0)[1], convert2utm9(c(min_map_lon, max_map_lon)[2], 50.0)[1]),
+      ylim = c(convert2utm9(-130,c(min_map_lat3, max_map_lat)[1])[2], convert2utm9(-130, c(min_map_lat3, max_map_lat)[2])[2])
+    )
+g
+
+ggsave("figs/filled-keepable-yelloweye-est-2020-rock-mud-w-hotspots.png", 
+  width = 5.5, height = 4.5, dpi = 400
+  # width = 6, height = 5, dpi = 200
+  )
+```
 
 
 # CV maps
@@ -2448,10 +2557,10 @@ g <- map_predictions(
   # obs_data = d_hal_plots,
   # pred_min = min(exp(p_hal2020$est), na.rm = T),
   # pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
-  map_lat_limits = c(48.6, max_map_lat),
+  map_lat_limits = c(min_map_lat3, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon)
 )+theme(legend.spacing.y = unit(0.1, "cm"))
-# g
+ g
 dir.create("figs", showWarnings = FALSE)
 ggsave("figs/filled-keepable-halibut-delta-2020-CV-rock-mud.png", width = 6, height = 5, dpi = 400)
 ```
@@ -2475,10 +2584,10 @@ g <- map_predictions(
   # obs_data = d_hal_plots,
   # pred_min = min(exp(p_hal2020$est), na.rm = T),
   # pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
-  map_lat_limits = c(48.6, max_map_lat),
+  map_lat_limits = c(min_map_lat3, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon)
 )+theme(legend.spacing.y = unit(0.1, "cm"))
-# g
+ g
 dir.create("figs", showWarnings = FALSE)
 ggsave("figs/filled-ye-2020-CV-rock-mud.png", width = 6, height = 5, dpi = 400)
 ```
@@ -2497,7 +2606,7 @@ p_ye <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictio
 p_hal_cda <- filter(p_hal$data, region == "CDA") 
 p_hal_noncda <- filter(p_hal$data, region %in% c("non-CDA 3CD5A S", "3CD5A N")) 
 p_ye_cda <- filter(p_ye$data, region == "CDA") 
-p_ye_noncda <- filter(p_ye$data, region %in% c("non-CDA 3CD5A S", "3CD5A N")) 
+p_ye_noncda <- filter(p_ye$data, region %in% c("non-CDA 3CD5A", "3CD5A N")) 
 
 py_cda <- p_ye_cda %>% rename(ye_est = est)
 py_noncda <- p_ye_noncda %>% rename(ye_est = est)
@@ -2670,7 +2779,11 @@ ggsave("figs/annual_yelloweye_weights.png", width = 4, height = 4)
 # get the fishing events that occurred within CDA
 d_ye_sf <- st_as_sf(d_ye, coords = c("longitude", "latitude"))
 st_crs(d_ye_sf) <- 4326 # set the coordinate reference system
-d_ye_intersected <- sf::st_intersects(d_ye_sf, focal_area)
+
+focal_area <- sf::st_read(dsn = "shape-files/taaqwiihak_areaVer2.shp",
+    layer = "taaqwiihak_areaVer2", quiet = TRUE)
+focal_area2 <- sf::st_transform(focal_area, crs = 4326)
+d_ye_intersected <- sf::st_intersects(d_ye_sf, focal_area2)
 cda_ye_sf <- d_ye_sf[which(lengths(d_ye_intersected) > 0), ]
 noncda_ye_sf <- d_ye_sf[which(lengths(d_ye_intersected) == 0), ]
 
