@@ -91,28 +91,28 @@ get_all_sims <- function(fit_obj = NULL, newdata, fit_obj_bin = NULL, fit_obj_po
 
     for (i in seq_along(unique(newdata$region))){
 
-    pred <- p[newdata$region == unique(newdata$region)[i], ]
-    attr(pred, "time") <- "year"
+        pred <- p[newdata$region == unique(newdata$region)[i], ]
+        attr(pred, "time") <- "year"
 
-    ind2 <- get_index_sims(pred, return_sims = F, level = level,
-      est_function = est_function, agg_function = agg_function)
+        ind2 <- get_index_sims(pred, return_sims = F, level = level,
+          est_function = est_function, agg_function = agg_function)
 
-    i_sims2 <- get_index_sims(pred, return_sims = T, level = level,
-      est_function = est_function, agg_function = agg_function)
+        i_sims2 <- get_index_sims(pred, return_sims = T, level = level,
+          est_function = est_function, agg_function = agg_function)
 
-    # setNames(ind2, unique(newdata$region)[i])
-    ind2$region <- unique(newdata$region)[i]
+        # setNames(ind2, unique(newdata$region)[i])
+        ind2$region <- unique(newdata$region)[i]
 
-    # setNames(i_sims2, unique(newdata$region)[i])
-    i_sims2$region <- unique(newdata$region)[i]
+        # setNames(i_sims2, unique(newdata$region)[i])
+        i_sims2$region <- unique(newdata$region)[i]
 
-    # setNames(pred, unique(newdata$region)[i])
+        # setNames(pred, unique(newdata$region)[i])
 
-    by_region[[i+1]] <- list(index = ind2, sims = i_sims2, grid = newdata
-      , sim.predictions = pred # this takes up a lot of space so if not using it...
-    )
+        by_region[[i+1]] <- list(index = ind2, sims = i_sims2, grid = newdata
+          , sim.predictions = pred # this takes up a lot of space so if not using it...
+        )
 
-    setNames(by_region[i+1], paste(unique(newdata$region)[i]))
+        setNames(by_region[i+1], paste(unique(newdata$region)[i]))
 
     }
 
@@ -133,12 +133,19 @@ get_all_sims <- function(fit_obj = NULL, newdata, fit_obj_bin = NULL, fit_obj_po
       est_function = est_function, agg_function = agg_function)
 
     if(return_sims){
+
       i_sims <- get_index_sims(p, return_sims = T, level = level,
         est_function = est_function, agg_function = agg_function)
-      return(list(index = i, sims = i_sims, grid = newdata
+
+      # list_of_one <- list()
+
+      list_of_one <- list(index = i, sims = i_sims, grid = newdata
         , sim.predictions = p # this takes up a lot of space so if not using it...
         #, fit_obj = fit_obj
-      ))
+      )
+
+      return(list_of_one)
+
     } else {
       return(i)
     }
@@ -320,6 +327,10 @@ map_predictions <- function(
     filter(PID %in% c(3)) %>%
     filter(X > 200 & X < 725 & Y > 5400) #%>%
   # gfplot:::utm2ll(utm_zone = 9)
+  bound3Csouth <- fortify(majorbound) %>%
+    filter(PID %in% c(3)) %>%
+    filter(X > 200 & X < 900 & Y < 5420) #%>%
+  # gfplot:::utm2ll(utm_zone = 9)
   bound3Dnorth <- fortify(majorbound) %>%
     filter(PID %in% c(4)) %>%
     filter(X > 200 & X < 600 & Y > 5550)
@@ -404,6 +415,11 @@ map_predictions <- function(
     }
   }
   g <- g +
+    geom_line( # add major management region boundaries
+      data = bound3Csouth,
+      aes(X * 1e3, Y * 1e3), colour = "grey20", lty = 1,
+      inherit.aes = F
+    ) +
     geom_line( # add major management region boundaries
       data = bound3Cnorth,
       aes(X * 1e3, Y * 1e3), colour = "grey20", lty = 1,
