@@ -10,11 +10,11 @@ date: "30 July 2021"
 This code is to create a filled in prediction grid for southern outside Hard Bottom Longline survey area. The prediction grid is a 2 km X 2 km grid that extends from 20m to the 1000m bathymetry within this zone and excludes RCAs. 
 
 ```{r setup, include = FALSE, cache=FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  echo = FALSE, message = FALSE, warning = FALSE, evaluate = FALSE, cache = TRUE
-)
+# knitr::opts_chunk$set(
+#   collapse = TRUE,
+#   comment = "#>",
+#   echo = FALSE, message = FALSE, warning = FALSE, evaluate = FALSE, cache = TRUE
+# )
 ```
 
 
@@ -95,7 +95,7 @@ hbll_grid <- mutate(hbll_grid, depth = -depth) %>%
   filter(depth > 0)
 
 hbll_s_grid <- list(grid = hbll_grid, cell_area = 2.0)
-saveRDS(hbll_s_grid, here::here("grids/hbll_s_grid.rds"))
+# saveRDS(hbll_s_grid, here::here("grids/hbll_s_grid.rds"))
 ```
 
 Load HBLL S grid
@@ -115,8 +115,8 @@ CP <- as(raster::extent(
   ), "SpatialLines")
 
 CP1 <- as(raster::extent(
-  min(sp_dat1$x), max(sp_dat1$x),
-  min(sp_dat1$y), max(sp_dat1$y)
+  min(sp_dat1$x), max(sp_dat1$x)+40000, #+25000
+  min(sp_dat1$y)-30000, max(sp_dat1$y)
   ), "SpatialLines")
 
 CP2 <- as(raster::extent(
@@ -157,7 +157,7 @@ c.linesproj <- st_transform(c.linesfilter, crs = crsnum)
 gridarea <- st_bbox(st_intersection(st_geometry(CP1), st_geometry(c.linesproj))) %>% st_point %>% st_sfc(crs=3156)
 sa_clip <- st_intersection(st_as_sfc(st_bbox(CP1)),c.linesproj)
 
-#DEEP BOUNDARY
+# DEEP BOUNDARY
 c.linesfilter2 <- lines %>% filter(level == 1000) 
 st_crs(c.linesfilter2) <- CRS('+proj=longlat')
 c.linesproj2 <- st_transform(c.linesfilter2, crs = crsnum)
@@ -171,7 +171,7 @@ c.linesproj <- st_transform(c.linesfilter, crs = crsnum)
 gridarea <- st_bbox(st_intersection(st_geometry(CP2), st_geometry(c.linesproj))) %>% st_point %>% st_sfc(crs=3156)
 sa_clipN <- st_intersection(st_as_sfc(st_bbox(CP2)),c.linesproj)
 
-#DEEP BOUNDARY IN NORTH
+# DEEP BOUNDARY IN NORTH
 c.linesfilter2 <- lines %>% filter(level == 1000) 
 st_crs(c.linesfilter2) <- CRS('+proj=longlat')
 c.linesproj2 <- st_transform(c.linesfilter2, crs = crsnum)
@@ -199,17 +199,20 @@ corner <- st_bbox(CP2)[c('xmin','ymax')] %>% st_point %>% st_sfc(crs=crsnum)%>% 
 # test <- st_intersection(CP1, pts) %>% st_geometry %>% st_cast("POINT")
 sa_lineN <- c(pts_shallowN[1:195], pts_deepN[1:90], 
   corner, pts_shallowN[1]) %>% st_combine %>% st_cast('LINESTRING')
-sa_lineS <- c(pts_shallow[1:218], pts_deep[1:212], pts_shallow[1]) %>% st_combine %>% st_cast('LINESTRING')
+sa_lineS <- c(pts_shallow[1:245], pts_deep[1:212], pts_shallow[1]) %>% st_combine %>% st_cast('LINESTRING')
 # sa_polyN <- c(pts_shallowN[1:195], pts_deepN[1:90], corner, 
 #   pts_shallowN[1]
 #   ) %>% st_combine %>% st_cast('LINESTRING') %>% st_polygonize()
 # sa_polyS <- c(pts_shallow[1:218], pts_deep[1:212], pts_shallow[1]
 #   ) %>% st_combine %>% st_cast('LINESTRING') %>% st_polygonize()
 sa_poly <-  c(
-  pts_shallowN[1:195], pts_shallow[1:218],
+  pts_shallowN[1:195], pts_shallow[1:245],
   pts_deep[1:212], pts_deepN[1:90],
   corner, pts_shallowN[1]
   ) %>% st_combine %>% st_cast('LINESTRING') %>% st_polygonize()
+
+## checking for right cut off
+# sa_lineS <- c(pts_shallow[1:245], pts_deep[1:212], pts_shallow[1]) %>% st_combine %>% st_cast('LINESTRING')
 
 ggplot() +
   # geom_sf(data=sa_lineN) +
@@ -330,7 +333,9 @@ new_grid_norca <- st_difference(new_grid, st_union(cells_in_rcas))
 # cells_in_rcas <- rcas_utm[unlist(rca_keep)]
 # cells_in_rcas <- st_as_sf(cells_in_rcas)
 
-saveRDS(new_grid_norca, here::here("grids/hbll_shp_grid_norca.rds"))
+
+# saveRDS(new_grid_norca, here::here("grids/hbll_shp_grid_norca.rds"))
+saveRDS(new_grid_norca, here::here("grids/hbll_shp_grid_norca_expanded.rds"))
 
 ggplot() +
   geom_sf(data=new_grid_norca) +
@@ -384,6 +389,15 @@ range(new_grid_norca$Y)
 if(all(c(range(old_grid$X),range(old_grid$Y)) == c(range(new_grid_norca$X),range(new_grid_norca$Y))) ){
 saveRDS(new_grid_norca, here::here("grids/hbll_s_grid_norca.rds"))
 }
+
+if(all(
+    min(old_grid$X) >= min(new_grid_norca$X),  
+    max(old_grid$X) <= max(new_grid_norca$X),
+    min(old_grid$Y) >= min(new_grid_norca$Y),
+    max(old_grid$Y) <= max(new_grid_norca$Y)
+    )){
+saveRDS(new_grid_norca, here::here("grids/hbll_s_grid_norca_expanded.rds"))
+}
 ```
 
 
@@ -403,11 +417,26 @@ saveRDS(bat, "data/bath_res1_marmap.rds")
 }
 ```
 
+```{r}
+f <- "data/bath_res1_marmap2.rds"
+if(!file.exists(f)){
+# Load package
+library(marmap)
+new_grid_norca <- readRDS(here::here("grids/hbll_s_grid_norca_expanded.rds"))
+# Download bathymetric data and save on disk
+bat <- getNOAA.bathy(min(new_grid_norca$longitude)-2, max(new_grid_norca$longitude)+2,
+  min(new_grid_norca$latitude)-2, max(new_grid_norca$latitude)+2, res = 1, keep = TRUE) #resolution of the grid, in minutes (default is 4 or > 4 miles)
+saveRDS(bat, "data/bath_res1_marmap2.rds")
+}
+```
+
 Explore depth data retrieved
+- chunk just exploratory and not working because track was probably from some example
 ```{r eval=F}
 # Load package
 library(marmap)
-bat <- readRDS(here::here("data/bath_res1_marmap.rds"))
+# bat <- readRDS(here::here("data/bath_res1_marmap.rds"))
+bat <- readRDS(here::here("data/bath_res1_marmap2.rds"))
 # Create nice looking color palettes
 blues <- c("lightsteelblue4", "lightsteelblue3", "lightsteelblue2", "lightsteelblue1")
 greys <- c(grey(0.6), grey(0.93), grey(0.99))
@@ -447,7 +476,8 @@ legend("bottomright", legend = c("Track 1", "Track 2"), lwd = 1, col = c("brown3
 Extract depth for grid cells
 ```{r}
 # make depth raster
-bat <- readRDS(here::here("data/bath_res1_marmap.rds"))
+# bat <- readRDS(here::here("data/bath_res1_marmap.rds"))
+bat <- readRDS(here::here("data/bath_res1_marmap2.rds"))
 rast_bat <- marmap::as.raster(bat) 
 
 # change projection to match grid
@@ -456,7 +486,8 @@ rast_bat <- projectRaster(rast_bat, crs = proj)
 plot(rast_bat)
 
 # depth for complete cells only
-hbll_grid <- readRDS(here::here("grids/hbll_s_grid_norca.rds"))
+# hbll_grid <- readRDS(here::here("grids/hbll_s_grid_norca.rds"))
+hbll_grid <- readRDS(here::here("grids/hbll_s_grid_norca_expanded.rds"))
 # grid_scale <- 2000 #scale of prediction grid in m
 grid <- raster(
   ext = extent(hbll_grid)+c(-1000, 1000, -1000, 1000), # need to add 1km in all directions to allow coordinates to be the centroids of 2x2km cells
@@ -470,7 +501,7 @@ extracted_depth <- cbind(grid.df, depth)
 hbll_grid_full_cells <- left_join(hbll_grid, extracted_depth)
 
 # depth for partial cells too
-new_grid_norca <- readRDS(here::here("grids/hbll_shp_grid_norca.rds"))
+new_grid_norca <- readRDS(here::here("grids/hbll_shp_grid_norca_expanded.rds"))
 new_grid_norca <- st_as_sf(new_grid_norca)
 new_grid_norca <- st_transform(new_grid_norca, crs = 3156)
 
@@ -486,7 +517,7 @@ mean_depth2 <- sapply(get_depth2, function(x) if (!is.null(x)) {sum(apply(x, 1, 
 all_depths <- bind_cols(hbll_grid_full_cells, mean_depth = mean_depth, wm_depth = mean_depth2) %>% 
   mutate(cell_depth = -depth, depth_uw = -mean_depth, depth_wm = -wm_depth, depth = -wm_depth) %>% dplyr::select(-mean_depth, -wm_depth)
 
-saveRDS(all_depths, here::here("grids/exrtracted_depths_norca.rds"))
+saveRDS(all_depths, here::here("grids/exrtracted_depths_norca_expanded.rds"))
 
 
 ggplot(all_depths) + geom_point( aes(cell_depth, depth_uw, colour = area),alpha=0.2) # unweighted
@@ -510,8 +541,9 @@ ggplot(hbll_grid_keep) +
 # Get substrate covariates
 
 Convert tif projection and save as high res rasters
-```{r}
-f <- "data/highres-sandy-raster.grd" 
+```{r eval = F}
+# f <- "data/highres-sandy-raster.grd" 
+f <- "data/highres-sandy-raster-expanded.grd" 
 if (!file.exists(f)) {
 # retrieve substate layers if not done so before
 rocky <- raster("data/substrate/rocky.tif")
@@ -538,13 +570,13 @@ raster::res(new_sandy) <- 100
 
 # # Project values to new raster
 hres_rocky <- raster::projectRaster(rocky, new_rocky) #, method = "ngb")
-writeRaster(hres_rocky, file = "data/highres-rocky-raster.grd")
+# writeRaster(hres_rocky, file = "data/highres-rocky-raster.grd")
 hres_mixed <- raster::projectRaster(mixed, new_mixed) #, method = "ngb")
-writeRaster(hres_mixed, file = "data/highres-mixed-raster.grd")
+# writeRaster(hres_mixed, file = "data/highres-mixed-raster.grd")
 hres_muddy <- raster::projectRaster(muddy, new_muddy) #, method = "ngb")
-writeRaster(hres_muddy, file = "data/highres-muddy-raster.grd")
+# writeRaster(hres_muddy, file = "data/highres-muddy-raster.grd")
 hres_sandy <- raster::projectRaster(sandy, new_sandy) #, method = "ngb")
-writeRaster(hres_sandy, file = "data/highres-sandy-raster.grd")
+# writeRaster(hres_sandy, file = "data/highres-sandy-raster.grd")
 }
 ```
 
@@ -579,14 +611,15 @@ get_sandy <- raster::extract(x=sandy, y=new_grid_norca, na.rm = T, exact=T, weig
 mean_sandy <-  sapply(get_sandy, function(x) if (!is.null(x)) {sum(apply(x, 1, prod), na.rm = T) / sum(x[,2], na.rm = T)} else NA)
 
 # add substrate to grid with depth data
-all_covs <- bind_cols(all_depths, rocky = mean_rocky2, rocky_uw = mean_rocky, muddy = mean_muddy, mixed = mean_mixed, sandy = mean_sandy) 
+all_covs <- bind_cols(all_depths, rocky = mean_rocky2, #rocky_uw = mean_rocky, 
+  muddy = mean_muddy, mixed = mean_mixed, sandy = mean_sandy) 
 
-# check how weighting changes things?
-ggplot(all_covs) +
-  geom_point(aes(rocky, rocky_uw, colour = log(area)), alpha = 0.25) +
-  theme_classic()
+# # check how weighting changes things?
+# ggplot(all_covs) +
+#   geom_point(aes(rocky, rocky_uw, colour = log(area)), alpha = 0.25) +
+#   theme_classic()
 
-saveRDS(all_covs, here::here("grids/norca_grid_w_substrate.rds"))
+saveRDS(all_covs, here::here("grids/norca_grid_w_substrate_expanded.rds"))
 ```
 
 
