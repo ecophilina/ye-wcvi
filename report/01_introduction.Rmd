@@ -58,7 +58,7 @@ For halibut, individual fish weights or lengths were not collected and fish smal
 These biomass estimates for HBLL catch were further divided by the "area swept" calculation of hook count $\times$ a hook spacing of 0.0024384 km $\times$ an assumed catch radius of 0.009144 km.
 For the trawl survey halibut biomass, the estimated densities were multiplied by the proportion of biomass caught that belonged to landable individuals at the set-level where at least 10 fish, or greater than 70% by weight of the total catch, were measured.
 In cases where these criteria were not met, we used the global mean across all sets.
-YE biomass densities from the trawl survey were left unadjusted because the mean weight per fish were nearly identical between the surveys (synoptic surveys = `r round(yemeanweightSYN, 2)` kg; HBLL = `r round(yemeanweightHBLL, 2)` kg). <!-- and similar to placeholder value from IFMP that represents mean of landed commercial catch (`r round(yemeanweight, 2)` kg). -->
+YE biomass densities from the trawl survey were left unadjusted because the mean weight per fish were nearly identical between the surveys (synoptic surveys = `r round(yemeanweightSYN, 2)` kg; HBLL = `r round(yemeanweightHBLL, 2)` kg). 
 Finally, all densities were converted from kg per kg/km2 to kg per ha for computational reasons. 
 
 Next, we fit geostatistical spatiotemporal models to these surveyed biomass densities using the R package sdmTMB <https://github.com/pbs-assess/sdmTMB>. 
@@ -66,37 +66,45 @@ Because these biomass densities include both zeros and positive continuous value
 We did not account for hook competition in any of these models because the goal here is to estimate likely catch ratios and not the underlying abundances.
 Furthermore, an investigation into hook competition for YE in the latest outside YE stock assessment found little effect of including it [REF]. 
 For both species, we included quadratic effects of depth, and the proportions of rocky and muddy substrate within 1 km of the sampling location to help account for difference in the habitats targeted by each survey, and a factor for survey type to capture differences in catchability between the two fishing methods. 
-Finally, these models also estimated annual means for years and latent "random fields" representing remaining patterns in spatial and spatiotemporal correlation that were not explicitly modelled by the included covariates. 
+These models also estimated annual means for years and latent "random fields" representing remaining patterns in spatial and spatiotemporal correlation that were not explicitly modelled by the included covariates. 
 The magnitude of spatiotemporal variation was much higher for Halibut than for YE, but including spatiotemporal variation improved model fit compared to a model with only spatial random fields for both species by over 10 AIC (Akaike Information Criterion) units. 
+Allowing for anisotropy improved the delta AIC (>10) for the YE model, but interferred with estimate of spatiotemporal fields for the Halibut models.
+For YE, the Tweedie model fit the data well (Fig. \@ref(fig:qq-ye)), while for landable Halibut the Delta-Gamma models fit better than the Tweedie (Fig. \@ref(fig:qq-hal)).
 <!-- For Halibut, including a first-order autoregressive (AR1) correlation between spatiotemporal fields only marginally improved model fit (~5 $\Delta$ AIC), so we used independent spatiotemporal fields for both species. -->
-**should we add any diagnostic and validation plots?**
-<!-- SA: Yes, perhaps. Do the QQ plots look OK?-->
 <!-- SA: add equations?-->
 
-<!-- **should we include this bit and the comparison fig?** -->
 We also built models based on just the HBLL data to confirm that stitching the HBLL and synoptic surveys was still representative of the HBLL survey results.
 For this count-based model we used a negative binomial observation likelihood  with a log link and an an offset for number of hooks.
 This means we are modelling fish caught per hook, but with a statistical approach that lets us use a count distribution.
 The negative binomial distribution (NB2) lets the observation variance scale quadratically with the mean, which is typically needed for ecological data.
 This model also includes a quadratic effect of depth but no substrate habitat variables. 
 
-We then calculated expected biomass densities if sampled using HBLL gear for only those latitudes and depths covered in the HBLL survey and excluding locations within an Rockfish Conservation Area (RCA) where all fishing is prohibited. 
-<!-- SA: not just HBLL now, right?--> 
+TODO A BUNCH OF TECHNICAL STUFF HERE ABOUT FITTING AND confidence intervals (CIs). ... simulated 500 times...
+
+Finally, we calculated expected biomass densities, if sampled using HBLL gear, but for the larger area encompassing the both trawl and HBLL survey areas, depths between 20 and 1000 m (those covered in either survey), and excluding Rockfish Conservation Areas (RCAs) where fishing is prohibited. 
 For halibut, this was an estimate of landable biomass, while for YE it was for total catchable biomass. 
-These estimates were then used to produce maps of expected biomass distributions for each species, as well as the spatial distibution of expected catch ratios between these species.  
+These estimates were then used to produce maps of expected biomass distributions for each species, as well as the spatial distibution of expected catch ratios between these species. 
 These expected densities were multiplied by the area of survey grid cells (usually 2 x 2 km), and adjacent portions of cells where part falls inside RCAs, to produce overall biomass indices and overall average biomass ratios for different subregions (within the CDA vs. Area 3CD5A outside the CDA, or Area 3CD5A north of 50º vs. Area 3CD5A south of 50º and outside the CDA; Fig. \@ref(fig:region-col-key)). 
 Splitting at 50º separates the areas adjacent to the CDA from those not, as well as accounting for potential ecological or latitudinal variation implied by a positive correlation between HBLL catch counts of Halibut and YE in the south, but not in the north (Fig. \@ref(fig:hbll-catch)). 
-Finally, cell-specific biomass estimates were used to explore how contrasting fishing strategies might affect expected catch ratios for a given total area of each region. We examined two strategies: (1) select cells in order from lowest YE densities to highest or (2) select cells with the highest halibut densities to lowest. 
+Cell-specific biomass estimates were also used to explore how contrasting fishing strategies might affect expected catch ratios for a given total area of each region. We examined two strategies: (1) select cells in order from lowest YE densities to highest or (2) select cells with the highest halibut densities to lowest. 
 
-TODO A BUNCH OF TECHNICAL STUFF HERE ABOUT FITTING AND CIS. ... simulated 500 times...
+<!-- \clearpage -->
 
-```{r survey-grid-map, fig.cap="Map of 2x2 km grid cells comprising both fishery-independent surveys used in this analysis and the court defined area (CDA) outlined in red. Trawl survey area north of Vancouver Island belongs to the Queen Charlotte Sound Synoptic Survey, while the area west of the island is covered in the West Coast Vancouver Island Synoptic Survey. Cells within these area that are excluded from the trawl survey grid are either protected areas or have been deemed unfishable by trawl gear, often due to rockiness or the presence of corals or sponges.", out.width="4.5in"}
-include_graphics(here("figs/map-stitched-grid-overlap.png"))
+```{r qq-ye, fig.cap="QQ-plot of residuals from the YE model. Three iterations have been overlaid.", out.width="2.5in"}
+include_graphics(here("figs/ye-qq.png"))
+```
+
+```{r qq-hal, fig.cap="QQ-plots of residuals from landable Halibut models using different distributions. The predictions from binomial and Gamma models are combined to produce Delta-Gamma the approach.", out.width="6in"}
+include_graphics(here("figs/halibut-qq.png"))
+```
+
+```{r survey-grid-map, fig.cap="Map of 2 x 2 km grid cells comprising both fishery-independent surveys used in this analysis and the court defined area (CDA) outlined in red. Trawl survey area north of Vancouver Island belongs to the Queen Charlotte Sound Synoptic Survey, while the area west of the island is covered in the West Coast Vancouver Island Synoptic Survey. Cells within these area that are excluded from the trawl survey grid are either protected areas or have been deemed unfishable by trawl gear, often due to rockiness or the presence of corals or sponges. Light grey area underlying both survey grids forms the prediction grid used to derive indices.", out.width="5.5in"}
+include_graphics(here("figs/map-stitched-grid-overlap-expanded.png")) 
 ```
 
 
 ```{r region-col-key, fig.cap="This map illustrates the filled-in grid and the sub-regions for which indices will be calculated. Blue area is not illustrated as it is comprised of the green and purple areas combined.", out.width="4.5in"}
-include_graphics(here("figs/region-colour-map-3x3.png"))
+include_graphics(here("figs/region-colour-map-3x3-expanded.png"))
 ```
 
 ```{r hbll-catch, fig.cap="Species correlations within HBLL catch counts. Colours correspond to the sub-regions in Fig. 2 except that catch within the CDA has been included in panel B.", out.width="3in"}
@@ -155,15 +163,26 @@ r2 <- function(x) {
 
 Estimates from models based on both surveys showed similar patterns for the regions captured by the HBLL survey when compared to estimates from models built on just the HBLL survey data alone (Fig. \@ref(fig:hbll-v-hybrid)).
 Therefore, the general index trends from our combined model does not appear to have been affected substanially by the added complexity and assumptions involved in producing the the combined models. 
+The models also estimate the depth preferences, and effects of proportion of rocky and muddy habitats within 1 km on biomass of each species (Fig. \@ref(fig:effect-plots)).
 
-The models also estimate the depth preferences of each species (Fig. \@ref(fig:depth-profile)).
+DO WE REPORT EFFECTS SURVEY TYPE?
+DO WE WANT COEFFICIENT TABLES OF ANY KIND?
 
+
+These models produce biennial estimates of the spatial distribution of biomass density for each species (Figs \@ref(fig:halibut-preds-all) and \@ref(fig:ye-preds-all)). 
+However, we will focus on the predicted spatial variation for the most recent years in our survey data (2018 through 2020 in order to have complete spatial coverage) and prediction for 2019 and 2020 combined (Figs. \@ref(fig:halibut-preds-2020) and \@ref(fig:ye-preds-2020)).
+<!-- SA: clarify? 2019-2020 or 2018-2020; I'm confused here -->
+<!-- PE: This is accurate. It is because we don't have trawl data for the southern area in the 2019-2020 year pairing. In the faceted figure you can see which year pair samples belong to, but for the zoomed in figures I wanted to see how well trawl samples were represented in the south... possibly I should average predications across those final two sets of years for these zoomed in figures and make it 2017-2020 for both?-->
+Due to generally higher biomass densities in the north, zooming in on the area immediately around the CDA (Area 3CD5A south of 50º) is also useful (Figs. \@ref(fig:halibut-preds-2020-closeup) and \@ref(fig:ye-preds-2020-closeup)). 
+The predictions for both species can also be mapped as ratios to identify locations at particular risk of higher YE catch (Fig. \@ref(fig:ye-per-hal-preds-2020)) or locations that are particularly productive for halibut, while minimizing YE catch (Fig. \@ref(fig:hal-per-ye-preds-2020)). 
+
+\clearpage
 
 ```{r hbll-v-hybrid, fig.cap="Comparison of survey indices **for just the HBLL survey domain** from a count-based model using just the HBLL survey and a model of biomass densities based on both HBLL and trawl surveys. The count-based model index (A) has been converted to biomass using the same area swept and mean weights as used to convert the HBLL counts for use in the combined model.", out.width="\\textwidth"}
 include_graphics(here("figs/compare-model-indices.png"))
 ```
 
-```{r effect-plots, fig.cap="Modelled quadratic effects of covariates: depth, proportion rocky substrate, and proportion muddy for each species' models. Because peak biomass densities occur in different years for each species, each line represents a different year's estimate with the most recent year having the most opaque line. These estimates are for HBLL survey catches of landable Halibut and all YE. The effect of depth is for locations with avarage proportions of rocky (0.09) and muddy (0.13) substrate, and the subsrate effects are at the depth at which YE densities peak (78 m) with the remainder of the subsrate classed as either sandy or mixed.", out.width="\\textwidth"}
+```{r effect-plots, fig.cap="Modelled quadratic effects of covariates: depth, proportion rocky substrate, and proportion muddy for each species' models. Because peak biomass densities occur in different years for each species, each line represents a different year's estimate with the most recent year having the darkest line. Shaded areas are each year's CI. These estimates are for HBLL survey catches of landable Halibut and all YE. The effect of depth is for locations with avarage proportions of rocky (0.09) and muddy (0.13) substrate, and the subsrate effects are at the depth at which YE densities peak (78 m) with the remainder of the subsrate classed as either sandy or mixed.", out.width="\\textwidth"}
 include_graphics(here("figs/effects-delta-allfixed.png"))
 ```
 
@@ -178,15 +197,6 @@ include_graphics(here("figs/effects-delta-allfixed.png"))
 # include_graphics(here("figs/substrate-effects.png"))
 ```
 
-\clearpage
-
-These models produce biennial estimates of the spatial distribution of biomass density for each species (Figs \@ref(fig:halibut-preds-all) and \@ref(fig:ye-preds-all)). 
-However, we will focus on the predicted spatial variation for the most recent years in our survey data (2018 through 2020 in order to have complete spatial coverage) and prediction for 2019 and 2020 combined (Figs. \@ref(fig:halibut-preds-2020) and \@ref(fig:ye-preds-2020)).
-<!-- SA: clarify? 2019-2020 or 2018-2020; I'm confused here -->
-<!-- PE: This is accurate. It is because we don't have trawl data for the southern area in the 2019-2020 year pairing. In the faceted figure you can see which year pair samples belong to, but for the zoomed in figures I wanted to see how well trawl samples were represented in the south... possibly I should average predications across those final two sets of years for these zoomed in figures and make it 2017-2020 for both?-->
-Due to generally higher biomass densities in the north, zooming in on the area immediately around the CDA (Area 3CD5A south of 50º) is also useful (Figs. \@ref(fig:halibut-preds-2020-closeup) and \@ref(fig:ye-preds-2020-closeup)). 
-The predictions for both species can also be mapped as ratios to identify locations at particular risk of higher YE catch (Fig. \@ref(fig:ye-per-hal-preds-2020)) or locations that are particularly productive for halibut, while minimizing YE catch (Fig. \@ref(fig:hal-per-ye-preds-2020)). 
-
 
 ```{r halibut-preds-all, fig.cap="Model-predicted landable Halibut biomass densities (colour) with survey sample densities (circle areas) overlaid. HBLL catch counts were converted to a landable biomass density. Trawl survey catch is converted to an equivalent value by adjusting for model-estimated catchability and the proportion of biomass caught estimated to belong to landable individuals. The CDA is outlined in red. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="\\textwidth"}
 include_graphics(here("figs/filled-keepable-halibut-delta-predictions-est-rock-mud.png"))
@@ -196,11 +206,11 @@ include_graphics(here("figs/filled-keepable-halibut-delta-predictions-est-rock-m
 include_graphics(here("figs/filled-keepable-ye-predictions-est-rock-mud.png"))
 ```
 
-```{r halibut-preds-2020, fig.cap="Predicted Halibut densities and observed biomass densities for 2018--2020. This is a zoomed-in version of the 2019--2020 predictions, but with 2018 through 2020 survey data included because one of the 2020 surveys was deferred. Legend otherwise the same.", out.width="5.5in"}
+```{r halibut-preds-2020, fig.cap="Predicted Halibut densities and observed biomass densities for 2018--2020. This is a zoomed-in version of the 2019--2020 predictions, but with 2018 through 2020 survey data included because one of the 2020 surveys was deferred. Legend otherwise the same.", out.width="\\textwidth"}
 include_graphics(here("figs/filled-keepable-halibut-delta-2020-predictions-est-rock-mud.png"))
 ```
 
-```{r ye-preds-2020, fig.cap="Predicted Yelloweye Rockfish densities and observed biomass densities for 2018--2020. This is a zoomed-in version of the 2019--2020 predictions, but with 2018 through 2020 survey data included because one of the 2020 surveys was deferred. Legend otherwise the same.", out.width="5.5in"}
+```{r ye-preds-2020, fig.cap="Predicted Yelloweye Rockfish densities and observed biomass densities for 2018--2020. This is a zoomed-in version of the 2019--2020 predictions, but with 2018 through 2020 survey data included because one of the 2020 surveys was deferred. Legend otherwise the same.", out.width="\\textwidth"}
 include_graphics(here("figs/filled-keepable-yelloweye-2020-predictions-est-rock-mud.png"))
 ```
 
@@ -212,12 +222,21 @@ include_graphics(here("figs/filled-keepable-halibut-delta-2020-predictions-est-r
 include_graphics(here("figs/filled-keepable-yelloweye-2020-predictions-est-rock-mud-closeup.png"))
 ```
 
-```{r ye-per-hal-preds-2020, fig.cap="Mapped ratios of Yelloweye Rockfish biomass to Halibut biomass in 2019--2020. Note that the colour axis is square root transformed to improve visual interpretation.", out.width="4.5in"}
-include_graphics(here("figs/filled-keepable-ye-to-halibut-2020-w-hal-catch-est-rock-mud.png"))
+```{r ye-per-hal-preds-2020, fig.cap="Mapped ratios of Yelloweye Rockfish biomass to Halibut biomass in 2019--2020. Note that the colour axis is capped at the 99th precentile and is square root transformed to improve visual interpretation.", out.width="4.5in"}
+include_graphics(here("figs/filled-ye-to-halibut-2020-keepable-delta.png"))
+# could include hotspots?
+# include_graphics(here("figs/filled-ye-to-halibut-2020-w-hotspots.png"))
 ```
 
 ```{r hal-per-ye-preds-2020, fig.cap="Mapped ratios of Halibut biomass to Yelloweye Rockfish biomass in 2019--2020. Because YE often occur at much lower densities than Halibut, this calculation requires first truncating their biomass density to a minimum of 1 kg per kg/km2. Legend otherwise the same.", out.width="4.5in"}
-include_graphics(here("figs/filled-keepable-halibut-to-ye-2020-w-hal-catch-est-rock-mud.png"))
+include_graphics(here("figs/filled-halibut-to-ye-2020-keepable-delta.png"))
+# could include hotspots?
+# include_graphics(here("figs/filled-halibut-to-ye-2020-w-hotspots.png"))
+```
+
+
+```{r ye-hotspots, fig.cap="Mapped Yelloweye Rockfish biomass in 2019--2020 with known hotspots outlined in white. Hotspots are defined as regions where YE have been caught repeatedly on commercial long-line gear in excess of 18 fish per set since 2007. Note that the colour axis is capped at the 99th precentile and is square root transformed to improve visual interpretation.", out.width="4.5in"}
+include_graphics(here("figs/filled-keepable-yelloweye-est-2020-rock-mud-w-hotspots.png"))
 ```
 
 \clearpage
@@ -290,7 +309,7 @@ include_graphics(here("figs/filled-keepable-ye-to-hal-index-est-rock-mud.png"))
 # include_graphics(here("figs/filled-keepable-ye-to-hal-index-est-rock-mud-NS.png"))
 ```
 
-```{r ye-ratio-by-scenario, fig.cap="Spatial variation in the mean biomass ratio of YE to halibut for cells with (A) the highest halibut densities or (B) the lowest YE densities. Mean halibut densities of less than 1 g per 100 hooks have been truncated to this value. Note that both axes are log scales. Lines and 95 percent confidence intervals are calculated from 500 simulations of the biomass distribution for each species.", out.width="5.5in"}
+```{r ye-ratio-by-scenario, fig.cap="Spatial variation in the mean biomass ratio of YE to halibut for cells with (A) the highest halibut densities or (B) the lowest YE densities. Mean halibut densities of less than 1 g per 100 hooks have been truncated to this value. Note that both axes are log scales. Lines and 95 percent confidence intervals are calculated from 500 simulations of the biomass distribution for each species.", out.width="4.5in"}
 include_graphics(here("figs/expected_ye_to_hal-keepable_both_scenarios.png"))
 # include_graphics(here("figs/expected_ye_to_hal-keepable_both_scenarios_NS.png"))
 ```
@@ -305,7 +324,7 @@ include_graphics(here("figs/expected_ye_to_hal-keepable_both_scenarios.png"))
 
 \clearpage
 
-# Discussion
+# Discussion {#sec:discussion}
 
 **Some random thoughts that might also belong in results...**
 

@@ -3,7 +3,14 @@
 
 \clearpage
 
-# THE FIRST APPENDIX {#app:first-appendix}
+# Coefficient of variation {#app:first-appendix}
 
+```{r cv-hal, fig.cap="CV of halibut model predictions from 500 simulations.", out.width="4in"}
+include_graphics(here("figs/filled-keepable-halibut-delta-2020-CV-rock-mud.png"))
+```
+
+```{r cv-ye, fig.cap="CV of YE model predictions from 500 simulations.", out.width="4in"}
+include_graphics(here("figs/filled-ye-2020-CV-rock-mud.png"))
+```
 
 `r if(knitr:::is_latex_output()) '% end csasdown appendix'`
