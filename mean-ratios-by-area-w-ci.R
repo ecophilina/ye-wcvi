@@ -36,7 +36,7 @@ g_cda <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_v
 #   ) %>% select(X, Y, year, area)
 
 g_noncdaN <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars,
-  "-index-cda-sim-500.rds"))[[3]] %>% filter(region %in% c("3CD5A N")
+  "-index-5A3CDS-outside-cda-sim-500.rds"))[[3]] %>% filter(region %in% c("3CD5A N")
   ) %>% select(X, Y, year, area)
 
 g_noncdaS <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars,
@@ -48,7 +48,7 @@ g_noncdaS <- readRDS(paste0("data-generated/filled", model_type, "-halibut", mod
 
 if (!file.exists(paste0("data-generated/ye_sims_for_ratios_by_area", model_type, "-50.rds"))) {
 
-# i_hal4 <- readRDS(paste0("data-generated/filled-halibut", model_vars, "index-all-S-sim-500.rds"))[[4]]
+# i_hal4 <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "index-all-S-sim-500.rds"))[[4]]
 s_hal_cda4 <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-cda-sim-500.rds"))[[4]][,1:50]
 s_hal_noncda4N <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-5A3CDN-outside-cda-sim-500.rds"))[[4]][,1:50]
 s_hal_noncda4S <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-5A3CDS-outside-cda-sim-500.rds"))[[4]][,1:50] #116571 vs. 116620 for newdata saved with it?
@@ -210,6 +210,7 @@ maximize_hal <- .dat[order(.dat$halibut, decreasing = T), ] %>% group_by(Area, y
       year %in% c(2017, 2018) ~ "2017-2018",
       year %in% c(2019, 2020) ~ "2019-2020"
     )) %>% ungroup()
+
 # check that denominator was successfully truncated to 1
 # before
 range(maximize_hal$ye_cumsum*100/maximize_hal$ordered)
@@ -467,11 +468,11 @@ areas_to_plot <- c(
 
 
 avoiding_ye_sum$Area <- ordered(avoiding_ye_sum$Area, levels =  c(
-  "CDA", "non-CDA 5A3CD", "5A3CD N of 50º","non-CDA 5A3CD S of 50º"
+  "CDA", "non-CDA 5A3CD", "5A3CD N of 50º", "non-CDA 5A3CD S of 50º"
 ))
 
 maximize_hal_sum$Area <- ordered(maximize_hal_sum$Area, levels =  c(
-  "CDA", "non-CDA 5A3CD", "5A3CD N of 50º","non-CDA 5A3CD S of 50º"))
+  "CDA", "non-CDA 5A3CD", "5A3CD N of 50º", "non-CDA 5A3CD S of 50º"))
 
 
 
@@ -573,7 +574,7 @@ p1$labels$x <- p2$labels$x <- " "
 # grid::grid.draw(grid::textGrob(xlab, y = 0.03))
 # grid::grid.draw(grid::textGrob(ylab, x = 0.02,rot = 90))
 
-ggsave(paste0("figs/expected_ye_to_hal", model_type, "_both_scenarios.png"), width = 7, height = 3.5)
+ggsave(paste0("figs/expected_ye_to_hal", model_type, "_both_scenarios.png"), width = 5.5, height = 3)
 # ggsave(paste0("figs/expected_ye_to_hal", model_type, "_both_scenarios_NS.png"), width = 7, height = 3.5)
 
 
