@@ -1,0 +1,24 @@
+# Discussion {#sec:discussion}
+
+**Some random thoughts that might also belong in results...**
+
+  Over the roughly 14-year timespan of this index (2007--2019 for QCS trawl survey area; 2008-2018 for WCVI trawl survey area; 2007--2020 for HBLL), overall landable Halibut biomass has fluctuated from a high of `r round(i_hal[i_hal$year==2014,]$est/1000)` tonnes in 2013-2014 to low of `r round(i_hal[i_hal$year==2018,]$est/1000)` tonnes in 2017-2018 (sum of red and blue in Fig. \@ref(fig:indexes)A), while total YE biomass fluctuated from a high of `r round(i_ye[i_ye$year==2008,]$est/1000)` tonnes in 2013-2014 to low of `r round(i_ye[i_ye$year==2020,]$est/1000)` tonnes in 2017-2018 (sum of red and blue in Fig. \@ref(fig:indexes)B).
+While index trajectories for both species are similar inside versus outside the CDA (Fig. \@ref(fig:indexes-avg)), the difference in the expected species ratio in the CDA compared to the non-CDA 3CD5A has been reduced in the most recent years (Fig. \@ref(fig:ye-ratio-through-time)).
+
+<!-- SA: define a term for 'wider area' much earlier? "3CD5A (that overlaps with the latitudes surveyed by the HBLL) except the CDA... -->
+<!-- PE: this is defined in Fig. \@ref(fig:region-col-key) and the methods text. At this late stage in the doc I wanted to translate the technical "non-3CD5A" into what it actually represents... maybe what we should say here is take it back to "the majority of the Groundfish Management Unit Area encompassing the CDA" or something like that? Trying to remind the reader what was covered in the methods and might have been forgotten by this point.-->
+
+If fishing were to focus only on the 10% of area with the highest halibut densities, the estimated mean ratios of YE to halibut range from `r round(ye_per_hal_cda[1],2)` to `r round(ye_per_hal_cda[2],2)` within the CDA.
+<!-- Overall, this ratio varies more between years than with total proportion of the CDA targeted for halibut (Fig. \@ref(fig:ye-ratio-targetting-by-year)).  -->
+In contrast, if fishing was focused on avoiding the 50% of the CDA grid area with the highest YE abundances, this ratio could be expected to stay below `r round(ye_per_hal_cda_min[2],4)`.
+While outside the CDA, a similar approach used to fish the same total area could be expected to keep the ratio of YE to halibut below `r round(ye_per_hal_noncda_min[2],4)` (Figs. \@ref(fig:ye-ratio-by-scenario)<!-- and \@ref(fig:ye-ratio-avoiding-by-year) -->).
+
+<!-- and much more pronounced fluctuations in the amount of halibut relative to YE within the CDA (Fig. \@ref(fig:hal-ratio-through-time)).  -->
+<!-- Building similar models from International Pacific Halibut Commission (IPHC) survey data could provide alternate estimates of catch ratios, but the local resolution would be coarser.  -->
+
+\clearpage
+
+```{r indexes, fig.cap="Indices of total (A) landable Halibut and (B) YE biomass through time within various regions (Fig. 2). Blue is the portion of Area 3CD5A that overlaps the HBLL survey (sampled range of Area 3CD5A) and excludes the CDA and RCAs. Purple represents the portion of this area included in the closeup of the CDA. Green is the portion of the blue area not included in purple. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 draws from the joint precision matrix.", out.width="5in"}
+include_graphics(here("figs/filled-keepable-rock-mud-index-by-area.png"))
+```
+

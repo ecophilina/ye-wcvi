@@ -1,0 +1,45 @@
+# Methods {#sec:methods}
+
+We used data collected on the southern outside Hard Bottom Longline survey (HBLL) and the synoptic bottom trawl survey to estimate the spatial and temporal variation in expected catches of YE and halibut.
+The HBLL survey focuses on rockfish habitats, rather than a broader range of habitats and depths that halibut occupy.
+This survey is usually conducted in alternating years, except that no survey occurred in 2012 and 2013.
+The synoptic trawl surveys sample soft-bottom habitats, but use trawl gear and record biomass densities, rather than fish counts as on the HBLL.
+Two trawl surveys overlap spatially with the HBLL Outside South Survey: the southern portion with the West Coast Vancouver Island Synoptic Survey conducted in even years (except 2020 due to the COVID-19 pandemic), and the northern portion with the Queen Charlotte Sound Synoptic Survey conducted in odd years.
+In order to join, or "stitch", these three surveys together and produce estimates of local variation in biomass density, we pooled odd and even year pairs and converted the catch counts from the HBLL into biomass densities.
+
+In order to incorporate observations from both survey types into one model, the observations needed to be converted into comparable units.
+For YE, we converted HBLL catch counts to biomass using an estimate of mean fish weight (all fish measured across all years on this survey).
+For halibut, individual fish weights or lengths were not collected and fish smaller than 81.3 cm cannot be kept, so HBLL catch counts were converted to a landable biomass density by multiplying counts by the average total landed biomass per fish caught.
+These biomass estimates for HBLL catch were further divided by the "area swept" calculation of hook count $\times$ a hook spacing of 0.0024384 km $\times$ an assumed catch radius of 0.009144 km.
+For the trawl survey halibut biomass, the estimated densities were multiplied by the proportion of biomass caught that belonged to landable individuals at the set-level where at least 10 fish, or greater than 70% by weight of the total catch, were measured.
+In cases where these criteria were not met, we used the global mean across all sets.
+YE biomass densities from the trawl survey were left unadjusted because the mean weight per fish were nearly identical between the surveys (synoptic surveys = `r round(yemeanweightSYN, 2)` kg; HBLL = `r round(yemeanweightHBLL, 2)` kg).
+Finally, all densities were converted from kg per kg/km2 to kg per ha for computational reasons.
+
+Next, we fit geostatistical spatiotemporal models to these surveyed biomass densities using the R package sdmTMB <https://github.com/pbs-assess/sdmTMB>.
+Because these biomass densities include both zeros and positive continuous values, we used either a Tweedie distribution or a Delta-Gamma approach to model predicted catches of each species.
+We did not account for hook competition in any of these models because the goal here is to estimate likely catch ratios and not the underlying abundances.
+Furthermore, an investigation into hook competition for YE in the latest outside YE stock assessment found little effect of including it [REF].
+For both species, we included quadratic effects of depth, and the proportions of rocky and muddy substrate within 1 km of the sampling location to help account for difference in the habitats targeted by each survey, and a factor for survey type to capture differences in catchability between the two fishing methods.
+These models also estimated annual means for years and latent "random fields" representing remaining patterns in spatial and spatiotemporal correlation that were not explicitly modelled by the included covariates.
+The magnitude of spatiotemporal variation was much higher for Halibut than for YE, but including spatiotemporal variation improved model fit compared to a model with only spatial random fields for both species by over 10 AIC (Akaike Information Criterion) units.
+Allowing for anisotropy improved the delta AIC (>10) for the YE model, but interferred with estimate of spatiotemporal fields for the Halibut models.
+For YE, the Tweedie model fit the data well (Fig. \@ref(fig:qq-ye)), while for landable Halibut the Delta-Gamma models fit better than the Tweedie (Fig. \@ref(fig:qq-hal)).
+<!-- For Halibut, including a first-order autoregressive (AR1) correlation between spatiotemporal fields only marginally improved model fit (~5 $\Delta$ AIC), so we used independent spatiotemporal fields for both species. -->
+  <!-- SA: add equations?-->
+
+  We also built models based on just the HBLL data to confirm that stitching the HBLL and synoptic surveys was still representative of the HBLL survey results.
+For this count-based model we used a negative binomial observation likelihood  with a log link and an an offset for number of hooks.
+This means we are modelling fish caught per hook, but with a statistical approach that lets us use a count distribution.
+The negative binomial distribution (NB2) lets the observation variance scale quadratically with the mean, which is typically needed for ecological data.
+This model also includes a quadratic effect of depth but no substrate habitat variables.
+
+TODO A BUNCH OF TECHNICAL STUFF HERE ABOUT FITTING AND confidence intervals (CIs). ... simulated 500 times...
+
+Finally, we calculated expected biomass densities, if sampled using HBLL gear, but for the larger area encompassing the both trawl and HBLL survey areas, depths between 20 and 1000 m (those covered in either survey), and excluding Rockfish Conservation Areas (RCAs) where fishing is prohibited.
+For halibut, this was an estimate of landable biomass, while for YE it was for total catchable biomass.
+These estimates were then used to produce maps of expected biomass distributions for each species, as well as the spatial distibution of expected catch ratios between these species.
+These expected densities were multiplied by the area of survey grid cells (usually 2 x 2 km), and adjacent portions of cells where part falls inside RCAs, to produce overall biomass indices and overall average biomass ratios for different subregions (within the CDA vs. Area 3CD5A outside the CDA, or Area 3CD5A north of 50º vs. Area 3CD5A south of 50º and outside the CDA; Fig. \@ref(fig:region-col-key)).
+Splitting at 50º separates the areas adjacent to the CDA from those not, as well as accounting for potential ecological or latitudinal variation implied by a positive correlation between HBLL catch counts of Halibut and YE in the south, but not in the north (Fig. \@ref(fig:hbll-catch)).
+Cell-specific biomass estimates were also used to explore how contrasting fishing strategies might affect expected catch ratios for a given total area of each region. We examined two strategies: (1) select cells in order from lowest YE densities to highest or (2) select cells with the highest halibut densities to lowest.
+
