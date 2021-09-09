@@ -1,7 +1,7 @@
 ---
 title: "Estimating relative biomass of Pacific Halibut and Yelloweye Rockfish off west coast of Vancouver Island"
 author: "Philina English"
-date: "09/06/2021"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
