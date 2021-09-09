@@ -484,13 +484,13 @@ rast_bat <- marmap::as.raster(bat)
 proj <- "+proj=utm +zone=9 +datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0  +units=m +no_defs"
 rast_bat <- projectRaster(rast_bat, crs = proj) 
 
-rast_bat[rast_bat > 0] <- 0
+rast_bat[rast_bat > 0] <- NA
 
 plot(rast_bat)
 
 rast_bat2 <- marmap::as.raster(bat) 
 rast_bat2 <- projectRaster(rast_bat2, crs = proj) 
-rast_water_area <- rast_bat
+rast_water_area <- rast_bat2
 rast_water_area[rast_bat2 <  0] <- 1
 rast_water_area[rast_bat2 >=  0] <- 0
 
@@ -499,7 +499,7 @@ plot(rast_water_area)
 # depth for complete cells only
 # hbll_grid <- readRDS(here::here("grids/hbll_s_grid_norca.rds"))
 hbll_grid <- readRDS(here::here("grids/hbll_s_grid_norca_expanded.rds"))
-# grid_scale <- 2000 #scale of prediction grid in m
+grid_scale <- 2000 #scale of prediction grid in m
 grid <- raster(
   ext = extent(hbll_grid)+c(-1000, 1000, -1000, 1000), # need to add 1km in all directions to allow coordinates to be the centroids of 2x2km cells
   resolution = grid_scale, crs = CRS(proj))
@@ -516,25 +516,21 @@ new_grid_norca <- readRDS(here::here("grids/hbll_shp_grid_norca_expanded.rds"))
 new_grid_norca <- st_as_sf(new_grid_norca)
 new_grid_norca <- st_transform(new_grid_norca, crs = 3156)
 
-new_grid_norca <- readRDS(here::here("grids/hbll_shp_grid_norca_expanded.rds"))
-new_grid_norca <- st_as_sf(new_grid_norca)
-new_grid_norca <- st_transform(new_grid_norca, crs = 3156)
-
 # # unweighted depths
 # get_depth <- raster::extract(x=rast_bat, y=new_grid_norca, na.rm = T, exact=T, sp = T)
 # mean_depth <- unlist(lapply(get_depth, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
 
 # weighted depths
 get_depth2 <- raster::extract(x=rast_bat, y=new_grid_norca, na.rm = T, exact=T, weights=T, sp = T)
-mean_depth2 <- sapply(get_depth2, function(x) if (!is.null(x)) {sum(apply(x, 1, prod)) / sum(x[,2])} else NA)
+mean_depth2 <- sapply(get_depth2, function(x) if (!is.null(x)) {sum(apply(x, 1, prod), na.rm = T) / sum(x[,2], na.rm = T)} else NA)
 
 # get water area
 get_water_area <- raster::extract(x=rast_water_area, y=new_grid_norca, na.rm = T, weights=T, exact=T, sp = T)
 water_area <- sapply(get_water_area, function(x) if (!is.null(x)) {sum(apply(x, 1, prod))} else NA)
 
 
-all_depths <- bind_cols(hbll_grid_full_cells, #mean_depth = mean_depth,
-  wm_depth = mean_depth2, prop_water = water_area) %>% 
+all_depths <- bind_cols(hbll_grid_full_cells, #mean_depth = mean_depth, prop_water = water_area,
+  wm_depth = mean_depth2) %>% 
   mutate(cell_depth = -depth, #depth_uw = -mean_depth, 
     depth_wm = -wm_depth, depth = -wm_depth) %>% dplyr::select(#-mean_depth, 
       -wm_depth)

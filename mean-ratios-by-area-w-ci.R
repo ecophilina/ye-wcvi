@@ -44,23 +44,23 @@ g_noncdaS <- readRDS(paste0("data-generated/filled", model_type, "-halibut", mod
   filter(region %in% c("non-CDA 3CD5A S")
   ) %>% select(X, Y, year, area)
 
-.file <- paste0(model_type, "-50.rds")
+.file <- paste0(model_type, "-100.rds")
 
 if (!file.exists(paste0("data-generated/ye_sims_for_ratios_by_area", model_type, "-50.rds"))) {
 
 # i_hal4 <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "index-all-S-sim-500.rds"))[[4]]
-s_hal_cda4 <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-cda-sim-500.rds"))[[4]][,1:50]
-s_hal_noncda4N <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-5A3CDN-outside-cda-sim-500.rds"))[[4]][,1:50]
-s_hal_noncda4S <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-5A3CDS-outside-cda-sim-500.rds"))[[4]][,1:50] #116571 vs. 116620 for newdata saved with it?
+s_hal_cda4 <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-cda-sim-500.rds"))[[4]][,1:100]
+s_hal_noncda4N <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-5A3CDN-outside-cda-sim-500.rds"))[[4]][,1:100]
+s_hal_noncda4S <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-5A3CDS-outside-cda-sim-500.rds"))[[4]][,1:100] #116571 vs. 116620 for newdata saved with it?
 # s_hal_5A4 <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-5A-sim-500.rds"))[[4]]
 
 
 model_vars <- "-est-rock-mud" # YE
 
 # i_ye4 <- readRDS(paste0("data-generated/filled", model_type, "-yelloweye", model_vars, "index-all-S-sim-500.rds"))[[4]]
-s_ye_cda4 <- readRDS(paste0("data-generated/filled", model_type, "-yelloweye", model_vars, "-index-cda-sim-500.rds"))[[4]][,1:50]
-s_ye_noncda4N <- readRDS(paste0("data-generated/filled", model_type, "-yelloweye", model_vars, "-index-5A3CDN-outside-cda-sim-500.rds"))[[4]][,1:50]
-s_ye_noncda4S <- readRDS(paste0("data-generated/filled", model_type, "-yelloweye", model_vars, "-index-5A3CDS-outside-cda-sim-500.rds"))[[4]][,1:50]
+s_ye_cda4 <- readRDS(paste0("data-generated/filled", model_type, "-yelloweye", model_vars, "-index-cda-sim-500.rds"))[[4]][,1:100]
+s_ye_noncda4N <- readRDS(paste0("data-generated/filled", model_type, "-yelloweye", model_vars, "-index-5A3CDN-outside-cda-sim-500.rds"))[[4]][,1:100]
+s_ye_noncda4S <- readRDS(paste0("data-generated/filled", model_type, "-yelloweye", model_vars, "-index-5A3CDS-outside-cda-sim-500.rds"))[[4]][,1:100]
 # s_ye_5A4 <- readRDS(paste0("data-generated/filled", model_type, "-yelloweye", model_vars, "-index-5A-sim-500.rds"))[[4]]
 
 model_vars <- "-delta-est-rock-mud" # change back to halibut/ version
@@ -509,7 +509,7 @@ p1 <- ggplot(avoiding_ye_sum %>%
     fill = Area), alpha=0.2) +
   scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
   scale_x_log10(breaks = c(10, 100, 1000, 10000, 100000), labels = c(10, 100, 1000, "10000", "100000")) +
-  coord_cartesian(ylim = c(0.000001, 0.5)) +
+  coord_cartesian(ylim = c(0.00000001, 0.5)) +
   # labs(tag="A")+
   scale_fill_brewer(palette = "Set1", direction = 1) +
   scale_colour_brewer(palette = "Set1", direction = 1) +
@@ -550,7 +550,7 @@ p2 <- ggplot(maximize_hal_sum %>%
   scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
   scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
   coord_cartesian(# expand = F,
-    ylim = c(0.000001, 0.5)) +
+    ylim = c(0.00000001, 0.5)) +
   # labs(tag="B")+
   scale_fill_brewer(palette = "Set1", direction = 1) +
   scale_colour_brewer(palette = "Set1", direction = 1) +
