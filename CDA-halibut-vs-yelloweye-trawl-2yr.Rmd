@@ -236,30 +236,32 @@ years <- sort(unique(d_ye$year))
 
 Scale covariates for models
 ```{r}
-f <- "grids/norca_grid_w_substrate_expanded.rds"
-
-if(!file.exists(f)) {
-  stop("Need to run make-grid.Rmd")
-} else {
-grid <- readRDS(file = f) %>% 
-  filter(depth > 2 & depth < 650) # produces best match to combination of HBLL S and trawl grids 
-}
-
-f2 <- "data-generated/events_w_substrate_1km_buffer.rds"
-if(!file.exists(f2)) {
+f1 <- "data-generated/events_w_substrate_1km_buffer.rds"
+if(!file.exists(f1)) {
   stop("Need to run part 1 of get-substrate.R script.")
 } else {
-substrate <- readRDS(file = f2) %>% 
+substrate <- readRDS(file = f1) %>% 
   select(X, Y, fishing_event_id, any_rock, rocky, mixed, muddy)
 }
-
-# grid <- grid[complete.cases(grid), ] # run this if only wanting complete 2x2 km cells
 
 d_utm <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>% 
   filter(latitude < 52.15507) %>%
   filter(year %in% years) %>% left_join(select(substrate, -X, -Y)) # looks like no missing data to worry about
 
 if(sum(is.na(d_utm$muddy))) { stop("Check for missing substrate data before running models.")}
+
+# check depth range and use as starting point for filtering grid
+ggplot(d_utm) + geom_histogram(aes(depth_m)) + scale_x_log10(breaks=c(25, 50, 100, 200, 400, 600, 800, 1000))
+
+f2 <- "grids/norca_grid_w_substrate_expanded.rds"
+
+if(!file.exists(f2)) {
+  stop("Need to run make-grid.Rmd")
+} else {
+grid <- readRDS(file = f2) %>% 
+  filter(depth > 2 & depth < 600) # produces best match to combination of HBLL S and trawl grids 
+}
+# grid <- grid[complete.cases(grid), ] # run this if only wanting complete 2x2 km cells
 
 grid_utm <- expand_prediction_grid(grid, years = years) %>%
   # mutate(any_rock_scaled = (any_rock - mean(substrate$any_rock)/ sd(substrate$any_rock)) %>%
@@ -511,7 +513,7 @@ trawl_sf2$source_data <- "TRAWL"
 # keep <- st_intersects(full_s_grid_sf2, full_sf_grid)
 # full_sf_grid <- full_sf_grid[unlist(keep)]
 # full_sf_grid2 <- st_as_sf(full_sf_grid)
-full_s_grid_trim <- full_s_grid #%>% filter(depth <= 600)
+full_s_grid_trim <- full_s_grid %>% filter(depth <= 600)
 
 g <- ggplot(focal_area_proj) +
   # geom_sf(data=full_sf_grid2, fill = "white", colour = NA, alpha = 0.9) +
@@ -1085,26 +1087,6 @@ if (!file.exists(s0)) {
 ```
 
 
-```{r eval = TRUE, echo=F}
-## For CDA only 
-# f <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-cda.rds"
-# if (!file.exists(f)) {
-#   p_ye_cda <- predict(m_ye, newdata = cda_grid, return_tmb_object = TRUE)
-#   saveRDS(p_ye_cda, "data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-cda.rds")
-# 
-#   i_ye_cda <- get_index(p_ye_cda, bias_correct = F)
-#   saveRDS(i_ye_cda, f)
-# }
-# 
-# ## duplicates subregions saved in chunk ye-sim-subregions
-# # ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-cda-sim-500.rds"
-# # if (!file.exists(ss)) {
-# #   i_ye_cda2 <- get_all_sims(m_ye, newdata = cda_grid)
-# #   saveRDS(i_ye_cda2, ss)
-# # }
-```
-
-
 For subregions using same batch of simulations
 
 ```{r ye-sim-subregions, eval = T, echo=F}
@@ -1156,9 +1138,7 @@ if (!file.exists(ss)) {
   i_ye_S2b <- get_all_sims(m_ye, newdata = hbll_s_grid, split_by_region = F)
   saveRDS(i_ye_S2b, ss)
 }
-```
 
-```{r eval = F}
 ## not needed right now
 # f <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-hbll-S.rds"
 # if (!file.exists(f)) {
@@ -1603,6 +1583,12 @@ ggsave("figs/filled-keepable-halibut-delta-est-rock-mud-average-index.png", widt
 ### Yelloweye Rockfish
 
 ```{r message = F, echo= F}
+i_ye_cda <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-cda-sim-500.rds")[[1]]
+i_ye_noncda <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds")[[1]]
+i_ye_noncdaN <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds")[[1]]
+i_ye_noncdaS <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds")[[1]]
+
+
 .dat <- bind_rows(
   mutate(i_ye_noncda,
     est = est / (sum(noncda_grid$area)/ 10000),
@@ -1668,12 +1654,14 @@ ggsave("figs/filled-keepable-yelloweye-est-rock-mud-average-index.png", width = 
 ```
 
 ```{r}
-g_a_hal  <- g_a_hal + theme(
+g_a_hal  <- g_a_hal + 
+  labs(tag ="A.") +
+  theme(plot.tag.position = c(0.15,0.9),
   axis.title.x = element_blank(),
   axis.text.x = element_blank(),
   legend.position = "none")
-g_a_ye <- g_a_ye + 
-  theme(
+g_a_ye <- g_a_ye + labs(tag ="B.") +
+  theme(plot.tag.position = c(0.15,0.9),
       # axis.title.y = element_blank(),
       # axis.text.y = element_blank(),
       # axis.ticks.y = element_blank(),
@@ -2126,6 +2114,7 @@ max_map_lon2 <- -125.2
 
 min_map_lat <- 48.3
 max_map_lon <- -124.85
+min_map_lat3 <- 48.4
 
 bs <- tidy(m_halibut_tweedie)
 # bs[bs$term == "as.factor(survey)TRAWL",2]
@@ -2476,8 +2465,6 @@ hotspots_proj <- sf::st_transform(hotspots, crs = 3156)
 ```
 
 ```{r message=F, echo=F}
-
-min_map_lat3 <- 48.4
 g <- map_predictions(
   map_lat_limits = c(min_map_lat, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
@@ -2560,11 +2547,8 @@ g <- map_predictions(
   pred_data = cv_hal2020,
   fill_aes = cv,
   fill_lab = "CV",
-  # pred_min = min(exp(p_hal2020$est), na.rm = T),
-  # pred_max = quantile(exp(p_hal2020$est), 0.9999, na.rm = T),
-  # obs_data = d_hal_plots,
-  # pred_min = min(exp(p_hal2020$est), na.rm = T),
-  # pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
+  pred_min = min(cv_hal2020$cv),
+  pred_max = quantile(cv_hal2020$cv, 0.995),
   map_lat_limits = c(min_map_lat3, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon)
 )+theme(legend.spacing.y = unit(0.1, "cm"))
@@ -2587,11 +2571,8 @@ g <- map_predictions(
   pred_data = cv_ye2020,
   fill_aes = cv,
   fill_lab = "CV",
-  # pred_min = min(exp(p_hal2020$est), na.rm = T),
-  # pred_max = quantile(exp(p_hal2020$est), 0.9999, na.rm = T),
-  # obs_data = d_hal_plots,
-  # pred_min = min(exp(p_hal2020$est), na.rm = T),
-  # pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
+  pred_min = min(cv_ye2020$cv),
+  pred_max = quantile(cv_ye2020$cv, 0.995),
   map_lat_limits = c(min_map_lat3, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon)
 )+theme(legend.spacing.y = unit(0.1, "cm"))
