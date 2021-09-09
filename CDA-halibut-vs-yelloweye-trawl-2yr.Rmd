@@ -327,7 +327,8 @@ Area 3CD5A outside CDA
 noncda_grid <- bind_rows(noncda_3CD_grid, s_5A_grid)
 
 noncda_grid$region <- "non-CDA 3CD5A"
-# saveRDS(noncda_grid, file = "data-generated/filled_noncda_grid_paired.rds")
+saveRDS(noncda_grid, file = "report-data/filled_noncda_grid_paired.rds")
+
 
 noncda_gridN <- filter(noncda_grid, latitude > 50)
 noncda_gridN$region <- "3CD5A N"
@@ -510,7 +511,7 @@ trawl_sf2$source_data <- "TRAWL"
 # keep <- st_intersects(full_s_grid_sf2, full_sf_grid)
 # full_sf_grid <- full_sf_grid[unlist(keep)]
 # full_sf_grid2 <- st_as_sf(full_sf_grid)
-full_s_grid_trim <- full_s_grid #%>% filter(depth <= 650)
+full_s_grid_trim <- full_s_grid #%>% filter(depth <= 600)
 
 g <- ggplot(focal_area_proj) +
   # geom_sf(data=full_sf_grid2, fill = "white", colour = NA, alpha = 0.9) +
