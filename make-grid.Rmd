@@ -483,7 +483,18 @@ rast_bat <- marmap::as.raster(bat)
 # change projection to match grid
 proj <- "+proj=utm +zone=9 +datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0  +units=m +no_defs"
 rast_bat <- projectRaster(rast_bat, crs = proj) 
+
+rast_bat[rast_bat > 0] <- 0
+
 plot(rast_bat)
+
+rast_bat2 <- marmap::as.raster(bat) 
+rast_bat2 <- projectRaster(rast_bat2, crs = proj) 
+rast_water_area <- rast_bat
+rast_water_area[rast_bat2 <  0] <- 1
+rast_water_area[rast_bat2 >=  0] <- 0
+
+plot(rast_water_area)
 
 # depth for complete cells only
 # hbll_grid <- readRDS(here::here("grids/hbll_s_grid_norca.rds"))
@@ -505,30 +516,44 @@ new_grid_norca <- readRDS(here::here("grids/hbll_shp_grid_norca_expanded.rds"))
 new_grid_norca <- st_as_sf(new_grid_norca)
 new_grid_norca <- st_transform(new_grid_norca, crs = 3156)
 
-# unweighted depths
-get_depth <- raster::extract(x=rast_bat, y=new_grid_norca, na.rm = T, exact=T, sp = T)
-mean_depth <- unlist(lapply(get_depth, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
+new_grid_norca <- readRDS(here::here("grids/hbll_shp_grid_norca_expanded.rds"))
+new_grid_norca <- st_as_sf(new_grid_norca)
+new_grid_norca <- st_transform(new_grid_norca, crs = 3156)
+
+# # unweighted depths
+# get_depth <- raster::extract(x=rast_bat, y=new_grid_norca, na.rm = T, exact=T, sp = T)
+# mean_depth <- unlist(lapply(get_depth, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
 
 # weighted depths
 get_depth2 <- raster::extract(x=rast_bat, y=new_grid_norca, na.rm = T, exact=T, weights=T, sp = T)
 mean_depth2 <- sapply(get_depth2, function(x) if (!is.null(x)) {sum(apply(x, 1, prod)) / sum(x[,2])} else NA)
 
+# get water area
+get_water_area <- raster::extract(x=rast_water_area, y=new_grid_norca, na.rm = T, weights=T, exact=T, sp = T)
+water_area <- sapply(get_water_area, function(x) if (!is.null(x)) {sum(apply(x, 1, prod))} else NA)
 
-all_depths <- bind_cols(hbll_grid_full_cells, mean_depth = mean_depth, wm_depth = mean_depth2) %>% 
-  mutate(cell_depth = -depth, depth_uw = -mean_depth, depth_wm = -wm_depth, depth = -wm_depth) %>% dplyr::select(-mean_depth, -wm_depth)
+
+all_depths <- bind_cols(hbll_grid_full_cells, #mean_depth = mean_depth,
+  wm_depth = mean_depth2, prop_water = water_area) %>% 
+  mutate(cell_depth = -depth, #depth_uw = -mean_depth, 
+    depth_wm = -wm_depth, depth = -wm_depth) %>% dplyr::select(#-mean_depth, 
+      -wm_depth)
 
 saveRDS(all_depths, here::here("grids/exrtracted_depths_norca_expanded.rds"))
 
 
-ggplot(all_depths) + geom_point( aes(cell_depth, depth_uw, colour = area),alpha=0.2) # unweighted
+# ggplot(all_depths) + geom_point( aes(cell_depth, depth_uw, colour = area),alpha=0.2) # unweighted
 ggplot(all_depths) + geom_point( aes(cell_depth, depth_wm, colour = area), alpha=0.2) # weighted
 # weighted seems closer to the full cells only way of doing this...
 ggplot(all_depths) + geom_point(aes(depth_wm, depth_uw, colour = area),alpha=0.2)
 
+
+ggplot(all_depths) + geom_jitter(aes(area, prop_water*area, colour = log(depth)), alpha=0.2) # weighted
+
 # will apply this filter after extracting substrate
 hbll_grid_keep <- all_depths %>%
   # filter(depth_all < 1100) %>% filter(depth_all > 10) 
-  filter(depth > 0.5) 
+  filter(depth > 0) 
 
 # ggplot(all_depths) +
 ggplot(hbll_grid_keep) +
@@ -622,5 +647,15 @@ all_covs <- bind_cols(all_depths, rocky = mean_rocky2, #rocky_uw = mean_rocky,
 saveRDS(all_covs, here::here("grids/norca_grid_w_substrate_expanded.rds"))
 ```
 
+Correct the area estimates by the proportion water
+```{r}
 
+# depths_only <- readRDS(here::here("grids/exrtracted_depths_norca_expanded.rds"))
+# 
+# all_covs <- readRDS(here::here("grids/norca_grid_w_substrate_expanded.rds")) %>% 
+#   rename(old_depth = depth) %>% dplyr::select( -depth_wm, -cell_depth) %>%  left_join(depths_only)
+
+all_covs2 <- all_covs %>% mutate(area = area * prop_water) %>% filter(area > 0)
+saveRDS(all_covs2, here::here("grids/norca_grid_w_substrate_expanded.rds"))
+```
 
