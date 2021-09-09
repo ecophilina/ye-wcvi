@@ -214,7 +214,7 @@ The ratio of YE to halibut within the CDA was on average lower overall (Fig. \@r
 If the same number of cells from the CDA or non-CDA 3CD5A were selected that have the highest density of landable halibut, the expected ratio of YE to landable halibut would not differ qualitatively between the areas (Fig. \@ref(fig:ye-ratio-by-scenario)A).
 However, if selecting cells to avoid YE, the ratio of YE to landable halibut biomass expected within the CDA would increasing sharply once more than 10% (or >250 kg/km^2^) of the CDA was sampled, while a lower YE ratio could be maintained while sampling from an equivelent area until the sampled area exceeded approximately `r signif(non_cda_exceeds_cda, digits = 2)` km2 of the non-CDA (Fig. \@ref(fig:ye-ratio-by-scenario)).
 
-```{r ye-ratio-through-time, fig.cap="Estimated ratio of Yelloweye Rockfish biomass to landable Halibut biomass through time within the CDA vs. in the sampled range of Area 3CD5A outside the CDA. Legend otherwise the same.", out.width="5in"}
+```{r ye-ratio-through-time, fig.cap="Estimated ratio of Yelloweye Rockfish biomass to landable Halibut biomass through time within the CDA vs. in Area 3CD5A outside the CDA. Legend otherwise the same.", out.width="5in"}
 include_graphics(here("figs/filled-keepable-ye-to-hal-index-est-rock-mud.png"))
 ## or with the N-S split
 # include_graphics(here("figs/filled-keepable-ye-to-hal-index-est-rock-mud-NS.png"))
