@@ -107,8 +107,8 @@ s_ye_noncda4 <- bind_rows(s_ye_noncda4N, s_ye_noncda4S)
   # , "5A", "Full combined"
   ))
 
-saveRDS(.s_hal, paste0("data-generated/hal_sims_for_ratios_by_area", model_type, "-50.rds"))
-saveRDS(.s_ye, paste0("data-generated/ye_sims_for_ratios_by_area", model_type, "-50.rds"))
+saveRDS(.s_hal, paste0("data-generated/hal_sims_for_ratios_by_area", .file))
+saveRDS(.s_ye, paste0("data-generated/ye_sims_for_ratios_by_area", .file))
 }
 
 
