@@ -238,8 +238,8 @@ range(maximize_hal_sum_cda$mean_ye_per_hal)
 
 
 
-saveRDS(maximize_hal_sum, paste0("data-generated/maximize_hal_sum", .file))
-saveRDS(avoiding_ye_sum, paste0("data-generated/avoiding_ye_sum", .file))
+saveRDS(maximize_hal_sum, paste0("report-data/maximize_hal_sum", .file))
+saveRDS(avoiding_ye_sum, paste0("report-data/avoiding_ye_sum", .file))
 }
 #
 

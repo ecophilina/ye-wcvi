@@ -281,8 +281,6 @@ full_s_grid_sf <- st_as_sf(full_s_grid_utm, coords = c("longitude", "latitude"))
 st_crs(full_s_grid_sf) <- 4326 # set the coordinate reference system
 full_s_grid1 <- sfc_as_cols(full_s_grid_sf, c("longitude", "latitude"))
 st_geometry(full_s_grid1) <- NULL
-
-# saveRDS(full_s_grid, file = "data-generated/full_filled_grid_paired.rds")
 ```
 
 Trim prediction grid for area 5A 
@@ -294,7 +292,7 @@ st_crs(s_5A_grid_sf) <- 4326 # set the coordinate reference system
 s_5A_grid <- sfc_as_cols(s_5A_grid_sf, c("longitude", "latitude"))
 st_geometry(s_5A_grid) <- NULL
 s_5A_grid$region <- "5A"
-# saveRDS(s_5A_grid, file = "data-generated/filled_5A_grid_paired.rds")
+saveRDS(s_5A_grid, file = "report-data/filled_5A_grid_paired.rds")
 ```
 
 Split area 3CD into areas inside and outside court defined area (CDA)
@@ -319,8 +317,8 @@ st_geometry(cda_grid) <- NULL
 st_geometry(noncda_3CD_grid) <- NULL
 cda_grid$region <- "CDA"
 noncda_3CD_grid$region <- "non-CDA 3CD"
-# saveRDS(cda_grid, file = "data-generated/filled_cda_grid_paired.rds")
-# saveRDS(noncda_3CD_grid, file = "data-generated/filled_noncda_3CD_grid_paired.rds")
+saveRDS(cda_grid, file = "report-data/filled_cda_grid_paired.rds")
+saveRDS(noncda_3CD_grid, file = "report-data/filled_noncda_3CD_grid_paired.rds")
 ```
 
 Area 3CD5A outside CDA 
@@ -364,7 +362,7 @@ full_s_grid <- left_join(full_s_grid1, region_names)
 full_s_grid <- full_s_grid %>% filter(!(latitude < 50.85 & latitude > 50.75 & longitude > -128.94 & longitude < -128.6))
 
 full_s_grid[is.na(full_s_grid$region), ]$region <- "other"
-# saveRDS(full_s_grid, file = "data-generated/full_filled_grid_paired.rds") 
+saveRDS(full_s_grid, file = "report-data/full_filled_grid_paired.rds")
 ```
 
 ```{r eval = F}
@@ -385,7 +383,7 @@ ggplot() + geom_point(data = filter(full_s_grid2,
 ```
 
 ```{r}
-f <- paste0("figs/region-colour-map-3x3.png")
+f <- paste0("figs/region-colour-map-3x3-expanded.png")
 if (!file.exists(f)) {
 full_s_grid2 <- full_s_grid  
   
@@ -522,7 +520,7 @@ g <- ggplot(focal_area_proj) +
         width = 2000, height = 2000) +
   # geom_sf(data=full_sf_grid2, fill = "grey90", colour = NA, alpha = 0.9) +
   geom_sf(data=trawl_sf2,  aes(fill = source_data), colour = NA,
-    alpha = 0.5) +
+    alpha = 0.7) +
   geom_sf(data=hbll_sf2,  aes(fill = source_data), colour = NA,
     alpha = 0.7) +
   geom_line( # add major management region boundaries
@@ -1732,7 +1730,7 @@ dens_per_hectare <- i_hal_2020 %>%
     catch_upr = quantile(.value / area_size, 0.975)
   )
 
-saveRDS(dens_per_hectare, "data-generated/dens_per_hectare.rds")
+saveRDS(dens_per_hectare, "report-data/dens_per_hectare.rds")
 ```
 
 ```{r}
@@ -1764,7 +1762,7 @@ ye_dens_per_hectare <- i_ye_2020 %>%
     catch_upr = quantile(.value / area_size, 0.975)
   )
 
-saveRDS(ye_dens_per_hectare, "data-generated/ye_cdens_per_hectare.rds")
+saveRDS(ye_dens_per_hectare, "report-data/ye_dens_per_hectare.rds")
 ```
 
 
@@ -1804,7 +1802,7 @@ What proportion of 5A3CD HBLL + trawl survey grid is inside CDA?
 ```{r echo=F, message=F, warning=F}
 # clearly wrong at the moment because simulations producing numerator and denominator are not actually the same
 hal_ratios <- i_hal_2020 %>%
-    select(-area_size, -region) %>%
+    dplyr::select(-area_size, -region) %>%
   pivot_wider(names_from = Area, values_from = .value) %>%
   group_by(.iteration) %>%
   mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 3CD5A S of 50º` + `3CD5A N of 50º`),
@@ -1822,7 +1820,7 @@ mean_hal_ratios <- hal_ratios %>%
     ratio_lwr = quantile(ratio, 0.025),
     ratio_upr = quantile(ratio, 0.975)
   )
-saveRDS(mean_hal_ratios, "data-generated/mean_hal_ratios.rds")
+saveRDS(mean_hal_ratios, "report-data/mean_hal_ratios.rds")
 
 ggplot(hal_ratios) +
   geom_histogram(aes(CDAto5A3CD), fill = "red", alpha = 0.75) +
@@ -1838,7 +1836,7 @@ ggsave("figs/filled-keepable-halibut-delta-est-rock-mud-relative-biomass.png", w
 
 ```{r echo=F, message=F, warning=F}
 ye_ratios <- i_ye_2020 %>%
-  select(-area_size, -region) %>%
+  dplyr::select(-area_size, -region) %>%
   pivot_wider(names_from = Area, values_from = .value) %>%
   group_by(.iteration) %>%
   mutate(CDAto5A3CD = CDA / (CDA + `non-CDA 3CD5A S of 50º` + `3CD5A N of 50º`),
@@ -1856,7 +1854,7 @@ mean_ye_ratios <- ye_ratios %>%
     ratio_lwr = quantile(ratio, 0.025),
     ratio_upr = quantile(ratio, 0.975)
   )
-saveRDS(mean_ye_ratios, "data-generated/mean_ye_ratios.rds")
+saveRDS(mean_ye_ratios, "report-data/mean_ye_ratios.rds")
 
 ggplot(ye_ratios) +
   geom_histogram(aes(CDAto5A3CD), fill = "red", alpha = 0.75) +
@@ -1992,9 +1990,9 @@ ggsave("figs/hbll-catch-correlations.png", width = 3.5, height = 5.5, dpi = 400)
 # Ratio of Yelloweye to Halibut through time
 
 ```{r message=F, echo=F, warning=F}
-i_ye_noncda2Nb <- i_ye_noncda2N %>% rename(N = .value) %>% select(-region)
-i_ye_noncda2Sb <- i_ye_noncda2S %>% rename(S = .value) %>% select(-region)
-i_ye_noncda2 <- left_join(i_ye_noncda2Nb, i_ye_noncda2Sb) %>% mutate(.value = N + S) %>% select(-S,-N)
+i_ye_noncda2Nb <- i_ye_noncda2N %>% rename(N = .value) %>% dplyr::select(-region)
+i_ye_noncda2Sb <- i_ye_noncda2S %>% rename(S = .value) %>% dplyr::select(-region)
+i_ye_noncda2 <- left_join(i_ye_noncda2Nb, i_ye_noncda2Sb) %>% mutate(.value = N + S) %>% dplyr::select(-S,-N)
 
 .i_ye <- bind_rows(
   # mutate(i_ye2, Area = "Full combined", num_cells = nrow(full_s_grid)),
@@ -2010,9 +2008,9 @@ i_ye_noncda2 <- left_join(i_ye_noncda2Nb, i_ye_noncda2Sb) %>% mutate(.value = N 
   levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º", "Full combined"))
 
 
-i_hal_noncda2Nb <- i_hal_noncda2N %>% rename(N = .value) %>% select(-region)
-i_hal_noncda2Sb <- i_hal_noncda2S %>% rename(S = .value) %>% select(-region)
-i_hal_noncda2 <- left_join(i_hal_noncda2Nb, i_hal_noncda2Sb) %>% mutate(.value = N + S) %>% select(-S,-N)
+i_hal_noncda2Nb <- i_hal_noncda2N %>% rename(N = .value) %>% dplyr::select(-region)
+i_hal_noncda2Sb <- i_hal_noncda2S %>% rename(S = .value) %>% dplyr::select(-region)
+i_hal_noncda2 <- left_join(i_hal_noncda2Nb, i_hal_noncda2Sb) %>% mutate(.value = N + S) %>% dplyr::select(-S,-N)
 
 .i_hal <- bind_rows(
   # mutate(i_hal2, Area = "Full combined", num_cells = nrow(full_s_grid)),
@@ -2041,7 +2039,7 @@ i_hal_noncda2 <- left_join(i_hal_noncda2Nb, i_hal_noncda2Sb) %>% mutate(.value =
     hal_per_ye = mean(hal_per_ye)
   ) 
 
-# saveRDS(.dat, "data-generated/ratios-yelloweye-to-halibut.rds")
+saveRDS(.dat, "report-data/ratios-yelloweye-to-halibut.rds")
 
 .dat2 <- .dat %>% filter(Area %in% c(
   "non-CDA 3CD5A",
@@ -2394,7 +2392,7 @@ ggsave(f, width = 10, height = 8, dpi = 200)
 ```
 
 
-# Map expected catch ratios (TODO: RERUN FROM HERE)
+# Map expected catch ratios
 
 ```{r message=F}
 # calculate ratio of yelloweye to halibut
@@ -2403,7 +2401,7 @@ p_hal <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-pred
 pyd <- p_ye %>% rename(ye_est = est) %>% distinct()
 phd <- p_hal %>%
   rename(hal_est = est) %>%
-  select(hal_est, X, Y, year)%>% distinct()
+  dplyr::select(hal_est, X, Y, year)%>% distinct()
 
 ratio_df <- left_join(pyd, phd) %>% mutate(
   halibut = exp(hal_est), 

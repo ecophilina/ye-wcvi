@@ -35,9 +35,9 @@ i_hal_noncda <- readRDS(here("report-data/filled-keepable-halibut-delta-est-rock
 i_hal_noncdaN <- readRDS(here("report-data/filled-keepable-halibut-delta-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))
 i_hal_noncdaS <- readRDS(here("report-data/filled-keepable-halibut-delta-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))
 
-cda_grid <- readRDS(here("data-generated/filled_cda_grid_paired.rds"))
-noncda_grid <- readRDS(here("data-generated/filled_noncda_grid_paired.rds"))
-full_s_grid <- readRDS(here("data-generated/full_filled_grid_paired.rds"))
+cda_grid <- readRDS(here("report-data/filled_cda_grid_paired.rds"))
+noncda_grid <- readRDS(here("report-data/filled_noncda_grid_paired.rds"))
+full_s_grid <- readRDS(here("report-data/full_filled_grid_paired.rds"))
 ```
 
 
@@ -49,9 +49,9 @@ i_ye_cda2020 <- filter(i_ye_cda, year == 2020)
 i_ye_noncda2020 <- filter(i_ye_noncda, year == 2020)
 i_ye2020 <- filter(i_ye, year == 2020)
 
-rel_hal <- readRDS(here("data-generated/mean_hal_ratios.rds"))
-rel_ye <- readRDS(here("data-generated/mean_ye_ratios.rds"))
-spp_ratios <- readRDS(here("data-generated/ratios-yelloweye-to-halibut.rds"))
+rel_hal <- readRDS(here("report-data/mean_hal_ratios.rds"))
+rel_ye <- readRDS(here("report-data/mean_ye_ratios.rds"))
+spp_ratios <- readRDS(here("report-data/ratios-yelloweye-to-halibut.rds"))
 
 rel_hal_3CD5A <- filter(rel_hal, area == "CDAto5A3CD")
 rel_ye_3CD5A <- filter(rel_ye, area == "CDAto5A3CD")
@@ -179,8 +179,8 @@ include_graphics(here("figs/filled-keepable-rock-mud-avg-by-area.png"))
 
 ```{r ratio-data}
 cda_2020 <- cda_grid %>% filter(year ==2020) %>% filter(area == 4000000)
-maximize_hal_sum <- readRDS(here("data-generated/maximize_hal_sum-keepable-50.rds"))
-avoiding_ye_sum <- readRDS(here("data-generated/avoiding_ye_sum-keepable-50.rds"))
+maximize_hal_sum <- readRDS(here("report-data/maximize_hal_sum-keepable-100.rds"))
+avoiding_ye_sum <- readRDS(here("report-data/avoiding_ye_sum-keepable-100.rds"))
 
 maximize_hal_sum_cda <- maximize_hal_sum %>% filter(Area == "CDA" & ordered < round(nrow(cda_2020)*0.1))
 ye_per_hal_cda <- range(maximize_hal_sum_cda$mean_ye_per_hal)
