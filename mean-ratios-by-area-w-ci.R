@@ -46,7 +46,7 @@ g_noncdaS <- readRDS(paste0("data-generated/filled", model_type, "-halibut", mod
 
 .file <- paste0(model_type, "-100.rds")
 
-if (!file.exists(paste0("data-generated/ye_sims_for_ratios_by_area", model_type, "-50.rds"))) {
+if (!file.exists(paste0("data-generated/ye_sims_for_ratios_by_area", .file))) {
 
 # i_hal4 <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "index-all-S-sim-500.rds"))[[4]]
 s_hal_cda4 <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-cda-sim-500.rds"))[[4]][,1:100]
@@ -123,8 +123,8 @@ cda_2020 <- filter(g_cda, year == 2020)
 
 if (!file.exists(paste0("data-generated/avoiding_ye_sum", .file))) {
 
-.s_hal <- readRDS( paste0("data-generated/hal_sims_for_ratios_by_area", model_type, "-50.rds"))
-.s_ye <- readRDS( paste0("data-generated/ye_sims_for_ratios_by_area", model_type, "-50.rds"))
+.s_hal <- readRDS( paste0("data-generated/hal_sims_for_ratios_by_area", .file))
+.s_ye <- readRDS( paste0("data-generated/ye_sims_for_ratios_by_area", .file))
 
 glimpse(.s_hal)
 glimpse(.s_ye)
@@ -463,8 +463,9 @@ ggsave(paste0("figs/expected_hal_when_maximize_hal_CI", model_type, "_allcda_fil
 areas_to_plot <- c(
   # "Full combined", "5A",
   "non-CDA 5A3CD",
- # "non-CDA 5A3CD S of 50º",  "5A3CD N of 50º",
-  "CDA")
+ # "non-CDA 5A3CD S of 50º",  "5A3CD N of 50º"
+  "CDA"
+  )
 
 
 avoiding_ye_sum$Area <- ordered(avoiding_ye_sum$Area, levels =  c(
