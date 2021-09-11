@@ -313,6 +313,9 @@ intersected <- sf::st_intersects(s_3CD_grid_sf, focal_area)
 cda_grid_sf <- s_3CD_grid_sf[which(lengths(intersected) > 0), ]
 noncda_3CD_grid_sf <- s_3CD_grid_sf[which(lengths(intersected) == 0), ]
 
+
+only_3CD_grid <- sfc_as_cols(s_3CD_grid_sf, c("longitude", "latitude"))
+saveRDS(only_3CD_grid, file = "report-data/filled_3CD_grid_paired.rds")
 cda_grid <- sfc_as_cols(cda_grid_sf, c("longitude", "latitude"))
 noncda_3CD_grid <- sfc_as_cols(noncda_3CD_grid_sf, c("longitude", "latitude"))
 st_geometry(cda_grid) <- NULL
@@ -338,6 +341,96 @@ noncda_gridN$region <- "3CD5A N"
 noncda_gridS <- filter(noncda_grid, latitude <= 50)
 noncda_gridS$region <- "non-CDA 3CD5A S"
 ```
+
+Grids for different management regions
+ 
+```{r eval = F}
+library(PBSmapping) # needs this for some reason
+library(maptools)
+majorbound <- load_boundaries(9)
+
+ggplot() + geom_polygon(data = majorbound,  aes(X * 1000, Y * 1000, 
+            group = PID), colour = "grey", lty = 1, fill = NA) 
+
+attributes(majorbound)$PolyData  
+
+bound3C <- fortify(majorbound) %>% mutate(X = X * 1000, Y = Y * 1000) %>%
+    filter(PID %in% c(3))
+
+bound3D <- fortify(majorbound) %>% mutate(X = X * 1000, Y = Y * 1000) %>%
+    filter(PID %in% c(4))
+
+bound5A <- fortify(majorbound) %>% mutate(X = X * 1000, Y = Y * 1000) %>%
+    filter(PID %in% c(5))
+bound5B <- fortify(majorbound) %>% mutate(X = X * 1000, Y = Y * 1000) %>%
+    filter(PID %in% c(6))
+
+
+poly3C <- PolySet2SpatialPolygons(bound3C, close_polys=TRUE)
+poly3C_sf <-  st_as_sf(poly3C)
+st_crs(poly3C_sf) <- 3156
+poly3C_sf <- sf::st_transform(poly3C_sf, crs = 4326)
+intersected3C <- sf::st_intersects(full_s_grid_sf, poly3C_sf)
+poly3C_grid_sf <- full_s_grid_sf[which(lengths(intersected3C) > 0), ]
+poly3C_grid <- sfc_as_cols(poly3C_grid_sf, c("longitude", "latitude"))
+st_geometry(poly3C_grid) <- NULL
+poly3C_grid$region <- "3C"
+poly3D <- PolySet2SpatialPolygons(bound3D, close_polys=TRUE)
+poly3D_sf <-  st_as_sf(poly3D)
+st_crs(poly3D_sf) <- 3156
+poly3D_sf <- sf::st_transform(poly3D_sf, crs = 4326)
+intersected3D <- sf::st_intersects(full_s_grid_sf, poly3D_sf)
+poly3D_grid_sf <- full_s_grid_sf[which(lengths(intersected3D) > 0), ]
+poly3D_grid <- sfc_as_cols(poly3D_grid_sf, c("longitude", "latitude"))
+st_geometry(poly3D_grid) <- NULL
+poly3D_grid$region <- "3D"
+
+poly5A <- PolySet2SpatialPolygons(bound5A, close_polys=TRUE)
+poly5A_sf <-  st_as_sf(poly5A)
+st_crs(poly5A_sf) <- 3156
+poly5A_sf <- sf::st_transform(poly5A_sf, crs = 4326)
+intersected5A <- sf::st_intersects(full_s_grid_sf, poly5A_sf)
+poly5A_grid_sf <- full_s_grid_sf[which(lengths(intersected5A) > 0), ]
+poly5A_grid <- sfc_as_cols(poly5A_grid_sf, c("longitude", "latitude"))
+st_geometry(poly5A_grid) <- NULL
+poly5A_grid$region <- "5A"
+
+poly5B <- PolySet2SpatialPolygons(bound5B, close_polys=TRUE)
+poly5B_sf <-  st_as_sf(poly5B)
+st_crs(poly5B_sf) <- 3156
+poly5B_sf <- sf::st_transform(poly5B_sf, crs = 4326)
+intersected5B <- sf::st_intersects(full_s_grid_sf, poly5B_sf)
+poly5B_grid_sf <- full_s_grid_sf[which(lengths(intersected5B) > 0), ]
+poly5B_grid <- sfc_as_cols(poly5B_grid_sf, c("longitude", "latitude"))
+st_geometry(poly5B_grid) <- NULL
+poly5B_grid$region <- "5B"
+
+ggplot() + geom_sf(data = poly3C_sf, colour = "blue", lty = 2, fill = NA) +
+  geom_sf(data = poly3D_sf, colour = "green", lty = 2, fill = NA) +
+  geom_sf(data = poly5A_sf, colour = "red", lty = 2, fill = NA) +
+  geom_sf(data = poly5B_sf, colour = "yellow", lty = 2, fill = NA) 
+
+
+# full_s_grid_sf_utm <- st_transform(full_s_grid_sf, crs = 3156)
+# intersected3C <- sf::st_intersects(full_s_grid_sf_utm, poly3C_sf)
+# poly3C_grid_sf <- full_s_grid_sf_utm[which(lengths(intersected3C) > 0), ]
+
+ggplot() + geom_sf(data = poly3C_sf, colour = "blue", lty = 2, fill = NA) +
+  geom_sf(data = poly3D_sf, colour = "green", lty = 2, fill = NA) +
+  geom_sf(data = poly5A_sf, colour = "red", lty = 2, fill = NA) +
+  geom_sf(data = poly5B_sf, colour = "yellow", lty = 2, fill = NA) +
+  geom_sf(data = poly3C_grid_sf, colour = "blue", lty = 2, fill = NA) + 
+  geom_sf(data = poly3D_grid_sf, colour = "green", lty = 2, fill = NA) +
+  geom_sf(data = poly5A_grid_sf, colour = "red", lty = 2, fill = NA) +
+  geom_sf(data = poly5B_grid_sf, colour = "yellow", lty = 2, fill = NA) 
+
+
+poly5A_grid <- poly5A_grid %>% filter(!(latitude < 50.85 & latitude > 50.75 & longitude > -128.94 & longitude < -128.6))
+regions_grid <- bind_rows(poly3C_grid, poly3D_grid, poly5A_grid, poly5B_grid)
+
+saveRDS(regions_grid, file = "report-data/filled_regions_grid.rds")
+```
+
 
 Just the HBLL S grid 
 
@@ -1012,6 +1105,49 @@ if (!file.exists(s5)) {
 }
 ```
 
+
+For management regions using same batch of simulations
+
+```{r hal-sim-manregions, eval = F, echo=F}
+## this takes up a lot of space and duplicates the components saved below...
+# ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-list-sim-500.rds"
+# if (!file.exists(ss)) {
+#   i_ye_combined <- get_all_sims(m_ye, newdata = full_s_grid)
+#   saveRDS(i_ye_combined, ss)
+# }
+
+s1 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-all-regions-sim-500.rds"
+if (!file.exists(s1)) {
+  i_hal_combined <- get_all_sims(fit_obj_bin = m_halibut_bin, fit_obj_pos = m_halibut_pos, newdata = regions_grid)
+  i_hal_1 <- i_hal_combined[[1]] 
+  saveRDS(i_hal_1, s1)
+}
+
+s2 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-3C-sim-500.rds"
+if (!file.exists(s2)) {
+  i_hal_2 <- i_hal_combined[[2]] 
+  saveRDS(i_hal_2, s2)
+}
+
+s3 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-3D-sim-500.rds"
+if (!file.exists(s3)) {
+  i_hal_3 <- i_hal_combined[[3]] 
+  saveRDS(i_hal_3, s3)
+}
+
+s4 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-5A-sim-500.rds"
+if (!file.exists(s4)) {
+  i_hal_4 <- i_hal_combined[[4]] 
+  saveRDS(i_hal_4, s4)
+}
+
+s5 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-5B-sim-500.rds"
+if (!file.exists(s5)) {
+  i_hal_5 <- i_hal_combined[[5]] 
+  saveRDS(i_hal_5, s5)
+}
+```
+
 For just southern outside HBLL 
 
 ```{r  echo=F}
@@ -1100,7 +1236,6 @@ For subregions using same batch of simulations
 s1 <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-all-S-sim-500.rds"
 if (!file.exists(s1)) {
   i_ye_combined <- get_all_sims(m_ye, newdata = full_s_grid)
-  saveRDS(i_ye_combined, ss)
   i_ye_S <- i_ye_combined[[1]] 
   saveRDS(i_ye_S, s1)
 }
@@ -1129,6 +1264,50 @@ if (!file.exists(s5)) {
   saveRDS(i_ye_other, s5)
 }
 ```
+
+For management regions using same batch of simulations
+
+```{r ye-sim-manregions, eval = F, echo=F}
+## this takes up a lot of space and duplicates the components saved below...
+# ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-list-sim-500.rds"
+# if (!file.exists(ss)) {
+#   i_ye_combined <- get_all_sims(m_ye, newdata = full_s_grid)
+#   saveRDS(i_ye_combined, ss)
+# }
+
+s1 <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-all-regions-sim-500.rds"
+if (!file.exists(s1)) {
+  i_ye_combined <- get_all_sims(m_ye, newdata = regions_grid)
+  saveRDS(i_ye_combined, "data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-all-regions-sim-500.rds")
+  i_ye_1 <- i_ye_combined[[1]] 
+  saveRDS(i_ye_1, s1)
+}
+
+s2 <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-3C-sim-500.rds"
+if (!file.exists(s2)) {
+  i_ye_2 <- i_ye_combined[[2]] 
+  saveRDS(i_ye_2, s2)
+}
+
+s3 <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-3D-sim-500.rds"
+if (!file.exists(s3)) {
+  i_ye_3 <- i_ye_combined[[3]] 
+  saveRDS(i_ye_3, s3)
+}
+
+s4 <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A-sim-500.rds"
+if (!file.exists(s4)) {
+  i_ye_4 <- i_ye_combined[[4]] 
+  saveRDS(i_ye_4, s4)
+}
+
+s5 <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-5B-sim-500.rds"
+if (!file.exists(s5)) {
+  i_ye_5 <- i_ye_combined[[5]] 
+  saveRDS(i_ye_5, s5)
+}
+```
+
 
 For just southern outside HBLL 
 ```{r eval = T, echo = F}
@@ -1442,7 +1621,6 @@ g_i_hal
 ggsave("figs/filled-keepable-halibut-delta-est-rock-mud-index-by-area.png", width = 7, height = 4, dpi = 400)
 ```
 
-
 ## Index of total Yelloweye Rockfish catch through time
 
 ```{r message=F, echo=F}
@@ -1503,6 +1681,74 @@ g_i_ye <- g_i_ye +
 ggsave("figs/filled-keepable-rock-mud-index-by-area.png", width = 6, height = 7, dpi = 300)
 ```
 
+```{r eval = F, message=F, echo=F}
+i_hal_1 <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-index-3C-sim-500.rds")[[1]]
+i_hal_2 <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-index-3D-sim-500.rds")[[1]]
+i_hal_3 <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-index-5A-sim-500.rds")[[1]]
+i_hal_4 <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-index-5B-sim-500.rds")[[1]]
+
+.datH <- bind_rows(
+  mutate(i_hal_1, Area = "3C"),
+  mutate(i_hal_2, Area = "3D"),
+  mutate(i_hal_3, Area = "5A"),
+  mutate(i_hal_4, Area = "5B")
+)
+
+
+# .datH$Area <- ordered(.datH$Area, levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º", "Full combined", "HBLL grid only"))
+g_i_hal <- ggplot(.datH, aes(year, est/1000, fill = Area, colour = Area)) + # convert kg to tonnes
+  geom_line(size = 1.25) +
+  geom_ribbon(aes(ymin = lwr/1000, ymax = upr/1000), alpha = 0.2, colour = NA) +
+  xlab("Year") +
+  ylab("Biomass index (landable tonnes)") +
+  ggtitle("A. Pacific Halibut") +
+  coord_cartesian( #expand = FALSE, 
+    ylim = c(0, max(.datH$upr)/1000)) +
+  # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
+  scale_x_continuous(
+    labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
+    breaks = seq(2008, 2020, 2)) + 
+  theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_colour_brewer(palette = "Set1")
+g_i_hal
+ggsave("figs/filled-keepable-halibut-delta-est-rock-mud-index-by-region.png", width = 7, height = 4, dpi = 400)
+```
+
+
+```{r eval = F, message=F, echo=F}
+i_ye_1 <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-3C-sim-500.rds")[[1]]
+i_ye_2 <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-3D-sim-500.rds")[[1]]
+i_ye_3 <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A-sim-500.rds")[[1]]
+i_ye_4 <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5B-sim-500.rds")[[1]]
+
+.dat <- bind_rows(
+  mutate(i_ye_1, Area = "3C"),
+  mutate(i_ye_2, Area = "3D"),
+  mutate(i_ye_3, Area = "5A"),
+  mutate(i_ye_4, Area = "5B")
+)
+
+# .dat$Area <- ordered(.dat$Area, levels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º", "Full combined", "HBLL grid only"))
+g_i_ye <- ggplot(.dat, aes(year, est/1000, fill = Area, colour = Area)) +
+  geom_line(size = 1.25) +
+  geom_ribbon(aes(ymin = lwr/1000, ymax = upr/1000), alpha = 0.2, colour = NA) +
+  # geom_line(data = .dat1, linetype = 2) +
+  xlab("Year") +
+  ylab("Biomass index (tonnes)") +
+  ggtitle("B. Yelloweye Rockfish") +
+  coord_cartesian(#expand = FALSE, 
+    ylim = c(0, max(.dat$upr)/1000)) +
+  # scale_x_continuous(breaks = seq(1950, 2050, 2)) +
+  scale_x_continuous(
+    labels=c("2007-2008", "2009-2010", "2011-2012", "2013-2014", "2015-2016","2017-2018","2019-2020"), 
+    breaks = seq(2008, 2020, 2)) + 
+  theme(plot.margin = margin(11 / 2, r = 11, 11 / 2, 11 / 2)) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_colour_brewer(palette = "Set1")
+g_i_ye
+ggsave("figs/filled-keepable-yelloweye-est-rock-mud-index-by-region.png", width = 7, height = 4, dpi = 400)
+```
 
 ## Estimated average catch through time
 
