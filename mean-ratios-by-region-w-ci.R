@@ -19,7 +19,7 @@ g_4 <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_var
 
 .file <- paste0(model_type, "-100.rds")
 
-# if (!file.exists(paste0("data-generated/ye_sims_for_ratios_by_area", .file))) {
+if (!file.exists(paste0("data-generated/ye_sims_for_ratios_by_area", .file))) {
 
 s_hal_1 <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-3C-sim-500.rds"))[[4]][,1:100]
 s_hal_2 <- readRDS(paste0("data-generated/filled", model_type, "-halibut", model_vars, "-index-3D-sim-500.rds"))[[4]][,1:100]
@@ -63,7 +63,7 @@ s_ye_4 <- bind_cols(g_4, as.data.frame(s_ye_4))%>% filter(area == 400) %>% selec
 
 saveRDS(.s_hal, paste0("data-generated/hal_sims_for_ratios_by_region", .file))
 saveRDS(.s_ye, paste0("data-generated/ye_sims_for_ratios_by_region", .file))
-# }
+}
 
 
 g1 <- g_1 %>% filter(area == 400) %>% select(-area)
@@ -78,7 +78,7 @@ g4_2020 <- filter(g4, year == 2020)
 
 
 
-if (!file.exists(paste0("data-generated/avoiding_ye_sum", .file))) {
+if (!file.exists(paste0("data-generated/maximize_hal_regions", .file))) {
 
 .s_hal <- readRDS( paste0("data-generated/hal_sims_for_ratios_by_region", .file))
 .s_ye <- readRDS( paste0("data-generated/ye_sims_for_ratios_by_region", .file))
@@ -208,8 +208,8 @@ areas_to_plot <- c(
 
 
 # #### make plots ####
-maximize_hal_sum <- readRDS( paste0("data-generated/maximize_hal_regions", .file))
-avoiding_ye_sum <- readRDS( paste0("data-generated/avoiding_ye_regions", .file))
+maximize_hal_sum <- readRDS( paste0("report-data/maximize_hal_regions", .file))
+avoiding_ye_sum <- readRDS( paste0("report-data/avoiding_ye_regions", .file))
 
 
 # mean_ye_hal
@@ -402,10 +402,21 @@ p1 <- ggplot(avoiding_ye_sum %>%
       , round((nrow(g2_2020))*.2)
       , round((nrow(g2_2020))*.3), round((nrow(g2_2020))*.4)
       , round((nrow(g2_2020))*.5)
-      , round((nrow(g2_2020))*.75), round((nrow(g2_2020))*1)
-      , round((nrow(g1_2020))*.85), round((nrow(g3_2020))*.85)
+      , round((nrow(g2_2020))*.75)
+      , round((nrow(g2_2020))*.85)
+      , round((nrow(g2_2020))*.95)
+      , round((nrow(g2_2020))*1)
+      , round((nrow(g1_2020))*.85)
+      , round((nrow(g3_2020))*.85)
       , round((nrow(g4_2020))*.85)
-      , round((nrow(g1_2020))), round((nrow(g3_2020)))
+      , round((nrow(g1_2020))*.9)
+      , round((nrow(g3_2020))*.9)
+      , round((nrow(g4_2020))*.9)
+      , round((nrow(g1_2020))*.95)
+      , round((nrow(g3_2020))*.95)
+      , round((nrow(g4_2020))*.95)
+      , round((nrow(g1_2020)))
+      , round((nrow(g3_2020)))
       , round((nrow(g4_2020)))
     ))) +
   geom_line(
@@ -418,10 +429,12 @@ p1 <- ggplot(avoiding_ye_sum %>%
     fill = Area), alpha=0.2) +
   # scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
   # scale_x_log10(breaks = c(10, 100, 1000, 10000, 100000), labels = c(10, 100, 1000, "10000", "100000")) +
-  coord_cartesian(expand = F, ylim = c(0.00000001, 0.7)) +
+  coord_cartesian(expand = F, ylim = c(0, 0.7)) +
   # labs(tag="A")+
-  scale_fill_brewer(palette = "Set1", direction = 1) +
-  scale_colour_brewer(palette = "Set1", direction = 1) +
+  scale_fill_viridis_d(option= "C", direction = -1, end = 0.8) +
+  scale_colour_viridis_d(option= "C", direction = -1, end = 0.8) +
+  # scale_fill_brewer(palette = "Set1", direction = 1) +
+  # scale_colour_brewer(palette = "Set1", direction = 1) +
   ylab("Mean ratio of YE to halibut") +
   xlab(expression("Total area of cells ("~km^2~")")) +
   ggtitle("B. Minimizing YE ") +
@@ -444,10 +457,21 @@ p2 <- ggplot(maximize_hal_sum %>%
       , round((nrow(g2_2020))*.2)
       , round((nrow(g2_2020))*.3), round((nrow(g2_2020))*.4)
       , round((nrow(g2_2020))*.5)
-      , round((nrow(g2_2020))*.75), round((nrow(g2_2020))*1)
-      , round((nrow(g1_2020))*.85), round((nrow(g3_2020))*.85)
+      , round((nrow(g2_2020))*.75)
+      , round((nrow(g2_2020))*.85)
+      , round((nrow(g2_2020))*.95)
+      , round((nrow(g2_2020))*1)
+      , round((nrow(g1_2020))*.85)
+      , round((nrow(g3_2020))*.85)
       , round((nrow(g4_2020))*.85)
-      , round((nrow(g1_2020))), round((nrow(g3_2020)))
+      , round((nrow(g1_2020))*.9)
+      , round((nrow(g3_2020))*.9)
+      , round((nrow(g4_2020))*.9)
+      , round((nrow(g1_2020))*.95)
+      , round((nrow(g3_2020))*.95)
+      , round((nrow(g4_2020))*.95)
+      , round((nrow(g1_2020)))
+      , round((nrow(g3_2020)))
       , round((nrow(g4_2020)))
     ))) +
   geom_line(
@@ -460,10 +484,12 @@ p2 <- ggplot(maximize_hal_sum %>%
     fill = Area), alpha=0.2) +
   # scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
   # scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
-  coord_cartesian(expand = F, ylim = c(0.00000001, 0.7)) +
+  coord_cartesian(expand = F, ylim = c(0, 0.7)) +
   # labs(tag="B")+
-  scale_fill_brewer(palette = "Set1", direction = 1) +
-  scale_colour_brewer(palette = "Set1", direction = 1) +
+  scale_fill_viridis_d(option= "C", direction = -1, end = 0.8) +
+  scale_colour_viridis_d(option= "C", direction = -1, end = 0.8) +
+  # scale_fill_brewer(palette = "Set1", direction = 1) +
+  # scale_colour_brewer(palette = "Set1", direction = 1) +
   ylab("Mean ratio of YE to halibut") +
   xlab(expression("Total area of cells ("~km^2~")")) +
   ggtitle("A. Maximizing halibut") +
