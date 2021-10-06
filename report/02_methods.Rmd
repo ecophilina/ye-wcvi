@@ -43,3 +43,23 @@ These expected densities were multiplied by the area of survey grid cells (usual
 Splitting at 50º separates the areas adjacent to the CDA from those not, as well as accounting for potential ecological or latitudinal variation implied by a positive correlation between HBLL catch counts of Halibut and YE in the south, but not in the north (Fig. \@ref(fig:hbll-catch)).
 Cell-specific biomass estimates were also used to explore how contrasting fishing strategies might affect expected catch ratios for a given total area of each region. We examined two strategies: (1) select cells in order from lowest YE densities to highest or (2) select cells with the highest halibut densities to lowest.
 
+```{r qq-ye, fig.cap="QQ-plot of residuals from the YE model. Three iterations have been overlaid.", out.width="2.5in"}
+include_graphics(here("figs/ye-qq.png"))
+```
+
+```{r qq-hal, fig.cap="QQ-plots of residuals from landable Halibut models using different distributions. The predictions from binomial and Gamma models are combined to produce Delta-Gamma the approach.", out.width="6in"}
+include_graphics(here("figs/halibut-qq.png"))
+```
+
+```{r survey-grid-map, fig.cap="Map of 2 x 2 km grid cells comprising both fishery-independent surveys used in this analysis and the court defined area (CDA) outlined in red. Trawl survey area north of Vancouver Island belongs to the Queen Charlotte Sound Synoptic Survey, while the area west of the island is covered in the West Coast Vancouver Island Synoptic Survey. Cells within these area that are excluded from the trawl survey grid are either protected areas or have been deemed unfishable by trawl gear, often due to rockiness or the presence of corals or sponges. Light grey area underlying both survey grids forms the prediction grid used to derive indices.", out.width="5.5in"}
+include_graphics(here("figs/map-stitched-grid-overlap-expanded.png"))
+```
+
+```{r region-col-key, fig.cap="This map illustrates the filled-in grid and the sub-regions for which indices will be calculated. Blue area is not illustrated as it is comprised of the green and purple areas combined.", out.width="4.5in"}
+include_graphics(here("figs/region-colour-map-3x3-expanded.png"))
+```
+
+```{r hbll-catch, fig.cap="Species correlations within HBLL catch counts. Colours correspond to the sub-regions in Fig. 2 except that catch within the CDA has been included in panel B.", out.width="3in"}
+include_graphics(here("figs/hbll-catch-correlations.png"))
+```
+
