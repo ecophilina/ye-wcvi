@@ -14,11 +14,11 @@ These biomass estimates for HBLL catch were further divided by the "area swept" 
 For the trawl survey halibut biomass, the estimated densities were multiplied by the proportion of biomass caught that belonged to landable individuals at the set-level, where at least 10 fish, or greater than 70% by weight of the total catch, were measured.
 In cases where these criteria were not met, we used the global mean across all sets.
 <!-- YE biomass densities from the trawl survey were left unadjusted because -->
-The mean weight per fish were nearly identical between the two surveys (synoptic surveys = `r round(yemeanweightSYN, 2)` kg; HBLL = `r round(yemeanweightHBLL, 2)` kg).
+For YE, the mean weights per fish were nearly identical between the two surveys (synoptic surveys = `r round(yemeanweightSYN, 2)` kg; HBLL = `r round(yemeanweightHBLL, 2)` kg).
 <!-- Finally, all densities were converted from kg per kg/km2 to kg per ha for computational reasons. -->
 
 Next, we fit geostatistical spatiotemporal models to these surveyed biomass densities using the R package sdmTMB <https://github.com/pbs-assess/sdmTMB>.
-Because these biomass densities include both zeros and positive continuous values, we used either a Tweedie distribution or a delta-Gamma model (a binomial distribution for presence-absence and a Gamma distribution for the positive component) approach to model predicted catches of each species.
+Because these biomass densities include both zeros and positive continuous values, we used either a Tweedie distribution or a delta-Gamma (a binomial distribution for presence-absence and a Gamma distribution for the positive component) approach to model predicted catches of each species.
 We did not account for hook competition in any of these models because the goal here was to estimate likely catch ratios and not the underlying abundances.
 Furthermore, an investigation into hook competition for YE in the latest outside YE stock assessment found little effect of accounting for it [REF].
 For both species, we included quadratic effects of depth, and the proportions of rocky and muddy substrate within 1 km of the sampling location, to help account for difference in the habitats targeted by each survey.
@@ -90,7 +90,7 @@ where the symbols have the same meaning as in the YE equations, but the subscrip
 Finally, we calculated expected biomass densities, if sampled using HBLL gear, but for the larger area encompassing the both trawl and HBLL survey areas, depths between 20 and 1000 m (those covered in either survey), and excluding Rockfish Conservation Areas (RCAs) where fishing is prohibited.
 For halibut, this was an estimate of landable biomass, while for YE it was for total catchable biomass.
 These estimates were then used to produce maps of expected biomass distributions for each species, as well as the spatial distribution of expected catch ratios between these species.
-These expected densities were multiplied by the area of survey grid cells (2 x 2 km), and adjacent portions of cells where part fell inside RCAs, to produce overall biomass indices and overall average biomass ratios for different subregions (within the CDA vs. Area 3CD5A outside the CDA and Area 3CD5A north of 50º vs. Area 3CD5A south of 50º and outside the CDA; Fig. \@ref(fig:region-col-key)).
+These expected densities were multiplied by the area of water within survey grid cells (2 x 2 km), and adjacent portions of cells where part fell inside RCAs, to produce overall biomass indices and overall average biomass ratios for different subregions (within the CDA vs. Area 3CD5A outside the CDA and Area 3CD5A north of 50º vs. Area 3CD5A south of 50º and outside the CDA; Fig. \@ref(fig:region-col-key)).
 Splitting at 50º separates the areas adjacent to the CDA from those not adjacent, as well as accounting for potential ecological or latitudinal variation implied by a positive correlation between HBLL catch counts of halibut and YE in the south, but not in the north (Fig. \@ref(fig:hbll-catch)).
 Cell-specific biomass estimates were also used to explore how contrasting fishing strategies might affect expected catch ratios for a given total area of each region.
 We examined two strategies: (1) select cells in order from lowest to highest YE densities or (2) select cells with the highest to lowest halibut densities.

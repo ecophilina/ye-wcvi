@@ -84,7 +84,7 @@ include_graphics(here("figs/effects-delta-allfixed.png"))
 include_graphics(here("figs/filled-keepable-halibut-delta-predictions-est-rock-mud.png"))
 ```
 
-```{r ye-preds-all, fig.cap="Model-predicted Yelloweye Rockfish biomass densities (colour) with survey sample densities (circle areas) overlaid. HBLL catch counts were converted to a biomass density. Trawl survey catch is converted to an equivalent value by adjusting for model-estimated catchability. Legend otherwise the same.", out.width="\\textwidth"}
+```{r ye-preds-all, fig.cap="Model-predicted YE biomass densities (colour) with survey sample densities (circle areas) overlaid. HBLL catch counts were converted to a biomass density. Trawl survey catch is converted to an equivalent value by adjusting for model-estimated catchability. Legend otherwise the same.", out.width="\\textwidth"}
 include_graphics(here("figs/filled-keepable-ye-predictions-est-rock-mud.png"))
 ```
 
@@ -92,25 +92,25 @@ include_graphics(here("figs/filled-keepable-ye-predictions-est-rock-mud.png"))
 include_graphics(here("figs/filled-keepable-halibut-delta-2020-predictions-est-rock-mud.png"))
 ```
 
-```{r ye-preds-2020, fig.cap="Predicted Yelloweye Rockfish densities and observed biomass densities for 2018--2020. This is a zoomed-in version of the 2019--2020 predictions, but with 2018 through 2020 survey data included because one of the 2020 surveys was deferred. Legend otherwise the same.", out.width="\\textwidth"}
+```{r ye-preds-2020, fig.cap="Predicted YE densities and observed biomass densities for 2018--2020. This is a zoomed-in version of the 2019--2020 predictions, but with 2018 through 2020 survey data included because one of the 2020 surveys was deferred. Legend otherwise the same.", out.width="\\textwidth"}
 include_graphics(here("figs/filled-keepable-yelloweye-2020-predictions-est-rock-mud.png"))
 ```
 
-```{r halibut-preds-2020-closeup, fig.cap="Predicted Halibut densities and observed biomass densities for 2018--2020. This is a zoomed-in version of just the area around the CDA. Legend otherwise the same.", out.width="4.5in"}
+```{r halibut-preds-2020-closeup, fig.cap="Predicted halibut densities and observed biomass densities for 2018--2020. This is a zoomed-in version of just the area around the CDA. Legend otherwise the same.", out.width="4.5in"}
 include_graphics(here("figs/filled-keepable-halibut-delta-2020-predictions-est-rock-mud-closeup.png"))
 ```
 
-```{r ye-preds-2020-closeup, fig.cap="Predicted Yelloweye Rockfish densities and observed biomass densities for 2018--2020. This is a zoomed-in version of just the area around the CDA. Legend otherwise the same.", out.width="4.5in"}
+```{r ye-preds-2020-closeup, fig.cap="Predicted YE densities and observed biomass densities for 2018--2020. This is a zoomed-in version of just the area around the CDA. Legend otherwise the same.", out.width="4.5in"}
 include_graphics(here("figs/filled-keepable-yelloweye-2020-predictions-est-rock-mud-closeup.png"))
 ```
 
-```{r ye-per-hal-preds-2020, fig.cap="Mapped ratios of Yelloweye Rockfish biomass to Halibut biomass in 2019--2020. Note that the colour axis is capped at the 99th percentile and is square root transformed to improve visual interpretation.", out.width="4.5in"}
+```{r ye-per-hal-preds-2020, fig.cap="Mapped ratios of YE biomass to halibut biomass in 2019--2020. Note that the colour axis is capped at the 99th percentile and is square root transformed to improve visual interpretation.", out.width="4.5in"}
 include_graphics(here("figs/filled-ye-to-halibut-2020-keepable-delta.png"))
 # could include hotspots?
 # include_graphics(here("figs/filled-ye-to-halibut-2020-w-hotspots.png"))
 ```
 
-(ref:fig-hal-per-ye-preds-2020) Mapped ratios of halibut biomass to Yelloweye Rockfish biomass in 2019--2020. Because YE often occur at much lower densities than Halibut, this calculation requires first truncating their biomass density to a minimum of 1 kg per kg/km^2^. Legend otherwise the same.
+(ref:fig-hal-per-ye-preds-2020) Mapped ratios of halibut biomass to YE biomass in 2019--2020. Because YE often occur at much lower densities than halibut, this calculation requires first truncating their biomass density to a minimum of 1 kg per kg/km^2^. Legend otherwise the same.
 
 ```{r hal-per-ye-preds-2020, fig.cap="(ref:fig-hal-per-ye-preds-2020)", out.width="4.5in"}
 include_graphics(here("figs/filled-halibut-to-ye-2020-keepable-delta.png"))
@@ -118,7 +118,7 @@ include_graphics(here("figs/filled-halibut-to-ye-2020-keepable-delta.png"))
 # include_graphics(here("figs/filled-halibut-to-ye-2020-w-hotspots.png"))
 ```
 
-(ref:fig-ye-hotspots) Mapped Yelloweye Rockfish biomass in 2019--2020 with known YE commerical fishing hotspots for the halibut fleet outlined in white [modified from @forrestEvidenceRapidAvoidance2020a]. Hotspots are defined as regions where YE have been caught repeatedly on commercial long-line gear in excess of 18 fish per set since 2007. Note that the colour axis is capped at the 99th percentile and is square root transformed to improve visual interpretation.
+(ref:fig-ye-hotspots) Mapped YE biomass in 2019--2020 with known YE commerical fishing hotspots for the halibut fleet outlined in white [modified from @forrestEvidenceRapidAvoidance2020a]. Hotspots are defined as regions where YE have been caught repeatedly on commercial long-line gear in excess of 18 fish per set since 2007. Note that the colour axis is capped at the 99th percentile and is square root transformed to improve visual interpretation.
 
 ```{r ye-hotspots, fig.cap="(ref:fig-ye-hotspots)", out.width="4.5in"}
 include_graphics(here("figs/filled-keepable-yelloweye-est-2020-rock-mud-w-hotspots.png"))
@@ -133,13 +133,13 @@ We estimated the average landed halibut biomass density inside the CDA to be `r 
 However, this difference was much less than the difference in average YE biomass density between areas.
 Inside the CDA, average YE biomass density was `r r2(i_ye_cda2020$est / (sum(cda_grid$area)/1000000))` kg/km^2^ (95% CI: `r r2(i_ye_cda2020$lwr / (sum(cda_grid$area)/1000000))` to `r r2(i_ye_cda2020$upr / (sum(cda_grid$area)/1000000))`), versus `r r2(i_ye_noncda2020$est / (sum(noncda_grid$area)/1000000))` kg/km^2^ (95% CI: `r r2(i_ye_noncda2020$lwr / (sum(noncda_grid$area)/1000000))` to `r r2(i_ye_noncda2020$upr / (sum(noncda_grid$area)/1000000))`; Fig. \@ref(fig:indexes-avg)B) in the rest of Area 3CD5A.
 
-```{r indexes-avg, fig.cap="Average landable Halibut (A) and YE (B) biomass densities through time within the CDA, versus in the sampled range of Area 3CD5A outside the CDA. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 draws from the joint-precision matrix.", out.width="5in"}
+```{r indexes-avg, fig.cap="Average landable halibut (A) and YE (B) biomass densities through time within the CDA, versus in the sampled range of Area 3CD5A outside the CDA. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 draws from the joint-precision matrix.", out.width="5in"}
 include_graphics(here("figs/filled-keepable-rock-mud-avg-by-area.png"))
 ## or with the N-S split
 # include_graphics(here("figs/filled-keepable-halibut-delta-est-rock-mud-average-index-NS.png"))
 ```
 
-```{r halibut-indexes-avg, fig.cap="Average landable Halibut biomass density through time within the CDA, versus in the sampled range of area 3CD5A outside the CDA. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 simulations.", out.width="5in"}
+```{r halibut-indexes-avg, fig.cap="Average landable halibut biomass density through time within the CDA, versus in the sampled range of area 3CD5A outside the CDA. Lines are means and ribbons are 95\\% confidence intervals (CIs) from 500 simulations.", out.width="5in"}
 # include_graphics(here("figs/filled-keepable-halibut-delta-est-rock-mud-average-index.png"))
 ## or with the N-S split
 # include_graphics(here("figs/filled-keepable-halibut-delta-est-rock-mud-average-index-NS.png"))
@@ -187,13 +187,13 @@ The ratio of YE to halibut within the CDA was on average lower than outside the 
 If the same number of cells from the CDA or non-CDA 3CD5A were selected that have the highest density of landable halibut, the expected ratio of YE to landable halibut would not differ qualitatively between the areas (Fig. \@ref(fig:ye-ratio-by-scenario)A).
 However, if selecting cells to avoid YE, the ratio of YE to landable halibut biomass expected within the CDA would increase sharply once more than 10% (or >250 kg/km^2^) of the CDA was sampled, while a lower YE ratio could be maintained while sampling from an equivelent area until the sampled area exceeded approximately `r signif(non_cda_exceeds_cda, digits = 2)` km^2^ of the non-CDA (Fig. \@ref(fig:ye-ratio-by-scenario)).
 
-```{r ye-ratio-through-time, fig.cap="Estimated ratio of Yelloweye Rockfish biomass to landable Halibut biomass through time within the CDA vs. in Area 3CD5A outside the CDA. Legend otherwise the same.", out.width="5in"}
+```{r ye-ratio-through-time, fig.cap="Estimated ratio of YE biomass to landable halibut biomass through time within the CDA vs. in Area 3CD5A outside the CDA. Legend otherwise the same.", out.width="5in"}
 include_graphics(here("figs/filled-keepable-ye-to-hal-index-est-rock-mud.png"))
 ## or with the N-S split
 # include_graphics(here("figs/filled-keepable-ye-to-hal-index-est-rock-mud-NS.png"))
 ```
 
-```{r ye-ratio-by-scenario, fig.cap="Spatial variation in the mean biomass ratio of YE to halibut for cells with (A) the highest halibut densities or (B) the lowest YE densities. Mean halibut densities of less than 1 g per 100 hooks have been truncated to this value. Note that both axes are log scales. Lines and 95 percent confidence intervals are calculated from 500 draws from the biomass distribution for each species.", out.width="4.5in"}
+```{r ye-ratio-by-scenario, fig.cap="Spatial variation in the mean biomass ratio of YE to halibut for cells with (A) the highest halibut densities or (B) the lowest YE densities. Mean halibut densities of less than 1 g per 100 hooks have been truncated to this value. Note that both axes are log scales. Lines and 95 percent CI are calculated from 500 draws from the biomass distribution for each species.", out.width="4.5in"}
 include_graphics(here("figs/expected_ye_to_hal-keepable_both_scenarios.png"))
 # include_graphics(here("figs/expected_ye_to_hal-keepable_both_scenarios_NS.png"))
 ```
@@ -220,7 +220,7 @@ While outside the CDA, a similar approach used to fish the same total area could
 <!-- and much more pronounced fluctuations in the amount of halibut relative to YE within the CDA (Fig. \@ref(fig:hal-ratio-through-time)).  -->
 <!-- Building similar models from International Pacific Halibut Commission (IPHC) survey data could provide alternate estimates of catch ratios, but the local resolution would be coarser.  -->
 
-```{r indexes, fig.cap="Indices of total (A) landable Halibut and (B) YE biomass through time within various regions (Fig. 2). Blue is the portion of Area 3CD5A that overlaps the HBLL survey (sampled range of Area 3CD5A) and excludes the CDA and RCAs. Purple represents the portion of this area included in the closeup of the CDA. Green is the portion of the blue area not included in purple. Lines are means and ribbons are 95\\% confidence intervals (CIs).", out.width="5in"}
+```{r indexes, fig.cap="Indices of total (A) landable halibut and (B) YE biomass through time within various regions (Fig. 2). Blue is the portion of Area 3CD5A that overlaps the HBLL survey (sampled range of Area 3CD5A) and excludes the CDA and RCAs. Purple represents the portion of this area included in the closeup of the CDA. Green is the portion of the blue area not included in purple. Lines are means and ribbons are 95\\% confidence intervals (CIs).", out.width="5in"}
 include_graphics(here("figs/filled-keepable-rock-mud-index-by-area.png"))
 ```
 
