@@ -75,6 +75,8 @@ include_graphics(here("figs/effects-delta-allfixed.png"))
 
 \clearpage
 
+## Spatial predictions
+
 These models produce biennial estimates of the spatial distribution of biomass density for each species (Figs \@ref(fig:halibut-preds-all) and \@ref(fig:ye-preds-all)).
 However, we will focus on the predicted spatial variation for the most recent years in our survey data (2018--2020 to have complete spatial coverage) and prediction for 2019 and 2020 combined (Figs. \@ref(fig:halibut-preds-2020) and \@ref(fig:ye-preds-2020)).
 <!-- SA: clarify? 2019-2020 or 2018-2020; I'm confused here -->
@@ -162,6 +164,9 @@ avoiding_ye_sum_noncda_2020 <- avoiding_ye_sum %>%
 non_cda_exceeds_cda <- max(avoiding_ye_sum_noncda_2020[avoiding_ye_sum_noncda_2020$mean_ye_per_hal < ye_per_hal_cda_min[2],]$ordered)*4
 ```
 
+\clearpage
+
+## Area-specific indices
 
 The CDA covers `r r2(((sum(cda_grid$area)/10000) / ((sum(cda_grid$area)/10000) + (sum(noncda_grid$area)/10000)))*100)`% of Area 3CD5A's total surveyed area, excluding RCAs.
 This area was estimated to contain `r r2(rel_hal_3CD5A$ratio_mean*100)`% (95% CI (confidence interval): `r r2(rel_hal_3CD5A$ratio_lwr*100)` to `r r2(rel_hal_3CD5A$ratio_upr*100)`) of estimated total landable halibut biomass in the surveyed portion of area 3CD5A.
@@ -170,10 +175,24 @@ We estimated the average landed halibut biomass density inside the CDA to be `r 
 However, this difference was much less than the difference in average YE biomass density between areas.
 Inside the CDA, average YE biomass density was `r r2(i_ye_cda2020$est / (sum(cda_grid$area)/1000000))` kg/km^2^ (95% CI: `r r2(i_ye_cda2020$lwr / (sum(cda_grid$area)/1000000))` to `r r2(i_ye_cda2020$upr / (sum(cda_grid$area)/1000000))`), versus `r r2(i_ye_noncda2020$est / (sum(noncda_grid$area)/1000000))` kg/km^2^ (95% CI: `r r2(i_ye_noncda2020$lwr / (sum(noncda_grid$area)/1000000))` to `r r2(i_ye_noncda2020$upr / (sum(noncda_grid$area)/1000000))`; Fig. \@ref(fig:indexes-avg)B) in the rest of Area 3CD5A.
 
-
 The ratio of YE to halibut within the CDA was on average lower than outside the CDA (Fig. \@ref(fig:ye-ratio-through-time)).
 If the same number of cells from the CDA or non-CDA 3CD5A were selected that have the highest density of landable halibut, the expected ratio of YE to landable halibut would not differ qualitatively between the areas (Fig. \@ref(fig:ye-ratio-by-scenario)A).
 However, if selecting cells to avoid YE, the ratio of YE to landable halibut biomass expected within the CDA would increase sharply once more than 10% (or >250 kg/km^2^) of the CDA was sampled, while a lower YE ratio could be maintained while sampling from an equivelent area until the sampled area exceeded approximately `r signif(non_cda_exceeds_cda, digits = 2)` km^2^ of the non-CDA (Fig. \@ref(fig:ye-ratio-by-scenario)).
+
+If fishing were to focus only on the 10% of area with the highest halibut densities, the estimated mean ratios of YE to halibut range from `r round(ye_per_hal_cda[1],2)` to `r round(ye_per_hal_cda[2],2)` within the CDA.
+<!-- Overall, this ratio varies more between years than with total proportion of the CDA targeted for halibut (Fig. \@ref(fig:ye-ratio-targetting-by-year)).  -->
+In contrast, if fishing was focused on avoiding the 50% of the CDA grid area with the highest YE abundances, this ratio could be expected to stay below `r round(ye_per_hal_cda_min[2],4)`.
+While outside the CDA, a similar approach used to fish the same total area could be expected to keep the ratio of YE to halibut below `r round(ye_per_hal_noncda_min[2],4)` (Fig. \@ref(fig:ye-ratio-by-scenario)<!-- and \@ref(fig:ye-ratio-avoiding-by-year) -->).
+
+<!-- and much more pronounced fluctuations in the amount of halibut relative to YE within the CDA (Fig. \@ref(fig:hal-ratio-through-time)).  -->
+<!-- Building similar models from International Pacific Halibut Commission (IPHC) survey data could provide alternate estimates of catch ratios, but the local resolution would be coarser.  -->
+
+Over the roughly 14-year timespan of this index (2007--2019 for QCS trawl survey area; 2008-2018 for WCVI trawl survey area; 2007--2020 for HBLL), overall landable halibut biomass has fluctuated from a high of `r round(i_hal[i_hal$year==2014,]$est/1000)` tonnes in 2013-2014 to low of `r round(i_hal[i_hal$year==2018,]$est/1000)` tonnes in 2017-2018 (sum of red and blue in Fig. \@ref(fig:indexes)A), while total YE biomass fluctuated from a high of `r round(i_ye[i_ye$year==2008,]$est/1000)` tonnes in 2013-2014 to low of `r round(i_ye[i_ye$year==2020,]$est/1000)` tonnes in 2017-2018 (sum of red and blue in Fig. \@ref(fig:indexes)B).
+While index trajectories for both species are similar inside versus outside the CDA (Fig. \@ref(fig:indexes-avg)), the difference in the expected species ratio in the CDA compared to the non-CDA 3CD5A has been reduced in the most recent years (Fig. \@ref(fig:ye-ratio-through-time)).
+
+<!-- SA: define a term for 'wider area' much earlier? "3CD5A (that overlaps with the latitudes surveyed by the HBLL) except the CDA... -->
+<!-- PE: this is defined in Fig. \@ref(fig:region-col-key) and the methods text. At this late stage in the doc I wanted to translate the technical "non-3CD5A" into what it actually represents... maybe what we should say here is take it back to "the majority of the Groundfish Management Unit Area encompassing the CDA" or something like that? Trying to remind the reader what was covered in the methods and might have been forgotten by this point.-->
+
 
 \clearpage
 
@@ -195,18 +214,7 @@ include_graphics(here("figs/filled-keepable-rock-mud-avg-by-area.png"))
 # include_graphics(here("figs/filled-keepable-yelloweye-est-rock-mud-average-index.png"))
 ```
 
-
-If fishing were to focus only on the 10% of area with the highest halibut densities, the estimated mean ratios of YE to halibut range from `r round(ye_per_hal_cda[1],2)` to `r round(ye_per_hal_cda[2],2)` within the CDA.
-<!-- Overall, this ratio varies more between years than with total proportion of the CDA targeted for halibut (Fig. \@ref(fig:ye-ratio-targetting-by-year)).  -->
-In contrast, if fishing was focused on avoiding the 50% of the CDA grid area with the highest YE abundances, this ratio could be expected to stay below `r round(ye_per_hal_cda_min[2],4)`.
-While outside the CDA, a similar approach used to fish the same total area could be expected to keep the ratio of YE to halibut below `r round(ye_per_hal_noncda_min[2],4)` (Fig. \@ref(fig:ye-ratio-by-scenario)<!-- and \@ref(fig:ye-ratio-avoiding-by-year) -->).
-
-<!-- and much more pronounced fluctuations in the amount of halibut relative to YE within the CDA (Fig. \@ref(fig:hal-ratio-through-time)).  -->
-<!-- Building similar models from International Pacific Halibut Commission (IPHC) survey data could provide alternate estimates of catch ratios, but the local resolution would be coarser.  -->
-
-\clearpage
-
-```{r ye-ratio-through-time, fig.cap="Estimated ratio of YE biomass to landable halibut biomass through time within the CDA vs. in Area 3CD5A outside the CDA. Legend otherwise the same.", out.width="6in"}
+```{r ye-ratio-through-time, fig.cap="Average estimated ratio of YE biomass to landable halibut biomass through time within the CDA vs. in Area 3CD5A outside the CDA. Legend otherwise the same.", out.width="6in"}
 include_graphics(here("figs/filled-keepable-ye-to-hal-index-est-rock-mud.png"))
 ## or with the N-S split
 # include_graphics(here("figs/filled-keepable-ye-to-hal-index-est-rock-mud-NS.png"))
@@ -224,16 +232,6 @@ include_graphics(here("figs/expected_ye_to_hal-keepable_both_scenarios.png"))
 ```{r ye-ratio-targetting-by-year, fig.cap="Spatial and temporal variation in the mean biomass of YE to halibut for cells with the \\textbf{highest halibut densities}. Mean halibut densities of less than 1 g per 100 hooks have been truncated to this value. The spatial areas underlying mean ratios range from a single 2x2 km grid cell to a max of 1.5 times the area of the CDA. Lines and 95 percent CI are calculated from 500 draws from the biomass distribution for each species.", out.width="5.5in"}
 # include_graphics(here("figs/expected_YE_when_maximize_hal_CI-keepable_allcda_filled.png"))
 ```
-
-\clearpage
-
-Over the roughly 14-year timespan of this index (2007--2019 for QCS trawl survey area; 2008-2018 for WCVI trawl survey area; 2007--2020 for HBLL), overall landable halibut biomass has fluctuated from a high of `r round(i_hal[i_hal$year==2014,]$est/1000)` tonnes in 2013-2014 to low of `r round(i_hal[i_hal$year==2018,]$est/1000)` tonnes in 2017-2018 (sum of red and blue in Fig. \@ref(fig:indexes)A), while total YE biomass fluctuated from a high of `r round(i_ye[i_ye$year==2008,]$est/1000)` tonnes in 2013-2014 to low of `r round(i_ye[i_ye$year==2020,]$est/1000)` tonnes in 2017-2018 (sum of red and blue in Fig. \@ref(fig:indexes)B).
-While index trajectories for both species are similar inside versus outside the CDA (Fig. \@ref(fig:indexes-avg)), the difference in the expected species ratio in the CDA compared to the non-CDA 3CD5A has been reduced in the most recent years (Fig. \@ref(fig:ye-ratio-through-time)).
-
-<!-- SA: define a term for 'wider area' much earlier? "3CD5A (that overlaps with the latitudes surveyed by the HBLL) except the CDA... -->
-<!-- PE: this is defined in Fig. \@ref(fig:region-col-key) and the methods text. At this late stage in the doc I wanted to translate the technical "non-3CD5A" into what it actually represents... maybe what we should say here is take it back to "the majority of the Groundfish Management Unit Area encompassing the CDA" or something like that? Trying to remind the reader what was covered in the methods and might have been forgotten by this point.-->
-
-
 
 ```{r indexes, fig.cap="Indices of total (A) landable halibut and (B) YE biomass through time within various regions (Fig. 2). Blue is the portion of Area 3CD5A that overlaps the HBLL survey (sampled range of Area 3CD5A) and excludes the CDA and RCAs. Purple represents the portion of this area included in the closeup of the CDA. Green is the portion of the blue area not included in purple. Lines are means and ribbons are 95\\% confidence intervals (CIs).", out.width="5in"}
 include_graphics(here("figs/filled-keepable-rock-mud-index-by-area.png"))
