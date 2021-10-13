@@ -41,5 +41,5 @@ In British Columbia, Yelloweye Rockfish (*Sebastes ruberrimus*, hereafter: YE) a
 Five Nations hold Aboriginal rights to a multi-species fishery that includes YE and halibut.
 A 2018 court decision, *Ahousaht Indian Band and Nation* v *Canada* outlined the area of each of the Five Nations’ individual Fishing Territories, which combined are referred to as the Court Defined Area (CDA). 
 This type of restricted harvest area within a larger management area raises issues regarding how expected catch ratios of choke and target species might vary at finer spatial scales than normally assessed. 
-In this report, we explore the potential for spatiotemporal geostatistical models based on fishery-independent survey data to aid in predicting relative catches of YE and halibut within the CDA and in the management area immediately surrounding it (Groundfish Management Unit Area 3CD5A). 
+In this report, we explore the use of spatiotemporal geostatistical models fitted to fishery-independent survey data to predict relative catches of YE and halibut within the CDA and in the management area immediately surrounding it (Groundfish Management Unit Area 3CD5A). 
 

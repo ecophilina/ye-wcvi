@@ -37,6 +37,7 @@ bibliography: bib/refs.bib
 # Any extra LaTeX code for the header:
 header-includes:
  - \usepackage{float}
+ - \usepackage{bm}
 ---
 
 ```{r setup, echo=FALSE, cache=FALSE, message=FALSE, results='hide', warning=FALSE}
