@@ -36,25 +36,9 @@ This means we modelled fish caught per hook, but with a statistical approach tha
 The NB2 distribution lets the observation variance scale quadratically with the mean, which is typically needed for ecological data.
 This model also includes a quadratic effect of depth but no substrate habitat variables.
 
-<!-- TODO A BUNCH OF TECHNICAL STUFF HERE ABOUT FITTING AND confidence intervals (CIs). ... simulated 500 times... -->
-
-<!-- if (!file.exists(f)) { -->
-<!--   m_halibut_tweedie <- sdmTMB( -->
-<!--     formula = density ~ 0 + as.factor(year) + as.factor(survey) +  -->
-<!--       s(rocky, k = 3) + s(muddy, k = 3) + -->
-<!--       depth_scaled + I(depth_scaled^2), -->
-<!--     data = d_hal, -->
-<!--     spde = mesh400kn, -->
-<!--     fields = "IID", -->
-<!--     time = "year", -->
-<!--     silent = FALSE, -->
-<!--     # anisotropy = TRUE, -->
-<!--     family = tweedie(link = "log") -->
-<!--   ) -->
-
-For YE, we modelled biomass $B$ for point in space $s$ and time $t$ as
+For YE, we modelled biomass density $D$ for point in space $s$ and time $t$ as
 \begin{align}
-  B_{s,t} &\sim \operatorname{Tweedie} \left(\mu_{s,t}, p, \phi \right), \: 1 < p < 2\ ,
+  D_{s,t} &\sim \operatorname{Tweedie} \left(\mu_{s,t}, p, \phi \right), \: 1 < p < 2\ ,
 \end{align}
 where $\mu_{s,t}$ represents the expected (mean) value, $p$ represents the Tweedie power parameter, and $\phi$ represents the Tweedie dispersion parameter. We modelled $\mu_{s,t}$ as a function of a series of fixed and random effects and a log link:
 \begin{align}
@@ -63,37 +47,54 @@ where $\mu_{s,t}$ represents the expected (mean) value, $p$ represents the Tweed
   \bm{\omega} &\sim \operatorname{MVNormal} \left( \bm{0}, \bm{\Sigma}_\omega \right),\\
   \bm{\epsilon}_t &\sim \operatorname{MVNormal} \left( \bm{0}, \bm{\Sigma}_{\epsilon} \right),
 \end{align}
-where $\alpha_t$ represents a mean for each year, $\bm{X}_{s,t}$ represents a vector of predictors (survey ID, depth, depth squared, and a spline for proportion rocky and proportion muddy) and $\bm{\beta}$ represents a vector of corresponding parameters.
+where $\alpha_t$ represents a mean for each year, $\bm{X}_{s,t}$ represents a vector of predictors (survey ID, depth, depth squared, and a spline [with a basis dimension of 3] for proportion rocky and proportion muddy), and $\bm{\beta}$ represents a vector of corresponding parameters.
 The symbol $\omega_s$ represents spatially correlated random effects that are constant through time, which are assumed to follow a multivariate normal distribution with covariance matrix $\bm{\Sigma}_\omega$ (a "random field").
 This covariance matrix is constrained via the Matérn covariance function.
 The symbol $\epsilon_{s,t}$ represents spatially correlated random effects that are independent each year (spatiotemporal random effects), similarly constrained by multivariate normal distribution with covariance matrix $\bm{\Sigma}_{\epsilon}$ and a Matérn covariance function.
 
-Our halibut model followed the same form as the YE model, but modelled biomass as a product of two component models:
+Our halibut model followed the same form as the YE model, but modelled biomass density as a product of two component models:
+
 \begin{align}
-  B_{s,t} &\sim 
+  D_{s,t} &\sim 
   \operatorname{Bernoulli} \left( \varphi_{s,t} \right) \cdot
-    \operatorname{Gamma} \left( \mu_{s,t}, \frac{\mu_{s,t}}{\vartheta} \right),
+    \operatorname{Gamma} \left( \vartheta, \frac{\mu_{2,s,t}}{\vartheta} \right),
 \end{align}
-where $\varphi$ represents the expected probability of catching any halibut in a given observation and $\mu$ represents the expected value conditional on a positive observation.
+
+where $\varphi_{s,t}$ represents the expected probability of catching any halibut in a given observation, $\mu_{2,s,t}$ represents the expected value conditional on a positive observation and $\vartheta$ represents the Gamma distribution shape parameter ($\mu_{s,t} / \vartheta$ represents the Gamma scale).
 These two components are modelled with logit and log links with a form similar to the YE model:
+
 \begin{align}
   \varphi_{s,t} &= \operatorname{logit}^{-1} 
   \left(\alpha_{1,t} + \bm{X}_{1,s,t} \bm{\beta_1} + \omega_{1,s} + \epsilon_{1,s,t} \right),\\
-    \mu_{s,t} &= \exp 
-  \left(\alpha_{2,t} + \bm{X}_{2,s,t} \bm{\beta_2} + \omega_{2,s} + \epsilon_{2,s,t} \right),
+    \mu_{2,s,t} &= \exp 
+  \left(\alpha_{2,t} + \bm{X}_{2,s,t} \bm{\beta_2} + \omega_{2,s} + \epsilon_{2,s,t} \right).
 \end{align}
 
-where the symbols have the same meaning as in the YE equations, but the subscript 1 and 2 denote the equivalent parameters from the first (Bernoulli) and second (Gamma) component models.
+The symbols have the same meaning as in the YE equations, but the subscript 1 and 2 denote the equivalent parameters from the first (Bernoulli) and second (Gamma) component models.
 
-\vspace{0.000mm}
-
-Finally, we calculated expected biomass densities, if sampled using HBLL gear, but for the larger area encompassing the both trawl and HBLL survey areas, depths between 20 and 1000 m (those covered in either survey), and excluding Rockfish Conservation Areas (RCAs) where fishing is prohibited.
+<!-- Philina, can you break up and clarify this next sentence? -->
+We calculated expected biomass densities, if sampled using HBLL gear, but for the larger area encompassing the both trawl and HBLL survey areas, depths between 20 and 1000 m (those covered in either survey), and excluding Rockfish Conservation Areas (RCAs) where fishing is prohibited.
 For halibut, this was an estimate of landable biomass, while for YE it was for total catchable biomass.
-These estimates were then used to produce maps of expected biomass distributions for each species, as well as the spatial distribution of expected catch ratios between these species.
+<!-- These estimates were then used to produce maps of expected biomass distributions for each species, as well as the spatial distribution of expected catch ratios between these species. -->
 These expected densities were multiplied by the area of water within survey grid cells (2 x 2 km), and adjacent portions of cells where part fell inside RCAs, to produce overall biomass indices and overall average biomass ratios for different subregions (within the CDA vs. Area 3CD5A outside the CDA and Area 3CD5A north of 50º vs. Area 3CD5A south of 50º and outside the CDA; Fig. \@ref(fig:region-col-key)).
 Splitting at 50º separates the areas adjacent to the CDA from those not adjacent, as well as accounting for potential ecological or latitudinal variation implied by a positive correlation between HBLL catch counts of halibut and YE in the south, but not in the north (Fig. \@ref(fig:hbll-catch)).
-Cell-specific biomass estimates were also used to explore how contrasting fishing strategies might affect expected catch ratios for a given total area of each region.
+
+Specifically, we calculated biomass $B_t$ (or abundance) indexes for each biennial year combination $t$ by summing the predicted biomass in every grid cell $j$ (1 through $n_j$) weighted by the cell area ($w_j$):
+
+\begin{equation}
+\label{eq:Bt}
+B_t = \sum_{j = 1}^{n_j} w_j  D_{j,t}.
+\end{equation}
+
+We fit our models in R version 4.1.1 [@R2021] with the R package sdmTMB [@anderson2019synopsis; @sdmTMB] version 0.0.18.9000, which combines automatic differentiation and the Laplace approximation from the TMB (Template Model Builder) R package [@kristensen2016] with the SPDE (Stochastic Partial Differential Equation) approximation to Gaussian Markov fields from the INLA R package [@rue2009].
+sdmTMB carries out optimization using the non-linear minimization function `nlminb` in R and finds the value of the fixed effects that minimizes the marginal negative log likelihood.
+We confirmed the models were consistent with convergence by checking that the Hessian matrix was positive definite and the maximum absolute gradient across fixed effects was $< 0.005$.
+
+We derived uncertainty on the predictions for each grid cell ($D_{j,t}$) by simulating 500 draws from the estimated (multivariate normal) joint precision matrix. We then used these draws to calculate uncertainty on the biomass estimates $B_t$ (Eq. \@ref(eq:Bt)), which we summarized at specific quantiles. This approach avoids the need to account for any re-transformation bias of the random effects [e.g., as in @thorson2016a] and facilitates calculating uncertainty on derived quantites combined from multiple models such as the ratio of YE to halibut biomass.
+
+In addition to biennial estimates of relative biomass, we used cell-specific biomass estimates to explore how contrasting fishing strategies might affect expected catch ratios for a given total area of each region.
 We examined two strategies: (1) select cells in order from lowest to highest YE densities or (2) select cells with the highest to lowest halibut densities.
+<!-- TODO: a bit more here about what this can show and exactly what was done? -->
 
 ```{r qq-ye, fig.cap="QQ-plot (quantile-quantile plot) of randomized quantile residuals from the YE model. Three random iterations have been overlaid.", out.width="2.5in"}
 include_graphics(here("figs/ye-qq.png"))
