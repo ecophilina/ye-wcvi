@@ -16,25 +16,22 @@ In cases where these criteria were not met, we used the global mean across all s
 <!-- YE biomass densities from the trawl survey were left unadjusted because -->
 For YE, the mean weights per fish were nearly identical between the two surveys (synoptic surveys = `r round(yemeanweightSYN, 2)` kg; HBLL = `r round(yemeanweightHBLL, 2)` kg).
 <!-- Finally, all densities were converted from kg per kg/km2 to kg per ha for computational reasons. -->
-
-Next, we fit geostatistical spatiotemporal models to these surveyed biomass densities using the R package sdmTMB <https://github.com/pbs-assess/sdmTMB>.
-Because these biomass densities include both zeros and positive continuous values, we used either a Tweedie distribution or a delta-Gamma (a binomial distribution for presence-absence and a Gamma distribution for the positive component) approach to model predicted catches of each species.
-We did not account for hook competition in any of these models because the goal here was to estimate likely catch ratios and not the underlying abundances.
+We did not account for hook competition because the goal here was to estimate likely catch ratios and not the underlying abundances.
 Furthermore, an investigation into hook competition for YE in the latest outside YE stock assessment found little effect of accounting for it [REF].
+
+## Modelling
+
+We then fit geostatistical spatiotemporal models to these surveyed biomass densities.
+Because these biomass densities include both zeros and positive continuous values, we used either a Tweedie distribution or a delta-Gamma (a binomial distribution for presence-absence and a Gamma distribution for the positive component) approach to model predicted catches of each species.
+The Tweedie model fit the data well for YE (Fig. \@ref(fig:qq-ye)), while for landable halibut the delta-Gamma models fit better than the Tweedie (Fig. \@ref(fig:qq-hal)).
 For both species, we included quadratic effects of depth, and the proportions of rocky and muddy substrate within 1 km of the sampling location, to help account for difference in the habitats targeted by each survey.
 We included a factor for survey type to capture differences in catchability between the two fishing methods.
 These models also estimated annual means for years and latent "random fields" representing remaining patterns in spatial and spatiotemporal correlation that were not explicitly modelled by the included covariates.
-The magnitude of spatiotemporal variation was much higher for halibut than for YE, but including spatiotemporal variation improved model fit compared to a model with only spatial random fields for both species by over 10 AIC (Akaike Information Criterion) units.
+<!-- Might these next two sentences belong in the start of the results? -->
+The magnitude of spatiotemporal variation was much higher for halibut than for YE, but including spatiotemporal variation improved model fit compared to models with only spatial random fields for each species by over 10 AIC (Akaike Information Criterion) units.
 Allowing for anisotropy improved the delta AIC (>10) for the YE model, but interfered with estimatation of spatiotemporal fields for the halibut models.
-For YE, the Tweedie model fit the data well (Fig. \@ref(fig:qq-ye)), while for landable halibut the delta-Gamma models fit better than the Tweedie (Fig. \@ref(fig:qq-hal)).
 <!-- For Halibut, including a first-order autoregressive (AR1) correlation between spatiotemporal fields only marginally improved model fit (~5 $\Delta$ AIC), so we used independent spatiotemporal fields for both species. -->
   <!-- SA: add equations?-->
-
-We also built models based on just the HBLL data to confirm that stitching the HBLL and synoptic surveys was still representative of the HBLL survey results.
-For this count-based model, we used a negative binomial observation likelihood ('NB2') with a log link and an an offset for the number of hooks.
-This means we modelled fish caught per hook, but with a statistical approach that let us use a count distribution.
-The NB2 distribution lets the observation variance scale quadratically with the mean, which is typically needed for ecological data.
-This model also includes a quadratic effect of depth but no substrate habitat variables.
 
 For YE, we modelled biomass density $D$ for point in space $s$ and time $t$ as
 \begin{align}
@@ -72,13 +69,38 @@ These two components are modelled with logit and log links with a form similar t
 
 The symbols have the same meaning as in the YE equations, but the subscript 1 and 2 denote the equivalent parameters from the first (Bernoulli) and second (Gamma) component models.
 
-<!-- Philina, can you break up and clarify this next sentence? -->
-We calculated expected biomass densities, if sampled using HBLL gear, but for the larger area encompassing the both trawl and HBLL survey areas, depths between 20 and 1000 m (those covered in either survey), and excluding Rockfish Conservation Areas (RCAs) where fishing is prohibited.
-For halibut, this was an estimate of landable biomass, while for YE it was for total catchable biomass.
-<!-- These estimates were then used to produce maps of expected biomass distributions for each species, as well as the spatial distribution of expected catch ratios between these species. -->
-These expected densities were multiplied by the area of water within survey grid cells (2 x 2 km), and adjacent portions of cells where part fell inside RCAs, to produce overall biomass indices and overall average biomass ratios for different subregions (within the CDA vs. Area 3CD5A outside the CDA and Area 3CD5A north of 50º vs. Area 3CD5A south of 50º and outside the CDA; Fig. \@ref(fig:region-col-key)).
-Splitting at 50º separates the areas adjacent to the CDA from those not adjacent, as well as accounting for potential ecological or latitudinal variation implied by a positive correlation between HBLL catch counts of halibut and YE in the south, but not in the north (Fig. \@ref(fig:hbll-catch)).
+We fit all our models in R version 3.6.3 [@R2020] with the R package sdmTMB [@anderson2019synopsis; @sdmTMB] version 0.0.18.9000, which combines automatic differentiation and the Laplace approximation from the TMB (Template Model Builder) R package [@kristensen2016] with the SPDE (Stochastic Partial Differential Equation) approximation to Gaussian Markov fields from the INLA R package [@rue2009].
+sdmTMB carries out optimization using the non-linear minimization function `nlminb` in R and finds the value of the fixed effects that minimizes the marginal negative log likelihood.
+We confirmed the models were consistent with convergence by checking that the Hessian matrix was positive definite and the maximum absolute gradient across fixed effects was $< 0.005$.
 
+We also built models based on just the HBLL data to confirm that stitching the HBLL and synoptic surveys was still representative of the HBLL survey results.
+For this count-based model, we used a negative binomial observation likelihood ('NB2') with a log link and an an offset for the number of hooks.
+This means we modelled fish caught per hook, but with a statistical approach that let us use a count distribution.
+The NB2 distribution lets the observation variance scale quadratically with the mean, which is typically needed for ecological data.
+This model also includes a quadratic effect of depth, but no substrate habitat variables.
+
+## Spatial predictions
+
+Next, we generated expected densities for the entire survey area if sampling was done using HBLL survey gear.
+For halibut, this produced an estimate of landable biomass densities, while for YE it was for total catchable biomass densities.
+To do this, we created a `filled in' grid encompassing the entire HBLL survey grid using the following series of steps:
+
+1. Using centroids from the HBLL survey grid split at 50.5 degrees N, we made two bounding boxes that excluded the inland side of Vancouver Island. The southern box was then expanded farther south to the southern and eastern extent of the WCVI trawl grid. 
+2. For the area within each box, we extracted the 20 m and 1000m contour lines, and extracted only the points on these lines that form continous depth contours that intersect with the box boundaries (ie. excluding contours around small offshore islands).
+3. We created a polygon our of these points and the NW corner of the northern box (this was necessary because this is well within the depth boundaries).
+4. This polygon was turned into a grid of 2 $\times$ 2 km cells.
+5. Rockfish Conservation Areas (RCAs) were clipped out.
+6. Area below sea-level was calculated for each grid cell (including partial ones).
+7. Mean depth and substrate proportions were then extracted for those areas below sea level.
+8. Finally, we kept only cells (and partial cells) with mean depths between 2 to 600 m, because that best matched the outline of both survey grids.
+<!-- These estimates were then used to produce maps of expected biomass distributions for each species, as well as the spatial distribution of expected catch ratios between these species. -->
+
+We derived uncertainty on the predictions for each grid cell ($D_{j,t}$) by simulating 500 draws from the estimated (multivariate normal) joint precision matrix. We then used these draws to calculate uncertainty on the biomass estimates $B_t$ (Eq. \@ref(eq:Bt)), which we summarized at specific quantiles. This approach avoids the need to account for any re-transformation bias of the random effects [e.g., as in @thorson2016a] and facilitates calculating uncertainty on derived quantites combined from multiple models such as the ratio of YE to halibut biomass.
+
+## Area-specific indices
+
+These expected densities were multiplied by the area below sea-level within survey grid cells to produce overall biomass indices, and overall average biomass ratios for different subregions (within the CDA vs. Area 3CD5A outside the CDA and Area 3CD5A north of 50º vs. Area 3CD5A south of 50º and outside the CDA; Fig. \@ref(fig:region-col-key)).
+Splitting at 50º separates the areas adjacent to the CDA from those not adjacent, as well as accounting for potential ecological or latitudinal variation implied by a positive correlation between HBLL catch counts of halibut and YE in the south, but not in the north (Fig. \@ref(fig:hbll-catch)).
 Specifically, we calculated biomass $B_t$ (or abundance) indexes for each biennial year combination $t$ by summing the predicted biomass in every grid cell $j$ (1 through $n_j$) weighted by the cell area ($w_j$):
 
 \begin{equation}
@@ -86,15 +108,17 @@ Specifically, we calculated biomass $B_t$ (or abundance) indexes for each bienni
 B_t = \sum_{j = 1}^{n_j} w_j  D_{j,t}.
 \end{equation}
 
-We fit our models in R version 4.1.1 [@R2021] with the R package sdmTMB [@anderson2019synopsis; @sdmTMB] version 0.0.18.9000, which combines automatic differentiation and the Laplace approximation from the TMB (Template Model Builder) R package [@kristensen2016] with the SPDE (Stochastic Partial Differential Equation) approximation to Gaussian Markov fields from the INLA R package [@rue2009].
-sdmTMB carries out optimization using the non-linear minimization function `nlminb` in R and finds the value of the fixed effects that minimizes the marginal negative log likelihood.
-We confirmed the models were consistent with convergence by checking that the Hessian matrix was positive definite and the maximum absolute gradient across fixed effects was $< 0.005$.
 
-We derived uncertainty on the predictions for each grid cell ($D_{j,t}$) by simulating 500 draws from the estimated (multivariate normal) joint precision matrix. We then used these draws to calculate uncertainty on the biomass estimates $B_t$ (Eq. \@ref(eq:Bt)), which we summarized at specific quantiles. This approach avoids the need to account for any re-transformation bias of the random effects [e.g., as in @thorson2016a] and facilitates calculating uncertainty on derived quantites combined from multiple models such as the ratio of YE to halibut biomass.
-
-In addition to biennial estimates of relative biomass, we used cell-specific biomass estimates to explore how contrasting fishing strategies might affect expected catch ratios for a given total area of each region.
-We examined two strategies: (1) select cells in order from lowest to highest YE densities or (2) select cells with the highest to lowest halibut densities.
+In addition to biennial estimates of average relative biomass, we used cell-specific biomass estimates to explore how contrasting fishing strategies might affect expected catch ratios for a given total area of each region.
+We examined two strategies: (1) select cells to 'fish' in order from lowest to highest YE densities or (2) select cells to 'fish' with the highest to lowest halibut densities.
 <!-- TODO: a bit more here about what this can show and exactly what was done? -->
+Only 2 $\times$ 2 km grid cells were considered in these scenarios. 
+Biomass densities in kg/ha were also converted to mass per 100 hooks by multiplying cell densities by (100 hooks * 0.0024384 km * 0.009144 km) and resulting mean ratios assume an equal number of hooks were set in each grid cell encompassing the total cumulative area 'fished'. 
+Selected grid cells can be anywhere within the subregion. 
+To avoid unrealistic catch ratios, when expected halibut biomass of less than 1 g per 100 hooks have been truncated to this value.
+This approach provides an estimate of the range of catch ratios one could expect from fishing, rather than an overall estimate of the relative biomass present in an entire region. 
+
+\clearpage
 
 ```{r qq-ye, fig.cap="QQ-plot (quantile-quantile plot) of randomized quantile residuals from the YE model. Three random iterations have been overlaid.", out.width="2.5in"}
 include_graphics(here("figs/ye-qq.png"))
