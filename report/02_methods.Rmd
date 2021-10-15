@@ -1,10 +1,12 @@
 # Methods {#sec:methods}
 
 We used data collected on the southern outside Hard Bottom Longline survey (HBLL) and the synoptic bottom trawl survey to estimate the spatial and temporal variation in expected catches of YE and halibut.
-The HBLL survey focuses on rockfish habitats, rather than the broader range of habitats and depths that halibut occupy.
+The HBLL survey focuses on rockfish habitats (i.e. non-trawlable habitats), rather than the broader range of habitats and depths that halibut occupy.
 This survey is usually conducted in alternating years, except that no survey occurred in 2012 and 2013.
 The synoptic trawl surveys sample soft-bottom habitats, but use trawl gear and record biomass densities, rather than fish counts as on the HBLL.
-Two trawl surveys overlap spatially with the HBLL: the southern portion with the West Coast Vancouver Island Synoptic Survey conducted in even years (except 2020 due to the COVID-19 pandemic), and the northern portion with the Queen Charlotte Sound Synoptic Survey conducted in odd years.
+Two trawl surveys overlap spatially with the HBLL: the southern portion with the West Coast Vancouver Island Synoptic Survey conducted in even years (except 2020 due to the COVID-19 pandemic), and the northern portion with the Queen Charlotte Sound Synoptic Survey conducted in odd years. 
+The data from both surveys are available through Open Data (trawl: https://open.canada.ca/data/en/dataset/a278d1af-d567-4964-a109-ae1e84cbd24a;
+HBLL: https://open.canada.ca/data/en/dataset/3cdc1ad5-70e5-4fac-865d-e583e54d15df).
 To join, or "stitch", these three surveys together and produce estimates of local variation in biomass density, we pooled odd and even year pairs and converted the catch counts from the HBLL into biomass densities.
 
 To incorporate observations from both survey types into one model, the observations needed to be converted into comparable units.
@@ -17,14 +19,14 @@ In cases where these criteria were not met, we used the global mean across all s
 For YE, the mean weights per fish were nearly identical between the two surveys (synoptic surveys = `r round(yemeanweightSYN, 2)` kg; HBLL = `r round(yemeanweightHBLL, 2)` kg).
 <!-- Finally, all densities were converted from kg per kg/km2 to kg per ha for computational reasons. -->
 We did not account for hook competition because the goal here was to estimate likely catch ratios and not the underlying abundances.
-Furthermore, an investigation into hook competition for YE in the latest outside YE stock assessment found little effect of accounting for it [REF].
+Furthermore, an investigation into hook competition for YE in the latest outside YE stock assessment found little effect of accounting for it [@coxEvaluationPotentialRebuilding2020].
 
 ## Modelling
 
 We then fit geostatistical spatiotemporal models to these surveyed biomass densities.
 Because these biomass densities include both zeros and positive continuous values, we used either a Tweedie distribution or a delta-Gamma (a binomial distribution for presence-absence and a Gamma distribution for the positive component) approach to model predicted catches of each species.
 The Tweedie model fit the data well for YE (Fig. \@ref(fig:qq-ye)), while for landable halibut the delta-Gamma models fit better than the Tweedie (Fig. \@ref(fig:qq-hal)).
-For both species, we included quadratic effects of depth, and the proportions of rocky and muddy substrate within 1 km of the sampling location, to help account for difference in the habitats targeted by each survey.
+For both species, we included quadratic effects of depth, and the proportions of rocky and muddy substrate [@ ***gregr and haggarty***] within 1 km of the sampling location, to help account for difference in the habitats targeted by each survey.
 We included a factor for survey type to capture differences in catchability between the two fishing methods.
 These models also estimated annual means for years and latent "random fields" representing remaining patterns in spatial and spatiotemporal correlation that were not explicitly modelled by the included covariates.
 <!-- Might these next two sentences belong in the start of the results? -->
@@ -87,9 +89,9 @@ To do this, we created a `filled in' grid encompassing the entire HBLL survey gr
 
 1. Using centroids from the HBLL survey grid split at 50.5 degrees N, we made two bounding boxes that excluded the inland side of Vancouver Island. The southern box was then expanded farther south to the southern and eastern extent of the WCVI trawl grid. 
 2. For the area within each box, we extracted the 20 m and 1000m contour lines, and extracted only the points on these lines that form continous depth contours that intersect with the box boundaries (ie. excluding contours around small offshore islands).
-3. We created a polygon our of these points and the NW corner of the northern box (this was necessary because this is well within the depth boundaries).
+3. We created a polygon folling the path of these points and the NW corner of the northern box (this was necessary because this is well within the depth boundaries).
 4. This polygon was turned into a grid of 2 $\times$ 2 km cells.
-5. Rockfish Conservation Areas (RCAs) were clipped out.
+5. Rockfish Conservation Areas (RCAs) were clipped out because they prohibit commercial groundfish harvesting.
 6. Area below sea-level was calculated for each grid cell (including partial ones).
 7. Mean depth and substrate proportions were then extracted for those areas below sea level.
 8. Finally, we kept only cells (and partial cells) with mean depths between 2 to 600 m, because that best matched the outline of both survey grids.

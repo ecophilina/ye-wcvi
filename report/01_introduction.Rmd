@@ -36,9 +36,9 @@ yemeanweight <- 3.2 # 7 lbs =3.18 kg
 
 # Introduction {#sec:introduction}
 
-"Choke" species are species with limited quota that co-occur with species of fishing interest and therefore limit fishing opportunities. 
+"Choke" or "pinch point" species are species with limited quota that co-occur with species of fishing interest and therefore limit fishing opportunities. 
 In British Columbia, Yelloweye Rockfish (*Sebastes ruberrimus*, hereafter: YE) are a known choke species for the Pacific Halibut (*Hippoglossus stenolepis*, hereafter: halibut) fishery [@forrestEvidenceRapidAvoidance2020a].
-Five Nations hold Aboriginal rights to a multi-species fishery that includes YE and halibut.
+The "Five Nations" representing Ahousaht, Ehattesaht, Mowachaht/Muchalaht, Hesquiaht and Tla-o-qui-aht First Nations hold Aboriginal rights to a multi-species fishery that includes YE and halibut.
 A 2018 court decision, *Ahousaht Indian Band and Nation* v *Canada* outlined the area of each of the Five Nations’ individual Fishing Territories, which combined are referred to as the Court Defined Area (CDA). 
 This type of restricted harvest area within a larger management area raises issues regarding how expected catch ratios of choke and target species might vary at finer spatial scales than normally assessed. 
 In this report, we explore the use of spatiotemporal geostatistical models fitted to fishery-independent survey data to predict relative catches of YE and halibut within the CDA and in the management area immediately surrounding it (Groundfish Management Unit Area 3CD5A). 
