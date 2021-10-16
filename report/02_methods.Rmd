@@ -26,7 +26,7 @@ Furthermore, an investigation into hook competition for YE in the latest outside
 We then fit geostatistical spatiotemporal models to these surveyed biomass densities.
 Because these biomass densities include both zeros and positive continuous values, we used either a Tweedie distribution or a delta-Gamma (a binomial distribution for presence-absence and a Gamma distribution for the positive component) approach to model predicted catches of each species.
 The Tweedie model fit the data well for YE (Fig. \@ref(fig:qq-ye)), while for landable halibut the delta-Gamma models fit better than the Tweedie (Fig. \@ref(fig:qq-hal)).
-For both species, we included quadratic effects of depth, and the proportions of rocky and muddy substrate [@ ***gregr and haggarty***] within 1 km of the sampling location, to help account for difference in the habitats targeted by each survey.
+For both species, we included quadratic effects of depth, and the proportions of rocky and muddy substrate [from a 100 $times$ 100 m resolution raster; @ ***gregr and haggarty***] within 1 km of the sampling location, to help account for difference in the habitats targeted by each survey.
 We included a factor for survey type to capture differences in catchability between the two fishing methods.
 These models also estimated annual means for years and latent "random fields" representing remaining patterns in spatial and spatiotemporal correlation that were not explicitly modelled by the included covariates.
 <!-- Might these next two sentences belong in the start of the results? -->
