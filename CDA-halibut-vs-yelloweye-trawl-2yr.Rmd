@@ -687,6 +687,147 @@ ggsave("figs/map-stitched-grid-overlap-expanded.png", width = 5.5, height = 5.5,
 }
 ```
 
+# Explore depth variation across regions
+```{r}
+f <- paste0("figs/depth-map.png")
+if (!file.exists(f)) {
+coast_gshhg_proj <- readRDS("data-generated/coast_gshhg.rds")
+
+focal_area <- sf::st_read(dsn = "shape-files/taaqwiihak_areaVer2.shp",
+    layer = "taaqwiihak_areaVer2", quiet = TRUE)
+focal_area_proj <- sf::st_transform(focal_area, crs = 3156)
+
+library(PBSmapping) # needs this for some reason
+  majorbound <- load_boundaries(9)
+  # attributes(majorbound)$PolyData
+  # 5AB
+  bound5Bnorth <- fortify(majorbound) %>%
+    filter(PID %in% c(6)) %>%
+    filter( # POS != 46 & # strange jog over HG
+      X > 200 & X < 560 & Y > 5700
+    )
+  bound5Anorth <- fortify(majorbound) %>%
+    filter(PID %in% c(5)) %>%
+    filter(
+      X > 200 & X < 600 & Y > 5650
+    )
+  # 3CD
+  bound3Cnorth <- fortify(majorbound) %>%
+    filter(PID %in% c(3)) %>%
+    filter(X > 200 & X < 725 & Y > 5400) #%>%
+  # gfplot:::utm2ll(utm_zone = 9)
+  bound3Dnorth <- fortify(majorbound) %>%
+    filter(PID %in% c(4)) %>%
+    filter(X > 200 & X < 600 & Y > 5550)
+  bound3Csouth <- fortify(majorbound) %>%
+    filter(PID %in% c(3)) %>%
+    filter(X > 200 & X < 900 & Y < 5420) #%>%
+
+full_s_grid_trim <- full_s_grid %>% filter(depth <= 600)
+g <- ggplot(focal_area_proj) +
+  geom_tile(data = full_s_grid_trim, aes(X * 100000, Y * 100000, fill = depth),
+        width = 2000, height = 2000) +
+  geom_line( # add major management region boundaries
+      data = bound3Csouth,
+      aes(X * 1e3, Y * 1e3), colour = "grey20", lty = 1,
+      inherit.aes = F
+    ) +
+   geom_line( # add major management region boundaries
+      data = bound3Cnorth,
+      aes(X * 1e3, Y * 1e3), colour = "grey20", lty = 1,
+      inherit.aes = F
+    ) +
+    geom_line( # add major management region boundaries
+      data = bound3Dnorth,
+      aes(X * 1e3, Y * 1e3), colour = "grey20", lty = 1,
+      inherit.aes = F
+    ) +
+    geom_line( # add major management region boundaries
+      data = bound5Anorth,
+      aes(X * 1e3, Y * 1e3), colour = "grey20", lty = 1,
+      inherit.aes = F
+    ) +
+    geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
+    geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey75", col = "grey55") +
+    annotate("text",
+      x = convert2utm9(-129.8, 50.7)[1],
+      y = convert2utm9(-129.8, 50.7)[2], label = "5A") +
+    annotate("text",
+      x = convert2utm9(-129.8, 50.3)[1],
+      y = convert2utm9(-129.8, 50.3)[2],
+      label = "3D") +
+    annotate("text",
+      x = convert2utm9(-129.8, 48.8)[1],
+      y = convert2utm9(-129.8, 48.8)[2],
+      label = "3C") +
+  scale_fill_viridis_c(trans = "sqrt", name = "Depth", direction = -1) +
+  geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
+  geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey99", col = "grey55") +
+  coord_sf(
+      # xlim = c(230957.7 + 205000, 1157991 - 385000),
+      # ylim = c(5366427 + 25000, 6353456 - 590000)
+      xlim = c(230957.7 + 205000, 1157991 - 370000),
+      ylim = c(5366427 + 2000, 6353456 - 590000)
+    ) +
+   annotate("text",
+      x = convert2utm9(-126.25, 50.1)[1],
+      y = convert2utm9(-126.25, 50.1)[2],
+      colour = "gray65",
+     size = 3.5,
+      label = "Vancouver\nIsland") +
+  annotate("text",
+      x = convert2utm9(-126.1, 51.4)[1],
+      y = convert2utm9(-126.1, 51.4)[2],
+      colour = "gray65",
+    size = 5,
+      label = "British\nColumbia") +
+  ggsidekick::theme_sleek() + theme(
+      panel.grid.major = element_line(colour = "grey60", size = 0.3),
+      legend.key = element_rect(colour = NA, fill = "grey70"),
+      axis.title = element_blank(),
+      legend.box.background = element_rect(color = NA, size = 1, fill = "#ffffff90"),
+      legend.position = c(0.99, 0.99),
+      legend.justification = c(1, 1),
+      panel.background = element_rect(color = NA, size = 1, fill = "grey70")) 
+
+g
+
+ggsave("figs/depth-map.png", 
+ width = 5.5, height = 5.5, dpi = 400)
+}
+```
+
+```{r}
+full_s_grid3 <- full_s_grid  %>% filter(region != "other")
+
+full_s_grid_all <- full_s_grid  %>% filter(region %in% c("3CD5A N", "non-CDA 3CD5A S")) %>% mutate(region = "non-CDA 3CD5A")
+
+full_s_grid_all <- bind_rows(full_s_grid3, full_s_grid_all)
+
+full_s_grid_all$region <- ordered(full_s_grid_all$region, 
+  levels = c("CDA", "non-CDA 3CD5A", "3CD5A N", "non-CDA 3CD5A S"), 
+  labels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º"))
+
+ggplot(full_s_grid_all, aes(depth, fill = region)) + 
+  geom_histogram() + facet_grid(rows=vars(region)) +
+  scale_fill_brewer(palette = "Set1") +
+  # scale_fill_manual(values = c("red", "#4DAF4A", "#984EA3")) +
+  xlab("Depth") + ylab("Cell count")+
+  ggsidekick::theme_sleek() + theme(
+      legend.position = "none") 
+
+ggsave("figs/depth-hist.png", width = 3.5, height = 7.5, dpi = 300)
+```
+
+```{r}
+d_hal <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
+  filter(latitude < 52.15507) %>%
+  filter(year %in% years)%>% left_join(select(substrate, -X, -Y)) 
+
+ggplot(d_hal, aes(depth_m, density, colour = survey)) + geom_point()
+
+```
+
 
 # Make relatively finescale mesh
 
@@ -2104,16 +2245,17 @@ ggplot(ye_ratios) +
 ggsave("figs/filled-keepable-yelloweye-est-rock-mud-relative-biomass.png", width = 7, height = 3, dpi = 400)
 ```
 
-# Check correlations in survey catch
+# Correlations between species
 
+### Merge survey catches
 ```{r}
 # glimpse(d_ye_plots)
 # glimpse(d_hal_plots) 
 d_hal_plotsN <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
   # plot observations for last 3 years to ensure sampling in all regions
   filter(latitude > 50.01 & latitude < 51.4) %>%
-  filter(year %in% c(#2017,
-    2018,2019,2020)) %>%  
+  # filter(year %in% c(#2017,
+  #   2018,2019,2020)) %>%  
   mutate(
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
@@ -2122,8 +2264,9 @@ d_hal_plotsN <- readRDS("data-generated/halibut-model-data-keepable-weight.rds")
     )
 
 d_ye_plotsN <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>%
-  filter(latitude > 50.01 & latitude < 51.4) %>% filter(year %in% c(#2017,
-    2018,2019,2020)) %>% 
+  filter(latitude > 50.01 & latitude < 51.4) %>% 
+  # filter(year %in% c(#2017,
+  #   2018,2019,2020)) %>% 
   mutate(
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight), 
@@ -2145,8 +2288,8 @@ catch_compN <- left_join(ye_obs, hal_obs)
 d_hal_plotsS <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
   # plot observations for last 3 years to ensure sampling in all regions
   filter(latitude < 50.01) %>%
-  filter(year %in% c(#2017,
-    2018,2019,2020)) %>%  
+  # filter(year %in% c(#2017,
+  #   2018,2019,2020)) %>%  
   mutate(
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / halmeanweight), 
@@ -2155,8 +2298,9 @@ d_hal_plotsS <- readRDS("data-generated/halibut-model-data-keepable-weight.rds")
     )
 
 d_ye_plotsS <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>%
-  filter(latitude < 50.01)  %>% filter(year %in% c(#2017,
-    2018,2019,2020)) %>% 
+  filter(latitude < 50.01)  %>% 
+  # filter(year %in% c(#2017,
+  #   2018,2019,2020)) %>% 
   mutate(
     # back transform densities into catch per 100 hooks
     catch_equiv = round(density * (100 * 0.0024384 * 0.009144 * 10000) / yemeanweight), 
@@ -2171,13 +2315,33 @@ hal_obs <- d_hal_plotsS %>%
   mutate(catch_count_hal = (catch_count/hook_count)*100, catch_equiv_hal = catch_equiv) %>% 
   select(fishing_event_id, catch_count_hal, density_hal = density, catch_equiv_hal)
 catch_compS <- left_join(ye_obs, hal_obs)
+```
+
+```{r}
+
+focal_area <- sf::st_read(dsn = "shape-files/taaqwiihak_areaVer2.shp",
+    layer = "taaqwiihak_areaVer2", quiet = TRUE)
+focal_area_proj <- sf::st_transform(focal_area, crs = 3156)
+
+catch_compS <- catch_compS %>% mutate (X2 = X*100000, Y2 = Y*100000)
+catch_compS_sf <- st_as_sf(catch_compS, coords = c("X2", "Y2"), crs = 3156)
+# catch_compS_sf <- st_transform(catch_compS_sf, crs = 3156)
+keep <- st_intersects(focal_area_proj, catch_compS_sf)
+catch_compS_cda <- catch_compS_sf[unlist(keep), ]
+```
 
 
 
-p1 <- ggplot(catch_compN, aes(log(catch_equiv_hal+10), log(catch_equiv_ye+10))) + 
-  geom_smooth(data = filter(catch_compN, survey == "TRAWL"), method = "lm", colour = "grey") +
-  geom_jitter(data = filter(catch_compN, survey == "TRAWL"), alpha=0.5) + 
-  coord_cartesian() + ggtitle("Trawl survey north of 50º latitude")
+```{r}
+
+p1 <- ggplot(catch_compN, aes(log(density_hal+1), log(density_ye+1))) + 
+  geom_smooth(data = filter(catch_compN, survey == "TRAWL"), method = "lm", fill = "#4DAF4A", colour = "#4DAF4A") +
+  geom_jitter(data = filter(catch_compN, survey == "TRAWL"), alpha=0.5, colour = "#4DAF4A") + 
+  xlim(0, log(max(catch_compN$density_hal, na.rm = T)+1)) +
+  ylab("log( YE density + 1)") +
+  xlab("log(landable halibut density + 1)") +
+  coord_cartesian()+ ggtitle("A. Trawl survey north of 50º latitude")
+
 
 p2 <-ggplot(catch_compN, aes(log(catch_count_hal+1), log(catch_count_ye+1))) + 
   geom_smooth(method = "lm", fill = "#4DAF4A", colour = "#4DAF4A") +
@@ -2193,27 +2357,36 @@ p2 <-ggplot(catch_compN, aes(log(catch_count_hal+1), log(catch_count_ye+1))) +
 #   geom_jitter(aes(colour = survey)) + 
 #   coord_cartesian(xlim=c(0, 3))
 
-p3 <-ggplot(catch_compS, aes(log(catch_equiv_hal+10), log(catch_equiv_ye+10))) + 
-  geom_smooth(data = filter(catch_compS, survey == "TRAWL"), method = "lm", colour = "grey") +
-  geom_jitter(data = filter(catch_compS, survey == "TRAWL"), alpha=0.5) + 
-  coord_cartesian() + ggtitle("Trawl survey south of 50º latitude")
+p3 <-ggplot(catch_compS, aes(log(density_hal+1), log(density_ye+1))) + 
+  geom_smooth(data = filter(catch_compS, survey == "TRAWL"), method = "lm",fill ="#984EA3", colour ="#984EA3") +
+  geom_jitter(data = filter(catch_compS, survey == "TRAWL"), alpha=0.5, colour ="#984EA3") + 
+  geom_point(data = catch_compS_cda, alpha=0.5, colour ="red") +
+  xlim(0, log(max(catch_compN$density_hal, na.rm = T)+1)) +
+  ylab("log( YE density + 1)") +
+  xlab("log(landable halibut density + 1)") +
+  coord_cartesian()+ ggtitle("B. Trawl survey south of 50º latitude")
 
 p4 <-ggplot(catch_compS, aes(log(catch_count_hal+1), log(catch_count_ye+1))) + 
   geom_smooth(method = "lm",fill ="#984EA3", colour ="#984EA3") + #"#E41A1C" "#377EB8" "#4DAF4A" "#984EA3"
   geom_jitter(alpha=0.5, colour ="#984EA3") +   
+  geom_point(data = catch_compS_cda, alpha=0.5, colour ="red") +
   # coord_cartesian(expand = F, xlim = c(0, log(max(catch_compN$catch_count_hal, na.rm = T)+1))) +
   xlim(0, log(max(catch_compN$catch_count_hal, na.rm = T)+1)) +
   ylab("log( YE catch count + 1)") +
-  xlab("log( Halibut catch count + 1)") +
+  xlab("log( halibut catch count + 1)") +
   coord_cartesian()+ ggtitle("B. HBLL survey south of 50º latitude")
 
 library(patchwork)
 # p1 + p3 + plot_layout(nrow = 2)
 p2 <-p2 + theme(axis.title.x = element_blank(),  axis.text.x = element_blank(),  axis.ticks.x = element_blank())
 p2 + p4 + plot_layout(nrow = 2)
+ggsave("figs/catch-correlations-hbll.png", width = 3.5, height = 5.5, dpi = 400)
 
 
-ggsave("figs/hbll-catch-correlations.png", width = 3.5, height = 5.5, dpi = 400)
+p1 <-p1 + theme(axis.title.x = element_blank(),  axis.text.x = element_blank(),  axis.ticks.x = element_blank())
+p1 + p3 + plot_layout(nrow = 2)
+ggsave("figs/catch-correlations-trawl.png", width = 3.5, height = 5.5, dpi = 400)
+
 
 # ggplot(catch_compS, aes(density_hal, density_ye)) + 
 #   geom_smooth(method = "lm", colour = "grey") +
@@ -2221,7 +2394,75 @@ ggsave("figs/hbll-catch-correlations.png", width = 3.5, height = 5.5, dpi = 400)
 #   coord_cartesian(xlim=c(0, 3))
 ```
 
+### Predictions
+```{r}
+p_hal2020 <- readRDS("data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-all-S.rds")[[1]] %>%
+  # filter(latitude < max_map_lat) %>% 
+  filter(year == 2020) %>% select(X,Y, depth, est, region) %>% rename(hal_est = est) 
 
+p_ye2020 <- readRDS("data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-all-S.rds")[[1]] %>%
+  # filter(latitude < max_map_lat) %>% 
+  filter(year == 2020) %>% select(X,Y, depth, est, region) %>% rename(ye_est = est) 
+
+
+# max(cda_grid$depth)
+p_both <- left_join(p_hal2020, p_ye2020) %>% filter(region != "other")
+p_both2 <- left_join(p_hal2020, p_ye2020) %>% filter(region %in% c("3CD5A N", "non-CDA 3CD5A S")) %>% 
+  filter(depth < max(cda_grid$depth)) %>% mutate(region = "non-CDA 3CD5A")
+
+p_both <- bind_rows(p_both, p_both2)
+
+p_both$region <- ordered(p_both$region, 
+  levels = c("CDA", "non-CDA 3CD5A", "3CD5A N", "non-CDA 3CD5A S"), 
+  labels = c("CDA", "non-CDA 3CD5A (< 130 m)", "3CD5A N of 50º", "3CD5A S of 50º"))
+
+p_both %>% filter(region %in% c("CDA", "non-CDA 3CD5A (< 130 m)")) %>%
+ggplot(., 
+    aes(log(exp(hal_est)+1), log(exp(ye_est)+1), colour= region, fill= region)
+    # aes(exp(hal_est), exp(ye_est), colour= region)
+    ) + geom_point(alpha=0.1) + 
+  # scale_fill_manual(values = c("red", "#4DAF4A", "#984EA3")) +
+  # scale_colour_manual(values = c("red", "#4DAF4A", "#984EA3")) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_colour_brewer(palette = "Set1") +
+  # scale_y_log10() + scale_x_log10() +
+    geom_smooth(method = "lm") + 
+  xlab("Landable halibut (log(kg/ha + 1))") +
+  ylab("YE (log(kg/ha + 1))")+
+  coord_cartesian(expand = F) +
+  # facet_wrap(~region
+  facet_grid(rows=vars(region)
+    # , scales = "free_y"
+    ) + ggsidekick::theme_sleek() + theme(legend.position = "none")
+
+
+ggsave("figs/predicted-correlations-cda.png", width = 3.5, height = 5.5, dpi = 400)
+
+p_cda_overlay <- p_both %>% filter(region %in% c("CDA")) %>% mutate(region = "3CD5A S of 50º") 
+
+
+p_both %>% filter(region %in% c("3CD5A N of 50º", "3CD5A S of 50º")) %>%
+  filter(depth < 200) %>%
+ggplot(., 
+    aes(log(exp(hal_est)+1), log(exp(ye_est)+1), colour= region, fill= region)
+    # aes(exp(hal_est), exp(ye_est), colour= region)
+    ) + geom_point(alpha=0.2) + 
+  geom_point(data=p_cda_overlay, colour= "red", alpha = 0.2) +
+  scale_fill_manual(values = c("#4DAF4A", "#984EA3")) +
+  scale_colour_manual(values = c("#4DAF4A", "#984EA3")) +
+  # scale_y_log10() + scale_x_log10() +
+    geom_smooth(method = "lm") + 
+  xlab("Landable halibut (log(kg/ha + 1))") +
+  ylab("YE (log(kg/ha + 1))")+
+  coord_cartesian(expand = F) +
+  # facet_wrap(~region
+  facet_grid(rows=vars(region)
+    # , scales = "free_y"
+    ) + ggsidekick::theme_sleek() + theme(legend.position = "none")
+
+ggsave("figs/predicted-correlations-NS.png", width = 3.5, height = 5.5, dpi = 400)
+
+```
 
 # Ratio of Yelloweye to Halibut through time
 
