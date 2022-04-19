@@ -405,7 +405,6 @@ ggplot(maximize_hal_sum %>%
 ggsave(paste0("figs/expected_YE_when_maximize_hal_CI", model_type, "_allcda_filled.png"), width = 6.5, height = 3.5)
 
 
-
 # mean_ye_hal
 ggplot(maximize_hal_sum %>%
     filter(Area %in% areas_to_plot)%>%
@@ -476,7 +475,14 @@ maximize_hal_sum$Area <- ordered(maximize_hal_sum$Area, levels =  c(
   "CDA", "non-CDA 5A3CD", "5A3CD N of 50º", "non-CDA 5A3CD S of 50º"))
 
 
+avoiding_ye_sum_cda <- avoiding_ye_sum %>%
+  filter(Area == "CDA" & year==2020)
+ye_per_hal_cda_min <- range(avoiding_ye_sum_cda$mean_ye_per_hal)
 
+avoiding_ye_sum_noncda_2020 <- avoiding_ye_sum %>%
+  filter(Area == "non-CDA 5A3CD" & year==2020 & ordered < round(nrow(cda_2020)))
+
+RColorBrewer::brewer.pal(1, "Set1")
 
 p1 <- ggplot(avoiding_ye_sum %>%
     filter(Area %in% areas_to_plot)%>%
@@ -500,6 +506,10 @@ p1 <- ggplot(avoiding_ye_sum %>%
       , round((nrow(noncda_2020)))
       # , round((nrow(cda_2020))*100000)
     ))) +
+  geom_hline(yintercept = ye_per_hal_cda_min[2], linetype = "dashed", colour = "#E41A1C") +
+  geom_vline(xintercept = nrow(cda_2020)*4, linetype = "dotted") +
+  geom_hline(yintercept = max(avoiding_ye_sum_noncda_2020$mean_ye_per_hal), linetype = "dashed", colour = "#377EB8") +
+
   geom_line(
     aes(x = ordered*4,
       y = mean_ye_per_hal, #lty = "solid",
@@ -515,8 +525,13 @@ p1 <- ggplot(avoiding_ye_sum %>%
   scale_fill_brewer(palette = "Set1", direction = 1) +
   scale_colour_brewer(palette = "Set1", direction = 1) +
   ylab("Mean ratio of YE to halibut") +
-  xlab(expression("Total area of cells ("~km^2~")")) +
-  ggtitle("B. Minimizing YE ") +
+  xlab(expression("Total area of cells ("~km^2~")"))
+p1
+
+ggsave(paste0("figs/expected_ye_to_hal", model_type, "_min-only.png"), width = 5, height = 3)
+
+
+p1 <- p1 + ggtitle("B. Minimizing YE ") +
   theme(
     axis.title.y = element_blank(), axis.text.y = element_blank(),
     legend.position = "none"
