@@ -110,17 +110,19 @@ Specifically, we calculated biomass $B_t$ (or abundance) indexes for each bienni
 B_t = \sum_{j = 1}^{n_j} w_j  D_{j,t}.
 \end{equation}
 
+## Fine-scale species correlations and ratios
 
-In addition to biennial estimates of average relative biomass, we used cell-specific biomass estimates to explore how contrasting fishing strategies might affect expected catch ratios for a given total area of each region.
-We examined two strategies: (1) select cells to 'fish' in order from lowest to highest YE densities or (2) select cells to 'fish' with the highest to lowest halibut densities.
+Finally, we used cell-specific biomass estimates to explore how fishing strategies affect catch ratios in different sub-regions.
+First, we compare these cell-specific biomass estimates with what has actually been the result of commercial fishing efforts using plots similar to Fig. \@ref(fig:hbll-catch), but this time based on our cell-specific predictions and commercial catch per unit effort (CPUE) for all sectors using longline and hook and line gear types. 
+Next, we used our predictions to examine two strategies: (1) select cells to 'fish' in order from lowest to highest YE densities or (2) select cells to 'fish' with the highest to lowest halibut densities.
 <!-- TODO: a bit more here about what this can show and exactly what was done? -->
 Only 2 $\times$ 2 km grid cells were considered in these scenarios. 
 Biomass densities in kg/ha were also converted to mass per 100 hooks by multiplying cell densities by (100 hooks * 0.0024384 km * 0.009144 km) and resulting mean ratios assume an equal number of hooks were set in each grid cell encompassing the total cumulative area 'fished'. 
 Selected grid cells can be anywhere within the subregion. 
 To avoid unrealistic catch ratios, when expected halibut biomass of less than 1 g per 100 hooks have been truncated to this value.
+The cumulative sum of the densities for for all cells was divided by the area of those cells to produce a rolling average catch ratio until the entire are of each sub-region was included.
 This approach provides an estimate of the range of catch ratios one could expect from fishing, rather than an overall estimate of the relative biomass present in an entire region. 
 
-\clearpage
 
 ```{r qq-ye, fig.cap="QQ-plot (quantile-quantile plot) of randomized quantile residuals from the YE model. Three random iterations have been overlaid.", out.width="2.5in"}
 include_graphics(here("figs/ye-qq.png"))
@@ -138,9 +140,20 @@ include_graphics(here("figs/map-stitched-grid-overlap-expanded.png"))
 include_graphics(here("figs/region-colour-map-3x3-expanded.png"))
 ```
 
-(ref:fig-hbll-catch) Species correlations within HBLL catch counts. Colours correspond to the sub-regions in Fig. \@ref(fig:region-col-key) except that catch within the CDA has been included in panel B.
+(ref:fig-hbll-catch) Species correlations within HBLL catch counts. Colours and linear regression lines correspond to the sub-regions in Fig. \@ref(fig:region-col-key) although catch within the CDA has been included in panel B regression.
 
 ```{r hbll-catch, fig.cap="(ref:fig-hbll-catch)", out.width="3in"}
 include_graphics(here("figs/hbll-catch-correlations.png"))
 ```
 
+<!-- (ref:fig-com-catch) Species correlations within commericial catch CPUE split by season where summer is when halibut tend to be in shallow waters (May through August) and winter is when they tend to be in deeper waters (September through April @loherAnalysisMatchMismatch2011). Colours and linear regression lines correspond to the sub-regions in Fig. \@ref(fig:region-col-key). -->
+
+<!-- ```{r com-catch, fig.cap="(ref:fig-com-catch)", out.width="5in"} -->
+<!-- include_graphics(here("figs/commercial-correlations-by-region-season.png")) -->
+<!-- ``` -->
+
+<!-- (ref:fig-com-catch-by-yr) Simple linear regression lines for annual species correlations within commericial catch CPUE split by sub-regions (Fig. \@ref(fig:region-col-key)) and season where summer is when halibut tend to be in shallow waters (May through August) and winter is when they tend to be in deeper waters (September through April @loherAnalysisMatchMismatch2011). -->
+
+<!-- ```{r com-catch-by-yr, fig.cap="(ref:fig-com-catch-by-yr)", out.width="5in"} -->
+<!-- include_graphics(here("figs/commercial-correlations-by-year-by-season.png"))  -->
+<!-- ```  -->

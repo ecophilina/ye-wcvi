@@ -1,6 +1,6 @@
 ---
-title: "Quantifying relative biomass of Pacific Halibut and Yelloweye Rockfish off the west coast of Vancouver Island with geostatistical modelling"
-year: 2021
+title: "Quantifying relative biomass of Pacific Halibut and Yelloweye Rockfish off the west coast of Vancouver Island with geostatistical modelling "
+year: 2022
 report_number: nnn
 author: |
   Philina A. English,
@@ -20,7 +20,11 @@ abstract: |
 abstract_other: |
   Voici le résumé. 
 output:
- csasdown::techreport_pdf:
+ # csasdown::techreport_word:
+   csasdown::techreport_pdf:
+   # draft_watermark is a toggle to show/not show a DRAFT watermark across every page
+   draft_watermark: true
+   prepub: true
    french: false
    copy_sty: true
    line_nums: false
@@ -93,10 +97,10 @@ if (length(grep("pdf", names(meta)))) {
   prepub <- meta$`csasdown::techreport_word`$prepub
 }
 csl <- "csl/csas.csl"
-if (french) {
-  csl <- "csl/csas-french.csl"
-  options(OutDec = ",")
-}
+# if (french) {
+#   csl <- "csl/csas-french.csl"
+#   options(OutDec = ",")
+# }
 
 # add other packages here:
 library(dplyr)
