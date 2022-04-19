@@ -7,7 +7,6 @@ output: html_document
 
 ```{r message = F}
 library(sf)
-sf_use_s2(FALSE) # needed with newer versions apparently
 library(dplyr)
 library(ggplot2)
 library(tidyr)
@@ -54,6 +53,7 @@ Load custom functions including one that takes all the set data and hook data re
 
 These models will be of estimated biomass density, so HBLL catch counts are converted to biomass using the mean weight of all fish sampled on the trawl surveys. 
 The HBLL biomass estimate is further divided by the "area swept" calculation I found in a hook competition script (total_hooks * 0.0024384 * 0.009144 * 1000) except that I am using density estimates in kg/ha from the trawl instead of kg/km2, so I am multiplying by 10000 instead of 1000. 
+It also appears that 0.009144 is the radius not the diameter; therefore, should all be multiplied by 2. 
 This results in similar, but not identical, value ranges for both surveys, as would be expected given the different habitats they sample. 
 
 
@@ -78,9 +78,9 @@ model_data_prep <- function(trawldata, hblldata, mean_weight) {
         year %in% c(2019, 2020) ~ 2020  # no WCVI
       ),
       year_true = year,
-      density = catch_count * mean_weight / (hook_count * 0.0024384 * 0.009144 * 10000) 
+      density = catch_count * mean_weight / (hook_count * 0.0024384 * 0.009144 * 10000 * 2) 
       # hook spacing = 0.0024384 km
-      # assumed catch radius = 0.009144 km (30 feet)  TODO: I think we need to *2 to get diameter
+      # assumed catch radius = 0.009144 km (30 feet)
       # this area swept calc was for km2, so * 10000 gives it in hectares
     ) %>%
     select(
@@ -305,12 +305,13 @@ Split area 3CD into areas inside and outside court defined area (CDA)
 s_3CD_grid_utm <- filter(grid_utm, latitude < 50.5 & longitude < -124.9) # trims grid to be just area 3CD
 s_3CD_grid_sf <- st_as_sf(s_3CD_grid_utm, coords = c("longitude", "latitude"))
 st_crs(s_3CD_grid_sf) <- 4326 # set the coordinate reference system
-# s_grid_sf
 
 focal_area <- sf::st_read(dsn = "shape-files/taaqwiihak_areaVer2.shp", layer = "taaqwiihak_areaVer2")
 focal_area <- sf::st_transform(focal_area, crs = 4326)
 
+sf_use_s2(FALSE)
 intersected <- sf::st_intersects(s_3CD_grid_sf, focal_area)
+sf_use_s2(TRUE)
 
 cda_grid_sf <- s_3CD_grid_sf[which(lengths(intersected) > 0), ]
 noncda_3CD_grid_sf <- s_3CD_grid_sf[which(lengths(intersected) == 0), ]
@@ -357,22 +358,23 @@ ggplot() + geom_polygon(data = majorbound,  aes(X * 1000, Y * 1000,
 attributes(majorbound)$PolyData  
 
 bound3C <- fortify(majorbound) %>% mutate(X = X * 1000, Y = Y * 1000) %>%
-    filter(PID %in% c(3))
+    filter(PID %in% c(3)) %>% as.PolySet(., projection = "UTM", zone = 9)
 
 bound3D <- fortify(majorbound) %>% mutate(X = X * 1000, Y = Y * 1000) %>%
-    filter(PID %in% c(4))
+    filter(PID %in% c(4)) %>% as.PolySet(., projection = "UTM", zone = 9)
 
 bound5A <- fortify(majorbound) %>% mutate(X = X * 1000, Y = Y * 1000) %>%
-    filter(PID %in% c(5))
+    filter(PID %in% c(5)) %>% as.PolySet(., projection = "UTM", zone = 9)
 bound5B <- fortify(majorbound) %>% mutate(X = X * 1000, Y = Y * 1000) %>%
-    filter(PID %in% c(6))
-
+    filter(PID %in% c(6)) %>% as.PolySet(., projection = "UTM", zone = 9)
 
 poly3C <- PolySet2SpatialPolygons(bound3C, close_polys=TRUE)
 poly3C_sf <-  st_as_sf(poly3C)
 st_crs(poly3C_sf) <- 3156
 poly3C_sf <- sf::st_transform(poly3C_sf, crs = 4326)
+sf_use_s2(F)
 intersected3C <- sf::st_intersects(full_s_grid_sf, poly3C_sf)
+sf_use_s2(T)
 poly3C_grid_sf <- full_s_grid_sf[which(lengths(intersected3C) > 0), ]
 poly3C_grid <- sfc_as_cols(poly3C_grid_sf, c("longitude", "latitude"))
 st_geometry(poly3C_grid) <- NULL
@@ -381,7 +383,9 @@ poly3D <- PolySet2SpatialPolygons(bound3D, close_polys=TRUE)
 poly3D_sf <-  st_as_sf(poly3D)
 st_crs(poly3D_sf) <- 3156
 poly3D_sf <- sf::st_transform(poly3D_sf, crs = 4326)
+sf_use_s2(F)
 intersected3D <- sf::st_intersects(full_s_grid_sf, poly3D_sf)
+sf_use_s2(T)
 poly3D_grid_sf <- full_s_grid_sf[which(lengths(intersected3D) > 0), ]
 poly3D_grid <- sfc_as_cols(poly3D_grid_sf, c("longitude", "latitude"))
 st_geometry(poly3D_grid) <- NULL
@@ -391,7 +395,9 @@ poly5A <- PolySet2SpatialPolygons(bound5A, close_polys=TRUE)
 poly5A_sf <-  st_as_sf(poly5A)
 st_crs(poly5A_sf) <- 3156
 poly5A_sf <- sf::st_transform(poly5A_sf, crs = 4326)
+sf_use_s2(F)
 intersected5A <- sf::st_intersects(full_s_grid_sf, poly5A_sf)
+sf_use_s2(T)
 poly5A_grid_sf <- full_s_grid_sf[which(lengths(intersected5A) > 0), ]
 poly5A_grid <- sfc_as_cols(poly5A_grid_sf, c("longitude", "latitude"))
 st_geometry(poly5A_grid) <- NULL
@@ -401,7 +407,9 @@ poly5B <- PolySet2SpatialPolygons(bound5B, close_polys=TRUE)
 poly5B_sf <-  st_as_sf(poly5B)
 st_crs(poly5B_sf) <- 3156
 poly5B_sf <- sf::st_transform(poly5B_sf, crs = 4326)
+sf_use_s2(F)
 intersected5B <- sf::st_intersects(full_s_grid_sf, poly5B_sf)
+sf_use_s2(T)
 poly5B_grid_sf <- full_s_grid_sf[which(lengths(intersected5B) > 0), ]
 poly5B_grid <- sfc_as_cols(poly5B_grid_sf, c("longitude", "latitude"))
 st_geometry(poly5B_grid) <- NULL
@@ -683,7 +691,7 @@ g <- ggplot(focal_area_proj) +
       legend.position = c(0.99, 0.99),
       legend.justification = c(1, 1),
       panel.background = element_rect(color = NA, size = 1, fill = "grey70")) 
-
+# g
 ggsave("figs/map-stitched-grid-overlap-expanded.png", width = 5.5, height = 5.5, dpi = 400)
 }
 ```
