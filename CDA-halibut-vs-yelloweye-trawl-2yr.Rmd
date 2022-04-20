@@ -59,7 +59,7 @@ This results in similar, but not identical, value ranges for both surveys, as wo
 
 ```{r echo=F}
 # load misc custom functions
-source("functions.R")
+source("analysis/functions.R")
 ```
 
 ```{r message=F}
@@ -856,15 +856,15 @@ plot(mesh400kn$mesh, asp = 1, main = "");points(d_utm$X, d_utm$Y, pch = ".")
 d_hal <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
   filter(latitude < 52.15507) %>%
   filter(year %in% years)%>% left_join(select(substrate, -X, -Y)) 
-f <- paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-tweedie2.rds")
+f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-tweedie.rds")
 if (!file.exists(f)) {
   m_halibut_tweedie <- sdmTMB(
     formula = density ~ 0 + as.factor(year) + as.factor(survey) + 
       s(rocky, k = 3) + s(muddy, k = 3) +
       depth_scaled + I(depth_scaled^2),
     data = d_hal,
-    spde = mesh400kn,
-    fields = "IID",
+    mesh = mesh400kn,
+    spatiotemporal = "IID",
     time = "year",
     silent = FALSE,
     # anisotropy = TRUE,
@@ -873,50 +873,74 @@ if (!file.exists(f)) {
   saveRDS(m_halibut_tweedie, file = f)
 }
 
-f <- paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-binomial2.rds")
+f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta.rds")
 if (!file.exists(f)) {
   d_hal$present <- ifelse(d_hal$density > 0, 1, 0)
-  m_halibut_bin <- sdmTMB(
-    formula = present ~ 0 + as.factor(year) + as.factor(survey) + 
-      s(rocky, k = 3) + s(muddy, k = 3) +
-      depth_scaled + I(depth_scaled^2),
-    data = d_hal,
-    spde = mesh400kn,
-    fields = "IID",
-    time = "year",
-    silent = FALSE,
-    # anisotropy = TRUE,
-    family = binomial(link = "logit")
-  )
-  saveRDS(m_halibut_bin, file = f)
-}
-
-f <- paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-gamma2.rds")
-if (!file.exists(f)) {
-  d_hal_pos <- subset(d_hal, density > 0)
-  mesh400kn_pos <- make_mesh(d_hal_pos, c("X", "Y"), n_knots = 400)
-  m_halibut_pos <- sdmTMB(
+  m_halibut_delta <- sdmTMB(
     formula = density ~ 0 + as.factor(year) + as.factor(survey) + 
       s(rocky, k = 3) + s(muddy, k = 3) +
       depth_scaled + I(depth_scaled^2),
-    data = d_hal_pos,
-    spde = mesh400kn_pos,
-    fields = "IID",
+    data = d_hal,
+    mesh = mesh400kn,
+    spatiotemporal = "IID",
     time = "year",
     silent = FALSE,
     # anisotropy = TRUE,
-    family = Gamma(link = "log")
+    family = delta_gamma()
   )
-  saveRDS(m_halibut_pos, file = f)
+  saveRDS(m_halibut_delta, file = f)
+}
+
+f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1.rds")
+if (!file.exists(f)) {
+  d_hal$present <- ifelse(d_hal$density > 0, 1, 0)
+  m_halibut_delta2 <- sdmTMB(
+    formula = density ~ 0 + as.factor(year) + as.factor(survey) + 
+      s(rocky, k = 3) + s(muddy, k = 3) +
+      depth_scaled + I(depth_scaled^2),
+    data = d_hal,
+    mesh = mesh400kn,
+    spatial = "off",
+    spatiotemporal = "AR1",
+    time = "year",
+    silent = FALSE,
+    # anisotropy = TRUE,
+    family = delta_gamma()
+  )
+  saveRDS(m_halibut_delta2, file = f)
+}
+
+f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-RW.rds")
+if (!file.exists(f)) {
+  d_hal$present <- ifelse(d_hal$density > 0, 1, 0)
+  # d_hal$year_f <- as.factor(d_hal$year)
+  m_halibut_delta3 <- sdmTMB(
+    formula = density ~ 0 + 
+      as.factor(year) + 
+      as.factor(survey) + 
+      s(rocky, k = 3) + s(muddy, k = 3) +
+      depth_scaled + I(depth_scaled^2),
+    data = d_hal,
+    mesh = mesh400kn,
+    # time_varying = ~ 1,
+    spatial = "off",
+    spatiotemporal = "RW",
+    time = "year",
+    silent = FALSE,
+    # anisotropy = TRUE,
+    family = delta_gamma()
+  )
+  saveRDS(m_halibut_delta3, file = f)
 }
 ```
 
 ## Load saved models
 
 ```{r}
-m_halibut_tweedie <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-tweedie2.rds"))
-m_halibut_bin <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-binomial2.rds"))
-m_halibut_pos <- readRDS(paste0("models/halibut-hybrid-keepable-model-rocky-muddy-400kn-gamma2.rds"))
+m_halibut_tweedie <- readRDS(paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-tweedie.rds"))
+m_halibut_delta1 <- readRDS(paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta.rds"))
+m_halibut_delta2 <- readRDS(paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1.rds"))
+m_halibut_delta3 <- readRDS(paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-RW.rds"))
 ```
 
 ## Comparing models
@@ -927,23 +951,34 @@ tidy(m_halibut_tweedie, "ran_pars", conf.int = TRUE)
 ```
 
 ```{r}
-m_halibut_bin
-tidy(m_halibut_bin, "ran_pars", conf.int = TRUE)
-
-m_halibut_pos
-tidy(m_halibut_pos, "ran_pars", conf.int = TRUE)
+m_halibut_delta1
+tidy(m_halibut_delta1, "ran_pars", conf.int = TRUE)
+tidy(m_halibut_delta1, "ran_pars", conf.int = TRUE, model = 2)
+max(m_halibut_delta1$gradients)
 ```
 
-```{r warning=F, message=F}
-get_diag(m_halibut_tweedie)
+```{r}
+m_halibut_delta2
+tidy(m_halibut_delta2, "ran_pars", conf.int = TRUE)
+tidy(m_halibut_delta2, "ran_pars", conf.int = TRUE, model = 2)
+max(m_halibut_delta2$gradients)
 ```
 
-```{r warning=F, message=F}
-get_diag(m_halibut_bin, response = "present")
+```{r}
+m_halibut_delta3
+tidy(m_halibut_delta3, "ran_pars", conf.int = TRUE)
+tidy(m_halibut_delta3, "ran_pars", conf.int = TRUE, model = 2)
+max(m_halibut_delta3$gradients)
 ```
 
+```{r}
+AIC(m_halibut_tweedie, m_halibut_delta, m_halibut_delta2, m_halibut_delta3)
+```
+
+
 ```{r warning=F, message=F}
-get_diag(m_halibut_pos)
+s1 <- simulate(m_halibut_delta2, nsim = 200) 
+dharma_residuals(s1, m_halibut_delta2)
 ```
 
 
@@ -957,7 +992,7 @@ d_ye <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>%
   filter(latitude < 52.15507) %>%
   filter(year %in% years)%>% left_join(select(substrate, -X, -Y))
 
-f <- "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn.rds"
+f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn.rds"
 if (!file.exists(f)) {
   m_ye <- sdmTMB(
     formula = density ~ 0 + as.factor(year) + as.factor(survey) + 
@@ -965,8 +1000,8 @@ if (!file.exists(f)) {
       s(muddy, k = 3) +
       depth_scaled + I(depth_scaled^2),
     data = d_ye,
-    spde = mesh400kn,
-    fields = "IID",
+    mesh = mesh400kn,
+    spatiotemporal = "IID",
     time = "year",
     silent = FALSE,
     anisotropy = TRUE,
@@ -976,7 +1011,7 @@ if (!file.exists(f)) {
   saveRDS(m_ye, file = f)
 }
 
-f <- "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn-no-anisotropy.rds"
+f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-no-anisotropy-RW.rds"
 if (!file.exists(f)) {
   m_ye0 <- sdmTMB(
     formula = density ~ 0 + as.factor(year) + as.factor(survey) + 
@@ -984,8 +1019,9 @@ if (!file.exists(f)) {
       s(muddy, k = 3) +
       depth_scaled + I(depth_scaled^2),
     data = d_ye,
-    spde = mesh400kn,
-    fields = "IID",
+    mesh = mesh400kn,
+    spatial = "off",
+    spatiotemporal = "RW",
     time = "year",
     silent = FALSE,
     # anisotropy = TRUE,
@@ -995,62 +1031,44 @@ if (!file.exists(f)) {
   saveRDS(m_ye0, file = f)
 }
 
-# 
-# d_ye$present <- ifelse(d_ye$density > 0, 1, 0)
-# m_ye1 <- sdmTMB(
-#     formula = present ~ 0 + as.factor(year) + as.factor(survey) +
-#       s(rocky, k = 3) +
-#       s(muddy, k = 3) +
-#       depth_scaled + I(depth_scaled^2),
-#     data = d_ye,
-#     spde = mesh400kn,
-#     fields = "IID",
-#     time = "year",
-#     silent = FALSE,
-#     anisotropy = TRUE,
-#     # reml = T, # F is simplier to explain.
-#     family = binomial(link = "logit")
-#   )
-# saveRDS(m_ye1, file = "models/yelloweye-hybrid-delta-mw-rocky-muddy-400kn-binomial.rds")
-# 
-# d_ye_pos <- subset(d_ye, density > 0)
-# mesh400kn_pos <- make_mesh(d_ye_pos, c("X", "Y"), n_knots = 400)
-# m_ye2 <- sdmTMB(
-#   formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-#     s(rocky, k = 3) +
-#     s(muddy, k = 3) +
-#     depth_scaled + I(depth_scaled^2),
-#   data = d_ye_pos,
-#   spde = mesh400kn_pos,
-#   fields = "IID",
-#   time = "year",
-#   silent = FALSE,
-#   anisotropy = TRUE,
-#   # reml = T, # F is simplier to explain.
-#   family = Gamma(link = "log")
-# )
-# saveRDS(m_ye2, file = "models/yelloweye-hybrid-delta-mw-rocky-muddy-400kn-gamma.rds")
+f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta.rds"
+if (!file.exists(f)) {
+  d_ye$present <- ifelse(d_ye$density > 0, 1, 0)
+  m_ye1 <- sdmTMB(
+    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
+      s(rocky, k = 3) +
+      s(muddy, k = 3) +
+      depth_scaled + I(depth_scaled^2),
+    data = d_ye,
+    mesh = mesh400kn,
+    spatial = "off",
+    spatiotemporal = "RW",
+    time = "year",
+    silent = FALSE,
+    # anisotropy = TRUE, # not implimented yet
+    # reml = T, # F is simplier to explain.
+    family = delta_gamma()
+  )
+  saveRDS(m_ye1, file = f)
+}
 ```
 
 
 ## Load saved models
 
 ```{r}
-m_ye <- readRDS(file = "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn.rds")
+m_ye <- readRDS(file = "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn.rds")
+m_ye0 <- readRDS(file = "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-no-anisotropy-RW.rds")
+m_ye1 <- readRDS(file = "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta.rds")
 ```
 
 ## Comparing models
 
 ```{r echo = F}
 m_ye
-AIC(m_ye)
 tidy(m_ye, "ran_pars", conf.int = TRUE)
 
-print("without anisotropy")
-
-m_ye0 <- readRDS(file = "models/yelloweye-hybrid-hbll-mw-rocky-muddy-400kn-no-anisotropy.rds")
-# m_ye0
-AIC(m_ye0) # worse by > 10 AIC
+AIC(m_ye, m_ye0, m_ye1) # worse by > 10 AIC
 ```
 
 ```{r warning=F, message=F}
