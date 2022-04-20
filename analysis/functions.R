@@ -172,6 +172,13 @@ get_diag <- function(m, response = "density",
 
   # browser()
   set.seed(100)
+
+  s <- simulate(m, nsim = 200)
+
+  dharma_residuals(s, m)
+
+  r <- dharma_residuals(s, m, plot = FALSE)
+  browser()
   predictions <- predict(m)
   predictions$residuals <- residuals(m)
 
@@ -179,7 +186,7 @@ get_diag <- function(m, response = "density",
   predictions$est_exp <- exp(predictions$est)
 
   print("R^2:")
-  r2 <- cor(predictions$est, predictions[[response]])^2
+  r2 <- cor(r$expected, r$observed)^2
   print(r2)
 
   print("")
@@ -189,10 +196,10 @@ get_diag <- function(m, response = "density",
   print("")
   print("MSE:")
   print(mean(predictions$residuals^2))
-  qqnorm(predictions$residuals);qqline(predictions$residuals)
-
-  hbll <- filter(predictions, survey == "HBLL")
-  qqnorm(hbll$residuals);qqline(hbll$residuals)
+  # qqnorm(predictions$residuals);qqline(predictions$residuals)
+  #
+  # hbll <- filter(predictions, survey == "HBLL")
+  # qqnorm(hbll$residuals);qqline(hbll$residuals)
 
 
   plot_map <- function(dat, column = "est") {
