@@ -1,9 +1,7 @@
-# library(sf)
+# model selection using sdmTMB
 library(dplyr)
 library(ggplot2)
 library(tidyr)
-# will need this version to replicate report
-# remotes::install_github("pbs-assess/sdmTMB", ref = "delta")
 library(sdmTMB)
 
 dir.create("models", showWarnings = FALSE)
@@ -17,7 +15,6 @@ chosen_priors <- sdmTMBpriors(
   matern_s = pc_matern(range_gt = 0.1, sigma_lt = 2),
   matern_st = pc_matern(range_gt = 0.1, sigma_lt = 2)
 )
-
 
 # Load both data sets
 
@@ -300,10 +297,11 @@ if (!file.exists(f)) {
   saveRDS(m_halibut_deltaF2, file = f)
 }
 
-m_halibut_delta_ar1F <- readRDS(paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1F.rds"))
-m_halibut_delta_ar1Fs <- readRDS(paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1F2.rds"))
+m_halibut_delta_ar1F <- readRDS("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1F.rds")
+m_halibut_delta_ar1Fs <- readRDS("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1F2.rds")
 
 AIC(m_halibut_delta_ar1F, m_halibut_delta_ar1Fs)
+# delta 3 AIC with simpler
 
 s1 <- simulate(m_halibut_delta_ar1Fs, nsim = 200)
 dharma_residuals(s1, m_halibut_delta_ar1Fs)
@@ -563,13 +561,17 @@ if (!file.exists(f)) {
 }
 
 # m_ye_delta_poly2 <- readRDS("models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-poly-2.rds")
-# this time its model 2 that can't estimate sigma_E and rho, so letting model two be IID
+# this time its model 2 that can't estimate sigma_E and rho, so tried letting model two be IID
 
 m_ye_delta_poly2 <- readRDS("models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-poly2.rds")
 m_ye_delta_poly2
 tidy(m_ye_delta_poly2, "ran_pars", conf.int = TRUE)
 tidy(m_ye_delta_poly2, "ran_pars", conf.int = TRUE, model = 2)
 max(m_ye_delta_poly2$gradients)
+
+# still couldn't estimate sigma_E
+
+
 
 # delta AR1 with unshared ranges only estimates fully with REML = F and 3 order poly on both substrates
 
