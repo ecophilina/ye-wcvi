@@ -8,6 +8,17 @@ library(sdmTMB)
 
 dir.create("models", showWarnings = FALSE)
 
+# choose a starting formula
+
+full_formula <- density ~ 0 + as.factor(year) + as.factor(survey) +
+  poly(rocky, 3) + poly(muddy, 3) + poly(depth_scaled, 2)
+
+chosen_priors <- sdmTMBpriors(
+  matern_s = pc_matern(range_gt = 0.1, sigma_lt = 2),
+  matern_st = pc_matern(range_gt = 0.1, sigma_lt = 2)
+)
+
+
 # Load both data sets
 
 substrate <- readRDS(file = "data-generated/events_w_substrate_1km_buffer.rds") %>%
@@ -44,10 +55,7 @@ plot(mesh400kn$mesh, asp = 1, main = "");points(d_hal$X, d_hal$Y, pch = ".")
 f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-tweedie.rds")
 if (!file.exists(f)) {
   m_halibut_tweedie <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-      rocky + I(rocky^2) +
-      muddy + I(muddy^2) +
-      depth_scaled + I(depth_scaled^2),
+    formula = full_formula,
     data = d_hal,
     mesh = mesh400kn,
     spatiotemporal = "IID",
@@ -62,12 +70,7 @@ if (!file.exists(f)) {
 f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-tw-anisotropy.rds")
 if (!file.exists(f)) {
   m_halibut_tw2 <- sdmTMB(
-    formula = density ~
-      0 + as.factor(year) +
-      as.factor(survey) +
-      rocky + I(rocky^2) +
-      muddy + I(muddy^2) +
-      depth_scaled + I(depth_scaled^2),
+    formula = full_formula,
     data = d_hal,
     mesh = mesh400kn,
     spatiotemporal = "IID",
@@ -83,19 +86,13 @@ if (!file.exists(f)) {
 f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta.rds")
 if (!file.exists(f)) {
   m_halibut_delta <- sdmTMB(
-    formula = density ~
-      0 +
-      as.factor(year) +
-      as.factor(survey) +
-      rocky + I(rocky^2) +
-      muddy + I(muddy^2) +
-      depth_scaled + I(depth_scaled^2),
+    formula = full_formula,
     data = d_hal,
     mesh = mesh400kn,
     spatiotemporal = "IID",
     time = "year",
     silent = FALSE,
-    # anisotropy = TRUE,
+    # anisotropy = TRUE, # not implemented yet
     reml = T, # F is simpler to explain.
     family = delta_gamma()
   )
@@ -106,9 +103,7 @@ if (!file.exists(f)) {
 # f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1-sp-off.rds")
 # if (!file.exists(f)) {
 #   m_halibut_delta1 <- sdmTMB(
-#     formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-#       s(rocky, k = 5) + s(muddy, k = 5) +
-#       depth_scaled + I(depth_scaled^2),
+#     formula = full_formula,
 #     data = d_hal,
 #     mesh = mesh400kn,
 #     spatial = "off",
@@ -125,13 +120,7 @@ if (!file.exists(f)) {
 f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1.rds")
 if (!file.exists(f)) {
   m_halibut_delta2 <- sdmTMB(
-    formula = density ~
-      0 +
-      as.factor(year) +
-      as.factor(survey) +
-      rocky + I(rocky^2) +
-      muddy + I(muddy^2) +
-      depth_scaled + I(depth_scaled^2),
+    formula = full_formula,
     data = d_hal,
     mesh = mesh400kn,
     spatial = "on",
@@ -154,9 +143,7 @@ if (!file.exists(f)) {
 #       0 +
 #       # as.factor(year) +
 #       as.factor(survey) +
-#       # s(rocky, k = 5) + s(muddy, k = 5) +
-#       rocky + I(rocky^2) +
-#       muddy + I(muddy^2) +
+#       poly(rocky, 3) + poly(muddy, 3) +
 #       depth_scaled + I(depth_scaled^2),
 #     time_varying = ~1,
 #     data = d_hal,
@@ -177,13 +164,7 @@ if (!file.exists(f)) {
 f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-RW.rds")
 if (!file.exists(f)) {
   m_halibut_delta3 <- sdmTMB(
-    formula = density ~
-      0 + as.factor(year) +
-      as.factor(survey) +
-      rocky + I(rocky^2) +
-      muddy + I(muddy^2) +
-      depth_scaled + I(depth_scaled^2),
-    # time_varying = ~ 1,
+    formula = full_formula,
     data = d_hal,
     mesh = mesh400kn,
     spatial = "on",
@@ -195,6 +176,7 @@ if (!file.exists(f)) {
   )
   saveRDS(m_halibut_delta3, file = f)
 }
+
 
 ## Load saved models
 
@@ -212,7 +194,15 @@ m_halibut_delta_rw <- readRDS(paste0("models/halibut-stitch-keepable-model-rocky
 AIC(m_halibut_tweedie, m_halibut_tw_anisotropy,
     m_halibut_delta_iid, m_halibut_delta_ar1, m_halibut_delta_rw)
 
-#  REML = T with I()
+# REML with poly 3
+#                         df      AIC
+# m_halibut_tweedie        5 4181.155
+# m_halibut_tw_anisotropy  7 4178.695
+# m_halibut_delta_iid      7 1974.846
+# m_halibut_delta_ar1      9 1954.744
+# m_halibut_delta_rw       7 1978.946
+
+#  REML = T with I() 2nd order only
 #                         df      AIC
 # m_halibut_tweedie        5 4203.499
 # m_halibut_tw_anisotropy  7 4200.896
@@ -221,7 +211,7 @@ AIC(m_halibut_tweedie, m_halibut_tw_anisotropy,
 # m_halibut_delta_rw       7 2028.019
 
 
-#  REML = T with s()
+#  REML = T with s( k = 3?)
 #                         df      AIC
 # m_halibut_tweedie        9 4213.975
 # m_halibut_tw_anisotropy 11 4211.417
@@ -230,97 +220,102 @@ AIC(m_halibut_tweedie, m_halibut_tw_anisotropy,
 # m_halibut_delta_rw      15 2049.362
 # m_halibut_delta_ar1_off 15 2022.831
 
-#                         df      AIC
-# m_halibut_tweedie        9 4271.514
-# m_halibut_tw_anisotropy 11 4269.305
-# m_halibut_delta_iid     15 2052.309
-# m_halibut_delta_ar1     17 2036.876
-# m_halibut_delta_rw      15 2074.266
-# m_halibut_delta_ar1_off 15 2037.700
-
-
-# faulty version with REML = F
-#                         df      AIC
-# m_halibut_tweedie       19 4264.005
-# m_halibut_tw_anisotropy 21 4262.296
-# m_halibut_delta_iid     35 2031.504
-# m_halibut_delta_ar1     35 2017.323
-# m_halibut_delta_rw      33 2059.692
-
-
-
-## RERUN top model without REML
-f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1F.rds")
-if (!file.exists(f)) {
-  m_halibut_delta2F <- sdmTMB(
-    formula = density ~
-      0 +
-      as.factor(year) +
-      as.factor(survey) +
-      rocky + I(rocky^2) +
-      muddy + I(muddy^2) +
-      depth_scaled + I(depth_scaled^2),
-    data = d_hal,
-    mesh = mesh400kn,
-    spatial = "on",
-    spatiotemporal = "AR1",
-    time = "year",
-    silent = FALSE,
-    # reml = T, # F is simpler to explain.
-    family = delta_gamma()
-  )
-  saveRDS(m_halibut_delta2F, file = f)
-}
-
-# f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1Fs.rds")
-# if (!file.exists(f)) {
-#   m_halibut_delta2Fs <- sdmTMB(
-#     formula = density ~
-#       0 +
-#       as.factor(year) +
-#       as.factor(survey) +
-#       s(rocky, k=3) +
-#       s(muddy, k=3) +
-#       depth_scaled + I(depth_scaled^2),
-#     data = d_hal,
-#     mesh = mesh400kn,
-#     spatial = "on",
-#     spatiotemporal = "AR1",
-#     time = "year",
-#     silent = FALSE,
-#     # reml = T, # F is simpler to explain.
-#     family = delta_gamma()
-#   )
-#   saveRDS(m_halibut_delta2Fs, file = f)
-# }
-
-m_halibut_delta_ar1 <- readRDS(paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1F.rds"))
-# m_halibut_delta_ar1s <- readRDS(paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1Fs.rds"))
-#
-# AIC(m_halibut_delta_ar1, m_halibut_delta_ar1s)
-
+# this is best so far
 m_halibut_delta_ar1
 tidy(m_halibut_delta_ar1, "ran_pars", conf.int = TRUE)
 tidy(m_halibut_delta_ar1, "ran_pars", conf.int = TRUE, model = 2)
 max(m_halibut_delta_ar1$gradients)
 
-s1 <- simulate(m_halibut_delta_ar1, nsim = 200)
-dharma_residuals(s1, m_halibut_delta_ar1)
+# let ranges be different and add priors
+f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1r.rds")
+if (!file.exists(f)) {
+  m_halibut_delta2r <- sdmTMB(
+    formula = full_formula,
+    data = d_hal,
+    mesh = mesh400kn,
+    spatial = "on",
+    spatiotemporal = "AR1",
+    share_range = FALSE,
+    priors = chosen_priors,
+    time = "year",
+    silent = FALSE,
+    # anisotropy = TRUE, # not implemented yet
+    reml = T, # F is simpler to explain.
+    family = delta_gamma()
+  )
+  saveRDS(m_halibut_delta2r, file = f)
+}
+
+# improves upon shared ranges ever so slightly
+AIC(m_halibut_delta_ar1, m_halibut_delta_ar1_unshared)
+
+# still looks good
+m_halibut_delta_ar1_unshared <- readRDS("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1r.rds")
+m_halibut_delta_ar1_unshared
+tidy(m_halibut_delta_ar1_unshared, "ran_pars", conf.int = TRUE)
+tidy(m_halibut_delta_ar1_unshared, "ran_pars", conf.int = TRUE, model = 2)
+max(m_halibut_delta_ar1_unshared$gradients)
+
+## RERUN top model without REML
+f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1F.rds")
+if (!file.exists(f)) {
+  m_halibut_deltaF <- sdmTMB(
+    formula = full_formula,
+    data = d_hal,
+    mesh = mesh400kn,
+    spatial = "on",
+    spatiotemporal = "AR1",
+    share_range = FALSE,
+    priors = chosen_priors,
+    time = "year",
+    silent = FALSE,
+    # reml = T, # F is simpler to explain.
+    family = delta_gamma()
+  )
+  saveRDS(m_halibut_deltaF, file = f)
+}
+
+# try simplifying muddy
+f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1F2.rds")
+if (!file.exists(f)) {
+  m_halibut_deltaF2 <- sdmTMB(
+    formula = density ~
+      0 +
+      as.factor(year) +
+      as.factor(survey) +
+      poly(rocky, 3) +
+      poly(muddy, 2) +
+      poly(depth_scaled, 2),
+    data = d_hal,
+    mesh = mesh400kn,
+    spatial = "on",
+    spatiotemporal = "AR1",
+    share_range = FALSE,
+    priors = chosen_priors,
+    time = "year",
+    silent = FALSE,
+    # reml = T, # F is simpler to explain.
+    family = delta_gamma()
+  )
+  saveRDS(m_halibut_deltaF2, file = f)
+}
+
+m_halibut_delta_ar1F <- readRDS(paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1F.rds"))
+m_halibut_delta_ar1Fs <- readRDS(paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1F2.rds"))
+
+AIC(m_halibut_delta_ar1F, m_halibut_delta_ar1Fs)
+
+s1 <- simulate(m_halibut_delta_ar1Fs, nsim = 200)
+dharma_residuals(s1, m_halibut_delta_ar1Fs)
 
 
 
 # Yelloweye Rockfish model
-# Much less temporal variation, so have confirmed that an AR1 didn't improve model. But what about a spatial-only model?
 
 f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn.rds"
 if (!file.exists(f)) {
   m_ye <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-      # s(rocky, k = 5) +
-      # s(muddy, k = 5) +
-      rocky + I(rocky^2) +
-      muddy + I(muddy^2) +
-      depth_scaled + I(depth_scaled^2),
+    formula = full_formula,
     data = d_ye,
     mesh = mesh400kn,
     spatiotemporal = "IID",
@@ -333,17 +328,10 @@ if (!file.exists(f)) {
   saveRDS(m_ye, file = f)
 }
 
-
-
 f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-no-anisotropy.rds"
 if (!file.exists(f)) {
   m_ye0 <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-      # s(rocky, k = 5) +
-      # s(muddy, k = 5) +
-      rocky + I(rocky^2) +
-      muddy + I(muddy^2) +
-      depth_scaled + I(depth_scaled^2),
+    formula = full_formula,
     data = d_ye,
     mesh = mesh400kn,
     spatial = "on",
@@ -360,12 +348,7 @@ if (!file.exists(f)) {
 f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta.rds"
 if (!file.exists(f)) {
   m_ye1 <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-      # s(rocky, k = 5) +
-      # s(muddy, k = 5) +
-      rocky + I(rocky^2) +
-      muddy + I(muddy^2) +
-      depth_scaled + I(depth_scaled^2),
+    formula = full_formula,
     data = d_ye,
     mesh = mesh400kn,
     spatial = "on",
@@ -383,14 +366,10 @@ if (!file.exists(f)) {
 f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-AR1.rds"
 if (!file.exists(f)) {
   m_ye2 <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-      # s(rocky, k = 5) +
-      # s(muddy, k = 5) +
-      rocky + I(rocky^2) +
-      muddy + I(muddy^2) +
-      depth_scaled + I(depth_scaled^2),
+    formula = full_formula,
     data = d_ye,
     mesh = mesh400kn,
+    spatial = "on",
     spatiotemporal = "AR1",
     time = "year",
     silent = FALSE,
@@ -401,84 +380,10 @@ if (!file.exists(f)) {
   saveRDS(m_ye2, file = f)
 }
 
-
-
-f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1.rds"
+f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta.rds"
 if (!file.exists(f)) {
   m_ye3 <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-      # s(rocky, k = 5) +
-      # s(muddy, k = 5) +
-      rocky + I(rocky^2) + #I(rocky^3) +
-      muddy + I(muddy^2) + #I(muddy^3) +
-      depth_scaled + I(depth_scaled^2),
-    data = d_ye,
-    mesh = mesh400kn,
-    spatial = "on",
-    spatiotemporal = "AR1",
-    time = "year",
-    silent = FALSE,
-    # anisotropy = TRUE, # not implimented yet
-    reml = T, # F is simplier to explain.
-    family = delta_gamma()
-  )
-  saveRDS(m_ye3, file = f)
-}
-
-m_ye_tw_iid_anisotopy <- readRDS( "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn.rds")
-m_ye_tw_iid <- readRDS("models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-no-anisotropy.rds")
-
-m_ye_tw_ar1 <- readRDS( "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-AR1.rds")
-m_ye_delta_iid <- readRDS( "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta.rds")
-m_ye_delta_ar1 <- readRDS( "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1.rds")
-
-AIC(m_ye, m_ye0, m_ye1, m_ye2, m_ye3)
-
-AIC(m_ye_tw_iid_anisotopy ,
-    m_ye_tw_iid ,
-    m_ye_tw_ar1 ,
-    m_ye_delta_iid ,
-    m_ye_delta_ar1 )
-
-# df      AIC
-# m_ye   7 3727.548
-# m_ye0  5 3740.245
-# m_ye1  7 2860.381
-# m_ye2  8 3728.826
-# m_ye3  9 2861.937
-
-## check that IDD is still best with 3rd order poly
-f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-3.rds"
-if (!file.exists(f)) {
-  m_ye3_3 <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-      # s(rocky, k = 5) +
-      # s(muddy, k = 5) +
-      rocky + I(rocky^2) + I(rocky^3) +
-      muddy + I(muddy^2) + I(muddy^3) +
-      depth_scaled + I(depth_scaled^2),
-    data = d_ye,
-    mesh = mesh400kn,
-    spatial = "on",
-    spatiotemporal = "AR1",
-    time = "year",
-    silent = FALSE,
-    # anisotropy = TRUE, # not implimented yet
-    reml = T, # F is simplier to explain.
-    family = delta_gamma()
-  )
-  saveRDS(m_ye3_3, file = f)
-}
-
-f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-3.rds"
-if (!file.exists(f)) {
-  m_ye1_3 <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-      # s(rocky, k = 5) +
-      # s(muddy, k = 5) +
-      rocky + I(rocky^2) + I(rocky^3) +
-      muddy + I(muddy^2) + I(muddy^3) +
-      depth_scaled + I(depth_scaled^2),
+    formula = full_formula,
     data = d_ye,
     mesh = mesh400kn,
     spatial = "on",
@@ -489,197 +394,192 @@ if (!file.exists(f)) {
     reml = T, # F is simplier to explain.
     family = delta_gamma()
   )
-  saveRDS(m_ye1_3, file = f)
+  saveRDS(m_ye3, file = f)
 }
 
-f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-RW-IID-3.rds"
+f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-r.rds"
 if (!file.exists(f)) {
-  m_ye1n3_3 <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-      # s(rocky, k = 5) +
-      # s(muddy, k = 5) +
-      rocky + I(rocky^2) + I(rocky^3) +
-      muddy + I(muddy^2) + I(muddy^3) +
-      depth_scaled + I(depth_scaled^2),
+  m_ye3_p <- sdmTMB(
+    formula = full_formula,
     data = d_ye,
     mesh = mesh400kn,
     spatial = "on",
-    spatiotemporal = c("RW", "IID"),
+    spatiotemporal = "IID",
+    share_range = FALSE,
+    priors = chosen_priors,
     time = "year",
     silent = FALSE,
     # anisotropy = TRUE, # not implimented yet
     reml = T, # F is simplier to explain.
     family = delta_gamma()
   )
-  saveRDS(m_ye1n3_3, file = f)
+  saveRDS(m_ye3_p, file = f)
 }
 
 
-f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-priors-3F.rds"
+f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1.rds"
 if (!file.exists(f)) {
-  m_ye3p <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-      rocky + I(rocky^2) + #I(rocky^3) +
-      muddy + I(muddy^2) + I(muddy^3) +
-      depth_scaled + I(depth_scaled^2),
-    data = d_ye,
-    mesh = mesh400kn,
-    spatial = "on",
-    spatiotemporal = c("AR1"),
-    share_range = F,
-    priors = sdmTMBpriors(
-      matern_s = pc_matern(range_gt = 0.1, sigma_lt = 2),
-      matern_st = pc_matern(range_gt = 0.1, sigma_lt = 2)),
-    time = "year",
-    silent = FALSE,
-    # anisotropy = TRUE, # not implimented yet
-    # reml = T, # F is simplier to explain.
-    family = delta_gamma()
-  )
-  saveRDS(m_ye3p, file = f)
-}
-
-tidy(m_ye3p, "ran_pars", conf.int = TRUE)
-tidy(m_ye3p, "ran_pars", conf.int = TRUE, model = 2)
-
-AIC(m_ye1_3, m_ye3_3, m_ye1n3_3)
-
-m_ye1n3_3
-tidy(m_ye1n3_3, "ran_pars", conf.int = TRUE)
-tidy(m_ye1n3_3, "ran_pars", conf.int = TRUE, model = 2)
-
-# check which fixed effects are best
-f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1F.rds"
-# if (!file.exists(f)) {
-  m_ye3 <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-      rocky + I(rocky^2) + #I(rocky^3) +
-      muddy + I(muddy^2) + #I(muddy^3) +
-      depth_scaled + I(depth_scaled^2),
-    data = d_ye,
-    mesh = mesh400kn,
-    time = "year",
-    spatial = "on",
-    spatiotemporal = c("AR1"),
-    share_range = F,
-    priors = sdmTMBpriors(
-      matern_s = pc_matern(range_gt = 0.1, sigma_lt = 2),
-      matern_st = pc_matern(range_gt = 0.1, sigma_lt = 2)),
-    silent = FALSE,
-    # anisotropy = TRUE, # not implimented yet
-    # reml = T, # F is simplier to explain.
-    family = delta_gamma()
-  )
-  saveRDS(m_ye3, file = f)
-}
-
-#
-# m_ye3
-# tidy(m_ye3, "ran_pars", conf.int = TRUE)
-# tidy(m_ye3, "ran_pars", conf.int = TRUE, model = 2)
-# max(m_ye3$gradients)
-#
-
-f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-3F.rds"
-# if (!file.exists(f)) {
   m_ye4 <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-      rocky + I(rocky^2) + I(rocky^3) +
-      muddy + I(muddy^2) + I(muddy^3) +
-      depth_scaled + I(depth_scaled^2),
+    formula = full_formula,
     data = d_ye,
     mesh = mesh400kn,
-    time = "year",
     spatial = "on",
-    spatiotemporal = c("AR1"),
-    share_range = F,
-    priors = sdmTMBpriors(
-      matern_s = pc_matern(range_gt = 0.1, sigma_lt = 2),
-      matern_st = pc_matern(range_gt = 0.1, sigma_lt = 2)),
+    spatiotemporal = "AR1",
+    time = "year",
     silent = FALSE,
     # anisotropy = TRUE, # not implimented yet
-    # reml = T, # F is simplier to explain.
+    reml = T, # F is simplier to explain.
     family = delta_gamma()
   )
   saveRDS(m_ye4, file = f)
 }
 
-f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-sF.rds"
-# if (!file.exists(f)) {
-  m_ye5 <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-      s(rocky, k = 5) +
-      s(muddy, k = 5) +
-      depth_scaled + I(depth_scaled^2),
-    data = d_ye,
-    mesh = mesh400kn,
-    time = "year",
-    spatial = "on",
-    spatiotemporal = c("AR1"),
-    share_range = F,
-    priors = sdmTMBpriors(
-      matern_s = pc_matern(range_gt = 0.1, sigma_lt = 2),
-      matern_st = pc_matern(range_gt = 0.1, sigma_lt = 2)),
-    silent = FALSE,
-    # anisotropy = TRUE, # not implimented yet
-    # reml = T, # F is simplier to explain.
-    family = delta_gamma()
-  )
-  saveRDS(m_ye5, file = f)
-}
-
-f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-polyF.rds"
+f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1r.rds"
 if (!file.exists(f)) {
-  m_ye6 <- sdmTMB(
-    formula = density ~ 0 + as.factor(year) + as.factor(survey) +
-      poly(rocky, 3) +
-      poly(muddy, 3) +
-      depth_scaled + I(depth_scaled^2),
+  m_ye4p <- sdmTMB(
+    formula = full_formula,
+    data = d_ye,
+    mesh = mesh400kn,
+    spatial = "on",
+    spatiotemporal = "AR1",
+    share_range = FALSE,
+    priors = chosen_priors,
+    time = "year",
+    silent = FALSE,
+    # anisotropy = TRUE, # not implimented yet
+    reml = T, # F is simplier to explain.
+    family = delta_gamma()
+  )
+  saveRDS(m_ye4p, file = f)
+}
+
+
+
+
+m_ye_tw_iid_anisotopy <- readRDS( "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn.rds")
+m_ye_tw_iid <- readRDS("models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-no-anisotropy.rds")
+m_ye_tw_ar1 <- readRDS( "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-AR1.rds")
+m_ye_delta_iid <- readRDS( "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta.rds")
+m_ye_delta_iid_unshared <- readRDS( "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-r.rds")
+m_ye_delta_ar1 <- readRDS( "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1.rds")
+m_ye_delta_ar1_unshared <- readRDS( "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1r.rds")
+
+AIC(m_ye_tw_iid_anisotopy,
+    m_ye_tw_iid,
+    m_ye_tw_ar1,
+    m_ye_delta_iid,
+    m_ye_delta_ar1,
+    m_ye_delta_iid_unshared,
+    m_ye_delta_ar1_unshared)
+
+#                         df      AIC
+# m_ye_tw_iid_anisotopy    7 3730.988
+# m_ye_tw_iid              5 3684.114
+# m_ye_tw_ar1              8 3673.368
+# m_ye_delta_iid           7 2768.750
+# m_ye_delta_ar1           9 2770.323
+# m_ye_delta_iid_unshared  9 2774.729
+# m_ye_delta_ar1_unshared 11 2775.324
+
+# not the simplest, but < 10 delta AIC and most flexible
+m_ye_delta_ar1_unshared
+tidy(m_ye_delta_ar1_unshared, "ran_pars", conf.int = TRUE)
+tidy(m_ye_delta_ar1_unshared, "ran_pars", conf.int = TRUE, model = 2)
+max(m_ye_delta_ar1_unshared$gradients)
+
+
+# # check which fixed effects are best
+# # but doesn't converge with ML
+# f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1F.rds"
+# if (!file.exists(f)) {
+#   m_ye3f <- sdmTMB(
+#     formula = full_formula,
+#     data = d_ye,
+#     mesh = mesh400kn,
+#     time = "year",
+#     spatial = "on",
+#     spatiotemporal = "AR1",
+#     share_range = F,
+#     priors = chosen_priors,
+#     silent = FALSE,
+#     # anisotropy = TRUE, # not implimented yet
+#     # reml = T, # F is simplier to explain.
+#     family = delta_gamma()
+#   )
+#   saveRDS(m_ye3f, file = f)
+# }
+
+# this time it's rocky that could use simplifying
+
+# f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-poly2-3.rds"
+# if (!file.exists(f)) {
+#   m_ye4p2 <- sdmTMB(
+#     formula = density ~ 0 + as.factor(year) +
+#       as.factor(survey) +
+#       poly(rocky, 2) +
+#       poly(muddy, 3) +
+#       poly(depth_scaled, 2),
+#     data = d_ye,
+#     mesh = mesh400kn,
+#     time = "year",
+#     spatial = "on",
+#     spatiotemporal = "AR1",
+#     share_range = F,
+#     priors = chosen_priors,
+#     silent = FALSE,
+#     # anisotropy = TRUE, # not implimented yet
+#     reml = T, # F is simplier to explain.
+#     family = delta_gamma()
+#   )
+#   saveRDS(m_ye4p2, file = f)
+# }
+#
+# m_ye_delta_poly23 <- readRDS("models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-poly2-3.rds")
+# m_ye_delta_poly23 <- run_extra_optimization(m_ye_delta_poly23)
+# # model one can't estimate sigma_E and rho
+
+
+f <- "models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-poly2.rds"
+if (!file.exists(f)) {
+  m_ye_mixed <- sdmTMB(
+    formula = density ~ 0 + as.factor(year) +
+      as.factor(survey) +
+      poly(rocky, 2) +
+      poly(muddy, 2) +
+      poly(depth_scaled, 2),
     data = d_ye,
     mesh = mesh400kn,
     time = "year",
     spatial = "on",
-    spatiotemporal = c("AR1"),
+    spatiotemporal = list("AR1","IID"),
     share_range = F,
-    priors = sdmTMBpriors(
-      matern_s = pc_matern(range_gt = 0.1, sigma_lt = 2),
-      matern_st = pc_matern(range_gt = 0.1, sigma_lt = 2)),
+    priors = chosen_priors,
     silent = FALSE,
     # anisotropy = TRUE, # not implimented yet
-    # reml = T, # F is simplier to explain.
+    reml = T, # F is simplier to explain.
     family = delta_gamma()
   )
-  saveRDS(m_ye6, file = f)
+  saveRDS(m_ye_mixed, file = f)
 }
 
-m_ye3 <- readRDS("models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1F.rds")
-m_ye4 <- readRDS("models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-3F.rds")
-m_ye5 <- readRDS("models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-sF.rds")
-m_ye6 <- readRDS("models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-polyF.rds")
+# m_ye_delta_poly2 <- readRDS("models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-poly-2.rds")
+# this time its model 2 that can't estimate sigma_E and rho, so letting model two be IID
 
-AIC(m_ye3, m_ye4, m_ye5, m_ye6)
+m_ye_delta_poly2 <- readRDS("models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1-poly2.rds")
+m_ye_delta_poly2
+tidy(m_ye_delta_poly2, "ran_pars", conf.int = TRUE)
+tidy(m_ye_delta_poly2, "ran_pars", conf.int = TRUE, model = 2)
+max(m_ye_delta_poly2$gradients)
 
-# df      AIC
-# m_ye3 37 2869.325
-# m_ye4 41 2865.230
-# m_ye5 39 2863.494
+# delta AR1 with unshared ranges only estimates fully with REML = F and 3 order poly on both substrates
 
-m_ye3
-tidy(m_ye3, "ran_pars", conf.int = TRUE)
-tidy(m_ye3, "ran_pars", conf.int = TRUE, model = 2)
-max(m_ye3$gradients)
-
-m_ye4
-tidy(m_ye4, "ran_pars", conf.int = TRUE)
-tidy(m_ye4, "ran_pars", conf.int = TRUE, model = 2)
-max(m_ye4$gradients)
-
-m_ye6
-tidy(m_ye6, "ran_pars", conf.int = TRUE)
-tidy(m_ye6, "ran_pars", conf.int = TRUE, model = 2)
-max(m_ye6$gradients)
+m_ye_delta_poly3 <- readRDS("models/yelloweye-stitch-hbll-mw-rocky-muddy-400kn-delta-AR1r.rds")
+m_ye_delta_poly3
+tidy(m_ye_delta_poly3, "ran_pars", conf.int = TRUE)
+tidy(m_ye_delta_poly3, "ran_pars", conf.int = TRUE, model = 2)
+max(m_ye_delta_poly3$gradients)
 
 
-s2 <- simulate(m_ye6, nsim = 200)
-dharma_residuals(s2, m_ye6)
+s2 <- simulate(m_ye_delta_poly3, nsim = 200)
+dharma_residuals(s2, m_ye_delta_poly3)
 
