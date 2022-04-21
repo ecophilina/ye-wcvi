@@ -100,7 +100,7 @@ hbll_s_grid <- list(grid = hbll_grid, cell_area = 2.0)
 
 Load HBLL S grid
 ```{r loaddat, include = FALSE}
-hbll_s_grid <- readRDS(here::here("grids/hbll_s_grid.rds")) # make sure it has the re-extracted cell coordinates
+hbll_s_grid <- readRDS(here::here("grids/hbll_s_grid.rds")) # make sure it has the re-extracted cell coordinates saved in chunk above
 ```
 
 Use bathymetry contours from PBSmapping to define grid area
