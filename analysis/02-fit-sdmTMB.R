@@ -244,7 +244,17 @@ if (!file.exists(f)) {
 }
 
 # improves upon shared ranges ever so slightly
-AIC(m_halibut_delta_ar1, m_halibut_delta_ar1_unshared)
+AIC(m_halibut_tweedie, m_halibut_tw_anisotropy,
+    m_halibut_delta_iid, m_halibut_delta_rw,
+    m_halibut_delta_ar1, m_halibut_delta_ar1_unshared)
+
+# df      AIC
+# m_halibut_tweedie             5 4181.155
+# m_halibut_tw_anisotropy       7 4178.695
+# m_halibut_delta_iid           7 1974.846
+# m_halibut_delta_rw            7 1978.946
+# m_halibut_delta_ar1           9 1954.744
+# m_halibut_delta_ar1_unshared 11 1952.177
 
 # still looks good
 m_halibut_delta_ar1_unshared <- readRDS("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1r.rds")
