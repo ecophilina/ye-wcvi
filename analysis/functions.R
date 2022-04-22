@@ -302,16 +302,16 @@ map_predictions <- function(
   utm_zone9 <- 3156
   # download from:
   # https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/
-  if (!file.exists("data-generated/coast_gshhg.rds")) {
-    coast_gshhg <- sf::read_sf("data/gshhg-shp-2.3.7/GSHHS_shp/f/GSHHS_f_L1.shp") %>%
+  if (!file.exists(here::here("data-generated/coast_gshhg.rds"))) {
+    coast_gshhg <- sf::read_sf(here::here("data/gshhg-shp-2.3.7/GSHHS_shp/f/GSHHS_f_L1.shp")) %>%
       st_crop(c(xmin = -133, ymin = 47, xmax = -121, ymax = 55))
     coast_gshhg_proj <- sf::st_transform(coast_gshhg, crs = utm_zone9)
-    saveRDS(coast_gshhg_proj, file = "data-generated/coast_gshhg.rds")
+    saveRDS(coast_gshhg_proj, file = here::here("data-generated/coast_gshhg.rds"))
   } else {
-    coast_gshhg_proj <- readRDS("data-generated/coast_gshhg.rds")
+    coast_gshhg_proj <- readRDS(here::here("data-generated/coast_gshhg.rds"))
   }
 
-  focal_area <- sf::st_read(dsn = "shape-files/taaqwiihak_areaVer2.shp",
+  focal_area <- sf::st_read(dsn = here::here("shape-files/taaqwiihak_areaVer2.shp"),
     layer = "taaqwiihak_areaVer2", quiet = TRUE)
   focal_area_proj <- sf::st_transform(focal_area, crs = utm_zone9)
 
