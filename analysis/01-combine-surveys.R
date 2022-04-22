@@ -4,8 +4,8 @@ library(tidyr)
 
 dir.create("data-generated", showWarnings = FALSE)
 
-# # load misc custom functions
-# source("analysis/functions.R")
+# load misc custom functions
+source("analysis/functions.R")
 
 # Load custom functions including one that takes all the set data and hook data retrieved for each species and produces a dataframe for use in sdmTMB model.
 
