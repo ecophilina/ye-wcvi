@@ -243,6 +243,14 @@ if (!file.exists(f)) {
   saveRDS(m_halibut_delta2r, file = f)
 }
 
+
+# still looks good
+m_halibut_delta_ar1_unshared <- readRDS("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1r.rds")
+m_halibut_delta_ar1_unshared
+tidy(m_halibut_delta_ar1_unshared, "ran_pars", conf.int = TRUE)
+tidy(m_halibut_delta_ar1_unshared, "ran_pars", conf.int = TRUE, model = 2)
+max(m_halibut_delta_ar1_unshared$gradients)
+
 # improves upon shared ranges ever so slightly
 AIC(m_halibut_tweedie, m_halibut_tw_anisotropy,
     m_halibut_delta_iid, m_halibut_delta_rw,
@@ -256,12 +264,6 @@ AIC(m_halibut_tweedie, m_halibut_tw_anisotropy,
 # m_halibut_delta_ar1           9 1954.744
 # m_halibut_delta_ar1_unshared 11 1952.177
 
-# still looks good
-m_halibut_delta_ar1_unshared <- readRDS("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1r.rds")
-m_halibut_delta_ar1_unshared
-tidy(m_halibut_delta_ar1_unshared, "ran_pars", conf.int = TRUE)
-tidy(m_halibut_delta_ar1_unshared, "ran_pars", conf.int = TRUE, model = 2)
-max(m_halibut_delta_ar1_unshared$gradients)
 
 ## RERUN top model without REML
 f <- paste0("models/halibut-stitch-keepable-model-rocky-muddy-400kn-delta-AR1F.rds")
