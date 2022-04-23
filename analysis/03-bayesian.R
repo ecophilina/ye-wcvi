@@ -165,17 +165,17 @@ qres_gamma_ <- function(y, mu, phi) {
 }
 
 d_hal$present <- ifelse(d_hal$density > 0, 1, 0)
-q <- qres_binomial_(y = d_hal$present, p1[,1,drop=TRUE])
+mu <- apply(p1, 1, mean)
+q <- qres_binomial_(y = d_hal$present, mu)
 qqnorm(q);qqline(q)
 
 post <- extract(m_hal_stan)
 pos <- which(d_hal$present == 1)
 dpos <- d_hal[pos, ]
 p2pos <- p2[pos, ]
-phipos <- post$ln_phi[pos]
+mu <- apply(exp(p2pos), 1, mean)
 
-q <- qres_gamma_(y = dpos$density, exp(p2pos[,1,drop=TRUE]),
-  phi = exp(phipos)[1])
+q <- qres_gamma_(y = dpos$density, mu, phi = mean(exp(post$ln_phi)))
 qqnorm(q);qqline(q)
 
 # pmean <- apply(p, 1, mean)
@@ -258,3 +258,25 @@ f <- paste0(
 )
 saveRDS(m_ye_stan, file = f)
 m_ye_stan <- readRDS(f)
+
+p1_ye <- predict(m_ye_fixed, tmbstan_model = m_ye_stan, delta_prediction = "1")
+p2_ye <- predict(m_ye_fixed, tmbstan_model = m_ye_stan, delta_prediction = "2")
+
+d_ye$present <- ifelse(d_ye$density > 0, 1, 0)
+mu <- apply(p1_ye, 1, mean)
+q <- qres_binomial_(y = d_ye$present, mu)
+qqnorm(q);qqline(q)
+
+post <- extract(m_ye_stan)
+pos <- which(d_ye$present == 1)
+dpos <- d_ye[pos, ]
+p2pos <- p2_ye[pos, ]
+
+# i <- 1
+# q <- qres_gamma_(y = dpos$density, exp(p2pos[,i,drop=TRUE]),
+#   phi = exp(phipos)[i])
+# qqnorm(q);qqline(q)
+
+mu <- apply(exp(p2pos), 1, mean)
+q <- qres_gamma_(y = dpos$density, mu, phi = mean(exp(post$ln_phi)))
+qqnorm(q);qqline(q)
