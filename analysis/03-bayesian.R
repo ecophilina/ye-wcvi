@@ -144,7 +144,40 @@ bayesplot::mcmc_pairs(post,
   off_diag_fun = "hex"
 )
 
-# p <- predict(m_hal_fixed, tmbstan_model = m_hal_stan)
+p1 <- predict(m_hal_fixed, tmbstan_model = m_hal_stan, delta_prediction = "1")
+p2 <- predict(m_hal_fixed, tmbstan_model = m_hal_stan, delta_prediction = "2")
+
+qres_binomial_ <- function(y, mu, n = NULL) {
+  p <- plogis(mu)
+  if (is.null(n)) n <- rep(1, length(y))
+  y <- n * y
+  a <- stats::pbinom(y - 1, n, p)
+  b <- stats::pbinom(y, n, p)
+  u <- stats::runif(n = length(y), min = pmin(a, b), max = pmax(a, b))
+  stats::qnorm(u)
+}
+
+qres_gamma_ <- function(y, mu, phi) {
+  s1 <- phi
+  s2 <- mu / s1
+  u <- stats::pgamma(q = y, shape = s1, scale = s2)
+  stats::qnorm(u)
+}
+
+d_hal$present <- ifelse(d_hal$density > 0, 1, 0)
+q <- qres_binomial_(y = d_hal$present, p1[,1,drop=TRUE])
+qqnorm(q);qqline(q)
+
+post <- extract(m_hal_stan)
+pos <- which(d_hal$present == 1)
+dpos <- d_hal[pos, ]
+p2pos <- p2[pos, ]
+phipos <- post$ln_phi[pos]
+
+q <- qres_gamma_(y = dpos$density, exp(p2pos[,1,drop=TRUE]),
+  phi = exp(phipos)[1])
+qqnorm(q);qqline(q)
+
 # pmean <- apply(p, 1, mean)
 # psd <- apply(p, 1, sd)
 
