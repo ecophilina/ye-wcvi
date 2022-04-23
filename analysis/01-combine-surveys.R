@@ -1,6 +1,7 @@
 # Stitch together trawl and HBLL survey data
 library(dplyr)
 library(tidyr)
+library(ggplot2)
 
 dir.create("data-generated", showWarnings = FALSE)
 
