@@ -1,7 +1,7 @@
 library(dplyr)
-# library(tidyr)
 library(sdmTMB)
 library(tmbstan)
+library(bayesplot)
 options(mc.cores = parallel::detectCores())
 TMB::openmp(n = 1L)
 options(sdmTMB.cores = 4L)
@@ -136,19 +136,18 @@ if (!file.exists(f)) {
 m_hal_stan
 
 post <- as.array(m_hal_stan)
-# bayesplot::mcmc_trace(post, pars = c("b_j[1]"))
 
-bayesplot::mcmc_pairs(post,
-  pars = c("ln_phi", "ln_tau_O[1]", "ln_tau_O[2]", "b_j[1]",
-    "ln_tau_E", "omega_s[1]", "epsilon_st[1]"),
-  off_diag_fun = "hex"
-)
+pars <- c("ln_phi", "ln_tau_O[1]", "ln_tau_O[2]",
+    "ln_tau_E", "omega_s[1]", "epsilon_st[1]")
+regex_pars <- "b_j"
+bayesplot::mcmc_pairs(post, pars = pars, off_diag_fun = "hex")
+bayesplot::mcmc_trace(post, pars = pars, regex_pars = regex_pars)
 
 p1 <- predict(m_hal_fixed, tmbstan_model = m_hal_stan, delta_prediction = "1")
 p2 <- predict(m_hal_fixed, tmbstan_model = m_hal_stan, delta_prediction = "2")
 
 qres_binomial_ <- function(y, mu, n = NULL) {
-  p <- plogis(mu)
+  p <- mu
   if (is.null(n)) n <- rep(1, length(y))
   y <- n * y
   a <- stats::pbinom(y - 1, n, p)
@@ -165,7 +164,7 @@ qres_gamma_ <- function(y, mu, phi) {
 }
 
 d_hal$present <- ifelse(d_hal$density > 0, 1, 0)
-mu <- apply(p1, 1, mean)
+mu <- plogis(apply(p1, 1, mean))
 q <- qres_binomial_(y = d_hal$present, mu)
 qqnorm(q);qqline(q)
 
@@ -178,8 +177,14 @@ mu <- apply(exp(p2pos), 1, mean)
 q <- qres_gamma_(y = dpos$density, mu, phi = mean(exp(post$ln_phi)))
 qqnorm(q);qqline(q)
 
-# pmean <- apply(p, 1, mean)
-# psd <- apply(p, 1, sd)
+s <- simulate(m_hal_fixed, tmbstan_model = m_hal_stan, nsim = 50L)
+bayesplot::pp_check(d_hal$density[pos], t(s[pos,1:50]), bayesplot::ppc_dens_overlay) + scale_x_log10()
+
+s <- simulate(m_hal_fixed, tmbstan_model = m_hal_stan, nsim = 50L, model = 1)
+table(s[,1])/sum(table(s[,1]))
+table(s[,2])/sum(table(s[,2]))
+table(s[,3])/sum(table(s[,3]))
+table(d_hal$present)/sum(table(d_hal$present))
 
 # YE -------------------------------------------------------
 
@@ -242,28 +247,30 @@ m_ye_fixed <- update(
   do_fit = FALSE
 )
 
-m_ye_stan <- tmbstan(
-  obj = m_ye_fixed$tmb_obj,
-  iter = 2000,
-  chains = 6,
-  thin = 4,
-  seed = 192819,
-  control = list(adapt_delta = 0.9, max_treedepth = 15)
-)
-m_ye_stan
-
 f <- paste0(
   "models/yelloweye-stitch-keepable-model-rocky-",
   "muddy-400kn-delta-spatial-stan-aniso.rds"
 )
-saveRDS(m_ye_stan, file = f)
-m_ye_stan <- readRDS(f)
+if (!file.exists(f)) {
+  m_ye_stan <- tmbstan(
+    obj = m_ye_fixed$tmb_obj,
+    iter = 2000,
+    chains = 6,
+    thin = 4,
+    seed = 192819,
+    control = list(adapt_delta = 0.9, max_treedepth = 15)
+  )
+  saveRDS(m_ye_stan, file = f)
+} else {
+  m_ye_stan <- readRDS(f)
+}
+m_ye_stan
 
 p1_ye <- predict(m_ye_fixed, tmbstan_model = m_ye_stan, delta_prediction = "1")
 p2_ye <- predict(m_ye_fixed, tmbstan_model = m_ye_stan, delta_prediction = "2")
 
 d_ye$present <- ifelse(d_ye$density > 0, 1, 0)
-mu <- apply(p1_ye, 1, mean)
+mu <- plogis(apply(p1_ye, 1, mean))
 q <- qres_binomial_(y = d_ye$present, mu)
 qqnorm(q);qqline(q)
 
@@ -280,3 +287,18 @@ p2pos <- p2_ye[pos, ]
 mu <- apply(exp(p2pos), 1, mean)
 q <- qres_gamma_(y = dpos$density, mu, phi = mean(exp(post$ln_phi)))
 qqnorm(q);qqline(q)
+
+post <- as.array(m_ye_stan)
+pars <- c("ln_phi", "ln_tau_O[1]", "ln_tau_O[2]", "omega_s[1]")
+regex_pars <- "b_j"
+bayesplot::mcmc_pairs(post, pars = pars, off_diag_fun = "hex")
+bayesplot::mcmc_trace(post, pars = pars, regex_pars = regex_pars)
+
+s <- simulate(m_ye_fixed, tmbstan_model = m_ye_stan, nsim = 50L)
+bayesplot::pp_check(d_ye$density[pos], t(s[pos,1:50]), bayesplot::ppc_dens_overlay) + scale_x_log10()
+
+s <- simulate(m_ye_fixed, tmbstan_model = m_ye_stan, nsim = 50L, model = 1)
+table(s[,1])/sum(table(s[,1]))
+table(s[,2])/sum(table(s[,2]))
+table(s[,3])/sum(table(s[,3]))
+table(d_ye$present)/sum(table(d_ye$present))
