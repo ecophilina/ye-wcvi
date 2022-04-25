@@ -143,8 +143,8 @@ regex_pars <- "b_j"
 bayesplot::mcmc_pairs(post, pars = pars, off_diag_fun = "hex")
 bayesplot::mcmc_trace(post, pars = pars, regex_pars = regex_pars)
 
-p1 <- predict(m_hal_fixed, tmbstan_model = m_hal_stan, delta_prediction = "1")
-p2 <- predict(m_hal_fixed, tmbstan_model = m_hal_stan, delta_prediction = "2")
+p1 <- predict(m_hal_fixed, tmbstan_model = m_hal_stan, model = 1)
+p2 <- predict(m_hal_fixed, tmbstan_model = m_hal_stan, model = 2)
 
 qres_binomial_ <- function(y, mu, n = NULL) {
   p <- mu
@@ -266,8 +266,9 @@ if (!file.exists(f)) {
 }
 m_ye_stan
 
-p1_ye <- predict(m_ye_fixed, tmbstan_model = m_ye_stan, delta_prediction = "1")
-p2_ye <- predict(m_ye_fixed, tmbstan_model = m_ye_stan, delta_prediction = "2")
+p_ye <- predict(m_ye_fixed, tmbstan_model = m_ye_stan)
+p1_ye <- predict(m_ye_fixed, tmbstan_model = m_ye_stan, model = 1)
+p2_ye <- predict(m_ye_fixed, tmbstan_model = m_ye_stan, model = 2)
 
 d_ye$present <- ifelse(d_ye$density > 0, 1, 0)
 mu <- plogis(apply(p1_ye, 1, mean))
