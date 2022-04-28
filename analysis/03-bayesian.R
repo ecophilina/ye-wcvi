@@ -52,7 +52,7 @@ points(d_hal$X, d_hal$Y, pch = ".", col = "blue")
 
 year_prior_sd <- 10
 q_sd <- 5
-poly_sd <- 5
+poly_sd <- 20
 
 priors <- sdmTMBpriors(
   b = normal(rep(0, 16),
@@ -187,24 +187,6 @@ table(s[,3])/sum(table(s[,3]))
 table(d_hal$present)/sum(table(d_hal$present))
 
 # YE -------------------------------------------------------
-
-priors <- sdmTMBpriors(
-  b = normal(rep(0, 16),
-    scale = c(
-      rep(10, 7),
-      rep(5, 1),
-      rep(5, 8)
-    )
-  )
-  # matern_s = pc_matern(range_gt = 0.1, sigma_lt = 2)
-)
-
-formula <- density ~ 0 +
-    as.factor(year) +
-    as.factor(survey) +
-    poly(rocky, 3) +
-    poly(muddy, 3) +
-    poly(depth_scaled, 2)
 
 m_ye <- sdmTMB(
   formula,
