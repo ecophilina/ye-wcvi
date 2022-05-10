@@ -115,12 +115,11 @@ m_hal_fixed <- update(
   do_fit = FALSE
 )
 
-f <- paste0(
-  "models/halibut-stitch-keepable-model-rocky-",
-  "muddy-400kn-delta-IID-stan-aniso.rds"
-)
+model_name <- "model-rocky-muddy-300kn-delta-IID-aniso"
+f <- paste0("models/halibut-", model_name, "-stan.rds")
 
 if (!file.exists(f)) {
+  saveRDS(m_hal_fixed, paste0("models/halibut-", model_name, "-tmb.rds"))
   m_hal_stan <- tmbstan(
     obj = m_hal_fixed$tmb_obj,
     iter = 2000,
@@ -229,11 +228,12 @@ m_ye_fixed <- update(
   do_fit = FALSE
 )
 
-f <- paste0(
-  "models/yelloweye-stitch-keepable-model-rocky-",
-  "muddy-400kn-delta-spatial-stan-aniso.rds"
-)
+model_name2 <- "model-rocky-muddy-300kn-delta-spatial-aniso"
+f <- paste0("models/yelloweye-", model_name2, "-stan.rds")
+
 if (!file.exists(f)) {
+
+  saveRDS(m_ye_fixed, paste0("models/yelloweye-", model_name2, "-tmb.rds"))
   m_ye_stan <- tmbstan(
     obj = m_ye_fixed$tmb_obj,
     iter = 2000,
@@ -248,7 +248,7 @@ if (!file.exists(f)) {
 }
 m_ye_stan
 
-p_ye <- predict(m_ye_fixed, tmbstan_model = m_ye_stan)
+# p_ye <- predict(m_ye_fixed, tmbstan_model = m_ye_stan)
 p1_ye <- predict(m_ye_fixed, tmbstan_model = m_ye_stan, model = 1)
 p2_ye <- predict(m_ye_fixed, tmbstan_model = m_ye_stan, model = 2)
 
