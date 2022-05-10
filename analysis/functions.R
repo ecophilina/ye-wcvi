@@ -42,7 +42,10 @@ expand_prediction_grid <- function(grid, years) {
 # m_halibut <- readRDS(file = "models/halibut-hybrid-model-rocky-muddy-400kn.rds")
 # i_hal_combined <- get_all_sims(m_halibut, newdata = full_s_grid)
 
-get_all_sims <- function(fit_obj = NULL, newdata, fit_obj_bin = NULL, fit_obj_pos = NULL, sims = 500, level = 0.95,
+get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
+                         newdata, # if contains a column names `area` it will be scaled by this
+                         fit_obj_bin = NULL, fit_obj_pos = NULL,
+                         sims = 500, level = 0.95,
   split_by_region = T,
   area_divisor = 10000, # 10000 for grid area in m2 to biomass/hectare,
   # could be 1000000 for m2 to km2, or 4000000 for m2 to # hooks 2x2 km grid cell
@@ -51,6 +54,9 @@ get_all_sims <- function(fit_obj = NULL, newdata, fit_obj_bin = NULL, fit_obj_po
   agg_function = function(x) sum(exp(x))){
 
 # browser()
+  if(!is.null(tmbstan_model)){
+    pred_obj_unscaled <- predict(fit_obj, newdata = newdata, tmbstan_model = tmbstan_model)
+  } else {
   if (!is.null(fit_obj)) {
     pred_obj_unscaled <- predict(fit_obj, newdata = newdata, sims = sims)
   }
@@ -59,26 +65,27 @@ get_all_sims <- function(fit_obj = NULL, newdata, fit_obj_bin = NULL, fit_obj_po
     pred_obj_unscaled_pos <- predict(fit_obj_pos, newdata = newdata, sims = sims)
     pred_obj_unscaled <- log(plogis(pred_obj_unscaled_bin) * exp(pred_obj_unscaled_pos))
   }
+  }
 
   if (any(names(newdata) == "area")) {
     # grid area is currently in m2 so need to convert to same units as the biomass variable
     newdata$area <- newdata$area / area_divisor
-    p <- apply(pred_obj_unscaled, 2, function(x) x + log(newdata$area)) # also now `area` arg in get_index_sims()
-    attr(p, "time") <- "year"
-  } else {
+  #   p <- apply(pred_obj_unscaled, 2, function(x) x + log(newdata$area)) # also now `area` arg in get_index_sims()
+  #   attr(p, "time") <- "year"
+  }# else {
     p <- pred_obj_unscaled
-  }
+  # }
 
   if (split_by_region) {
 
     by_region <- list()
 
-    ind <- get_index_sims(p, return_sims = F, level = level,
+    ind <- get_index_sims(p, return_sims = F, level = level, area = newdata$area,
       est_function = est_function, agg_function = agg_function)
 
     ind$region <- "all"
 
-    i_sims <- get_index_sims(p, return_sims = T, level = level,
+    i_sims <- get_index_sims(p, return_sims = T, level = level, area = newdata$area,
       est_function = est_function, agg_function = agg_function)
 
     i_sims$region <- "all"
@@ -95,9 +102,11 @@ get_all_sims <- function(fit_obj = NULL, newdata, fit_obj_bin = NULL, fit_obj_po
         attr(pred, "time") <- "year"
 
         ind2 <- get_index_sims(pred, return_sims = F, level = level,
+                               area = newdata[newdata$region == unique(newdata$region)[i], ]$area,
           est_function = est_function, agg_function = agg_function)
 
         i_sims2 <- get_index_sims(pred, return_sims = T, level = level,
+                                  area = newdata[newdata$region == unique(newdata$region)[i], ]$area,
           est_function = est_function, agg_function = agg_function)
 
         # setNames(ind2, unique(newdata$region)[i])
@@ -111,9 +120,7 @@ get_all_sims <- function(fit_obj = NULL, newdata, fit_obj_bin = NULL, fit_obj_po
         by_region[[i+1]] <- list(index = ind2, sims = i_sims2, grid = newdata
           , sim.predictions = pred # this takes up a lot of space so if not using it...
         )
-
         setNames(by_region[i+1], paste(unique(newdata$region)[i]))
-
     }
 
     # alternatively they could go in one df
@@ -129,12 +136,12 @@ get_all_sims <- function(fit_obj = NULL, newdata, fit_obj_bin = NULL, fit_obj_po
 
   } else {
 
-    i <- get_index_sims(p, return_sims = F, level = level,
+    i <- get_index_sims(p, return_sims = F, level = level, area = newdata$area,
       est_function = est_function, agg_function = agg_function)
 
     if(return_sims){
 
-      i_sims <- get_index_sims(p, return_sims = T, level = level,
+      i_sims <- get_index_sims(p, return_sims = T, level = level, area = newdata$area,
         est_function = est_function, agg_function = agg_function)
 
       # list_of_one <- list()
@@ -315,6 +322,9 @@ map_predictions <- function(
     layer = "taaqwiihak_areaVer2", quiet = TRUE)
   focal_area_proj <- sf::st_transform(focal_area, crs = utm_zone9)
 
+  focal_area2 <- sf::st_read(dsn = "shape-files/ExtendCDA1/Extend_1.shp", layer = "Extend_1")
+  focal_area2_proj <- sf::st_transform(focal_area2, crs = utm_zone9)
+
   library(PBSmapping) # needs this for some reason
   majorbound <- load_boundaries(9)
   # attributes(majorbound)$PolyData
@@ -442,6 +452,10 @@ map_predictions <- function(
       aes(X * 1e3, Y * 1e3), colour = "grey20", lty = 1,
       inherit.aes = F
     ) +
+    geom_sf(data = focal_area2_proj,
+            colour = "darkorchid4",
+            # colour = "deeppink4",
+            fill = NA, size = 0.70) + # add focal area2 behind focal area 1
     geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
     geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey75", col = "grey55") +
     labs(fill = fill_lab, colour = fill_lab, size = size_lab) +
