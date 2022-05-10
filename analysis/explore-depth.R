@@ -1,3 +1,20 @@
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+# will need this version to replicate report
+# remotes::install_github("pbs-assess/sdmTMB", ref = "47d997dd07b")
+library(sdmTMB)
+# Do we need instructions for installing other dependencies like "pbsmapping"?
+# devtools::install_github("seananderson/ggsidekick")
+library(ggsidekick) # for fourth_root_power_trans and theme_sleek
+library(patchwork)
+library(here)
+theme_set(ggsidekick::theme_sleek())
+
+# load misc custom functions
+source("analysis/functions.R")
+
 
 # Explore depth variation across regions
 f <- paste0("figs/depth-map.png")
@@ -74,7 +91,9 @@ if (!file.exists(f)) {
              x = convert2utm9(-129.8, 48.8)[1],
              y = convert2utm9(-129.8, 48.8)[2],
              label = "3C") +
+
     scale_fill_viridis_c(trans = "sqrt", name = "Depth", direction = -1) +
+    # scale_fill_viridis_c(name = "Depth", direction = -1) +
     geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
     geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey99", col = "grey55") +
     coord_sf(
