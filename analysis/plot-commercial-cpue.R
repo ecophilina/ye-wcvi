@@ -6,6 +6,13 @@ library(sf)
 ### Check commercial catch ratios
 
 # # only works on network
+# cpue <- get_cpue_index_hl()
+# # saveRDS(cpue, "all-hl-cpue.rds")
+# # cpue <- readRDS( "all-hl-cpue.rds")
+# fe <- cpue %>% select(year, month, fishing_event_id, best_depth) %>%
+#   mutate(fishing_event_id = as.integer(fishing_event_id)) %>%
+#   distinct()
+#
 # cye <- get_cpue_spatial_ll("yelloweye rockfish")
 # chal <- get_cpue_spatial_ll("pacific halibut")
 #
@@ -13,13 +20,17 @@ library(sf)
 #                        ye_kg = landed_round_kg,
 #                        ye_realeased = total_released_pcs) %>%
 #   select(-species_code, -species_common_name, -species_scientific_name)
+#
 # chal2 <- chal %>% rename(hal_cpue = cpue,
 #                          hal_kg = landed_round_kg,
 #                          hal_realeased = total_released_pcs) %>%
 #   select(-species_code, -species_common_name, -species_scientific_name)
+#
 # both <- full_join(chal2, cye2)
-# cc <- both %>% select(-ye_realeased, -vessel_registration_number, - trip_id, -fishing_event_id)
+# both2 <- left_join(both, fe)
+# cc <- both2 %>% select( -vessel_registration_number, - trip_id, -fishing_event_id)
 # saveRDS(cc, "hal-ye-ll-cpue-anon.rds")
+
 
 f <- "data-generated/commercialcpue.rds"
 
@@ -29,7 +40,8 @@ if (!file.exists(f)) {
     # filter(fishery_sector %in% c("halibut")) %>%
     filter(major_stat_area_code %in% c("03", "04", "05")) %>%
     # season based on summer shallow period versus winter deep period Loher 2011
-    mutate(month = month(best_date), season = ifelse(month > 4 & month < 9, "Summer", "Winter"))
+    mutate(month = month(best_date), season = ifelse(month > 4 & month < 9, "Summer", "Winter")) %>%
+    filter(lon > -130.2 & lon < -124.75 & lat < 51.5 & lat > 48.3)
 
   # add utms
 
@@ -41,6 +53,9 @@ if (!file.exists(f)) {
     units = "m"
   )
 
+  ggplot(cc, aes(x, y, colour = -log(best_depth))) +
+    geom_point()
+
 
   # library(sp)
   # library(raster)
@@ -50,44 +65,45 @@ if (!file.exists(f)) {
   # ggplot(filter(bctopo, z > 0), aes(x, y, colour = z)) + geom_point()
   # bath <- rename(bctopo, lon = x, lat = y, depth = z)
 
-  ## this bath option only has 1km resolution
-  ## make depth raster
-  bat <- readRDS(here::here("data/bath_res1_marmap2.rds"))
-  rast_bat <- marmap::as.raster(bat)
+  # ## this bath option only has 1km resolution
+  # ## make depth raster
+  # bat <- readRDS(here::here("data/bath_res1_marmap2.rds"))
+  # rast_bat <- marmap::as.raster(bat)
+  # #
+  # ## change projection to match grid
+  # ## I believe this is 3156
+  # # library(raster)
+  # proj <- "+proj=utm +zone=9 +datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0  +units=m +no_defs"
+  # rast_bat <- raster::projectRaster(rast_bat, crs = proj)
+  # depth2 <- raster::extract(x = rast_bat, y = cc[, (ncol(cc)-1):ncol(cc)], buffer = 1000, fun = median, na.rm = T, exact = F)
+  # cc2 <- cbind(cc, depth2) %>% mutate(X = x / 1000, Y = y / 1000, depth = -depth2)
+  # ggplot(cc2, aes(log(best_depth),log(depth))) + geom_point()
+  # cc3 <- gfplot:::interp_survey_bathymetry(cc2)
   #
-  ## change projection to match grid
-  ## I believe this is 3156
-  proj <- "+proj=utm +zone=9 +datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0  +units=m +no_defs"
-  rast_bat <- raster::projectRaster(rast_bat, crs = proj)
-  depth2 <- raster::extract(x = rast_bat, y = cc[, 15:16], buffer = 1000, fun = median, na.rm = T, exact = F)
-  cc2 <- cbind(cc, depth2) %>% mutate(X = x / 1000, Y = y / 1000, depth = -depth2)
-  ggplot(cc2, aes(x, y, colour = depth)) +
-    geom_point()
-  proj <- "+proj=utm +zone=9 +datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0  +units=m +no_defs"
-  rast_bat <- raster::projectRaster(bath, crs = proj)
+  # I think best_depth is much better!
 
-
-  # tried doing everything this way but too slow!
-  # cc$depth <- NA_real_
   # instead just fill in missing data from above function
+  cc2 <- cc %>% mutate(X = x / 1000, Y = y / 1000, depth = best_depth)
   cc3 <- gfplot:::interp_survey_bathymetry(cc2)
   # ggplot(cc3$data, aes(x, y, colour = akima_depth)) + geom_point()
 
-  hist(cc3$data$depth)
+  hist(cc3$data$depth, breaks = 40)
 
-  cc <- cc3$data
+  cc1 <- cc3$data
 
-  cc <- cc %>% filter(depth > 0)
+  cc1 <- cc1 %>% filter(depth > 0) %>%
+
   cc_akima <- cc3$data %>%
     filter(akima_depth > 0) %>%
     mutate(depth = akima_depth)
-  cc <- bind_rows(cc, cc_akima)
 
-  hist(cc$depth)
-  hist(cc$akima_depth)
-  ggplot(cc, aes(x, y, colour = depth)) +
+  cc <- bind_rows(cc1, cc_akima)
+
+  hist(cc$depth, breaks = 40)
+  hist(cc$akima_depth, breaks = 40)
+
+  ggplot(cc, aes(lon, lat, colour = depth)) +
     geom_point()
-
 
   cc$hal_cpue[is.na(cc$hal_cpue)] <- 0
   cc$hal_kg[is.na(cc$hal_kg)] <- 0
@@ -216,9 +232,6 @@ cc %>%
 ggsave("figs/comm-cpue-ratio-by-depth-summer.png", width = 6, height = 3)
 
 
-
-
-
 # # distribution of depths for fishing events in different regions
 # cc %>% filter(depth < 600 & hal_cpue > 0 & region != "3CD5A N of 50º")%>%
 #   filter(year > 2015) %>%
@@ -245,12 +258,15 @@ cc %>%
   filter(year > 2015) %>%
   ggplot(., aes(depth)) +
   geom_density(alpha = 0.4, fill = "darkgreen", colour = "darkgreen") +
-  geom_density(data = filter(cc, depth < 600 & region != "3CD5A N of 50º" & hal_cpue > 0 &
-    year <= 2015), fill = "darkgreen", colour = "darkgreen", alpha = 0.1, lty = "dashed") +
-  geom_density(data = filter(cc, depth < 600 & region != "3CD5A N of 50º" & ye_cpue > 0 &
-    year > 2015), fill = "orange", colour = "orange", alpha = 0.4) +
-  geom_density(data = filter(cc, depth < 600 & region != "3CD5A N of 50º" & ye_cpue > 0 &
-    year <= 2015), fill = "orange", colour = "orange", alpha = 0.1, lty = "dashed") +
+  geom_density(
+    data = filter(cc, depth < 600 & region != "3CD5A N of 50º" & hal_cpue > 0 & year <= 2015),
+    fill = "darkgreen", colour = "darkgreen", alpha = 0.1, lty = "dashed") +
+  geom_density(
+    data = filter(cc, depth < 600 & region != "3CD5A N of 50º" & ye_cpue > 0 & year > 2015),
+    fill = "orange", colour = "orange", alpha = 0.4) +
+  geom_density(
+    data = filter(cc, depth < 600 & region != "3CD5A N of 50º" & ye_cpue > 0 & year <= 2015),
+    fill = "orange", colour = "orange", alpha = 0.1, lty = "dashed") +
   scale_y_sqrt() +
   facet_grid(
     cols = vars(region),
