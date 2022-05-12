@@ -17,38 +17,38 @@ full_s_grid <- readRDS("report-data/full_filled_grid_w_ext.rds")
 hal_model <- "rocky-muddy-300kn-delta-IID-aniso"
 
 f <- paste0("models/halibut-model-", hal_model, "-stan.rds")
-if (file.exists(f)) {
+if (!file.exists(f)) {
   m_hal_fixed <- readRDS(paste0("models/halibut-model-", hal_model, "-tmb.rds"))
   m_hal_stan <- readRDS(f)
 }
 
 ye_model <- "rocky-muddy-300kn-delta-spatial-aniso"
 f2 <- paste0("models/yelloweye-model-", ye_model, "-stan.rds")
-if (file.exists(f2)) {
+if (!file.exists(f2)) {
   m_ye_fixed <- readRDS(paste0("models/yelloweye-model-", ye_model, "-tmb.rds"))
   m_ye_stan <- readRDS(f2)
 }
 
 # spatial predictions for whole grid
-#
-# f <- paste0("data-generated/halibut-", hal_model, "-predictions-all-S.rds")
-# if (file.exists(f)) {
-#   p_hal <- predict(m_hal_fixed, newdata = full_s_grid, tmbstan_model = m_hal_stan)
-#   saveRDS(p_hal, f)
-# } else{
-#   p_hal <- readRDS(f)
-# }
-#
-# f <- paste0("data-generated/yelloweye-", ye_model, "-predictions-all-S.rds")
-# if (file.exists(f)) {
-#   p_ye <- predict(m_ye_fixed, newdata = full_s_grid, tmbstan_model = m_ye_stan)
-#   saveRDS(p_ye, f)
-# } else{
-#   p_ye <- readRDS(f)
-# }
+
+f <- paste0("data-generated/halibut-", hal_model, "-predictions-all-S.rds")
+if (!file.exists(f)) {
+  p_hal <- predict(m_hal_fixed, newdata = full_s_grid, tmbstan_model = m_hal_stan)
+  saveRDS(p_hal, f)
+} else{
+  p_hal <- readRDS(f)
+}
+
+f <- paste0("data-generated/yelloweye-", ye_model, "-predictions-all-S.rds")
+if (!file.exists(f)) {
+  p_ye <- predict(m_ye_fixed, newdata = full_s_grid, tmbstan_model = m_ye_stan)
+  saveRDS(p_ye, f)
+} else{
+  p_ye <- readRDS(f)
+}
 
 f <- paste0("data-generated/halibut-", hal_model, "-index-all-stan.rds")
-if (file.exists(f)) {
+if (!file.exists(f)) {
   i_hal <- get_all_sims(p_hal)
   saveRDS(i_hal, f)
 } else{
@@ -56,7 +56,7 @@ if (file.exists(f)) {
 }
 
 f <- paste0("data-generated/yelloweye-", ye_model, "-index-all-stan.rds")
-if (file.exists(f)) {
+if (!file.exists(f)) {
   i_ye <- get_all_sims(p_ye)
   saveRDS(i_ye, f)
 } else{
