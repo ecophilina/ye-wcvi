@@ -1,3 +1,19 @@
+# set map boundaries
+# min_map_lat <- 48.3
+max_map_lat <- 51.4
+min_map_lon <- -130.1
+# max_map_lon <- -124.9
+min_map_lat2 <- 48.6
+max_map_lat2 <- 50.01
+min_map_lon2 <- -127.9
+max_map_lon2 <- -125.2
+
+
+min_map_lat <- 48.3
+max_map_lon <- -124.85
+min_map_lat3 <- 48.4
+
+
 convert2utm <- function(df, coords = c("X", "Y"), out_crs = 3156) {
   x <- sf::st_as_sf(df,
     coords = coords, crs = 4326
