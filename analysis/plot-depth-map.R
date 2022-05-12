@@ -2,14 +2,7 @@ library(sf)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
-# will need this version to replicate report
-# remotes::install_github("pbs-assess/sdmTMB", ref = "47d997dd07b")
-library(sdmTMB)
-# Do we need instructions for installing other dependencies like "pbsmapping"?
-# devtools::install_github("seananderson/ggsidekick")
 library(ggsidekick) # for fourth_root_power_trans and theme_sleek
-library(patchwork)
-library(here)
 theme_set(ggsidekick::theme_sleek())
 
 # load misc custom functions
@@ -128,31 +121,3 @@ if (!file.exists(f)) {
   ggsave("figs/depth-map.png",
          width = 5.5, height = 5.5, dpi = 400)
 }
-
-full_s_grid3 <- full_s_grid  %>% filter(region != "other")
-
-full_s_grid_all <- full_s_grid  %>% filter(region %in% c("3CD5A N", "non-CDA 3CD5A S")) %>% mutate(region = "non-CDA 3CD5A")
-
-full_s_grid_all <- bind_rows(full_s_grid3, full_s_grid_all)
-
-full_s_grid_all$region <- ordered(full_s_grid_all$region,
-                                  levels = c("CDA", "non-CDA 3CD5A", "3CD5A N", "non-CDA 3CD5A S"),
-                                  labels = c("CDA", "non-CDA 3CD5A", "3CD5A N of 50º", "non-CDA 3CD5A S of 50º"))
-
-ggplot(full_s_grid_all, aes(depth, fill = region)) +
-  geom_histogram() + facet_grid(rows=vars(region)) +
-  scale_fill_brewer(palette = "Set1") +
-  # scale_fill_manual(values = c("red", "#4DAF4A", "#984EA3")) +
-  xlab("Depth") + ylab("Cell count")+
-  ggsidekick::theme_sleek() + theme(
-    legend.position = "none")
-
-ggsave("figs/depth-hist.png", width = 3.5, height = 7.5, dpi = 300)
-
-# check the depths at which surveys caught halibut
-d_hal <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
-  filter(latitude < 52.15507) %>%
-  filter(year %in% years)%>% left_join(select(substrate, -X, -Y))
-
-ggplot(d_hal, aes(depth_m, density, colour = survey)) + geom_point()
-
