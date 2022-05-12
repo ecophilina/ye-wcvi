@@ -5,9 +5,10 @@ remotes::install_github("pbs-assess/sdmTMB", ref = "delta")
 devtools::install_github("seananderson/ggsidekick")
 install.packages(c("StanHeaders", "rstan", "tmbstan"),type="source")
 
+if(!require(raster))install.packages("raster")
 if(!require(sf))install.packages("sf")
 if(!require(tidyverse))install.packages("tidyverse")
-
+if(!require(marmap))install.packages("marmap")
 
 if(!require(patchwork))install.packages("patchwork")
 if(!require(here))install.packages("here")

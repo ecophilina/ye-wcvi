@@ -92,7 +92,7 @@ if (!file.exists(f)) {
              y = convert2utm9(-129.8, 48.8)[2],
              label = "3C") +
 
-    scale_fill_viridis_c(trans = "sqrt", name = "Depth", direction = -1) +
+    scale_fill_viridis_c(trans = "sqrt", name = "Depth", direction = -1, guide = guide_colourbar(reverse = TRUE)) +
     # scale_fill_viridis_c(name = "Depth", direction = -1) +
     geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
     geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey99", col = "grey55") +
