@@ -7,43 +7,203 @@ library(tidyr)
 library(sdmTMB)
 theme_set(ggsidekick::theme_sleek())
 # load misc custom functions
+# includes a set of map boundaries that could be adjusted
 source("analysis/functions.R")
-
 
 # load grid
 full_s_grid <- readRDS("report-data/full_filled_grid_w_ext.rds")
 
 # load models
-model_name <- "model-rocky-muddy-300kn-delta-IID-aniso"
+hal_model <- "rocky-muddy-300kn-delta-IID-aniso"
 
-f <- paste0("models/halibut-", model_name, "-stan.rds")
+f <- paste0("models/halibut-model-", hal_model, "-stan.rds")
 if (file.exists(f)) {
-  m_hal_fixed <- readRDS(paste0("models/halibut-", model_name, "-tmb.rds"))
+  m_hal_fixed <- readRDS(paste0("models/halibut-model-", hal_model, "-tmb.rds"))
   m_hal_stan <- readRDS(f)
 }
 
-model_name2 <- "model-rocky-muddy-300kn-delta-spatial-aniso"
-f2 <- paste0("models/yelloweye-", model_name2, "-stan.rds")
+ye_model <- "rocky-muddy-300kn-delta-spatial-aniso"
+f2 <- paste0("models/yelloweye-model-", ye_model, "-stan.rds")
 if (file.exists(f2)) {
-  m_ye_fixed <- readRDS(paste0("models/yelloweye-", model_name2, "-tmb.rds"))
+  m_ye_fixed <- readRDS(paste0("models/yelloweye-model-", ye_model, "-tmb.rds"))
   m_ye_stan <- readRDS(f2)
 }
 
 # spatial predictions for whole grid
-
-p_hal <- predict(m_hal_fixed, newdata = full_s_grid, tmbstan_model = m_hal_stan)
-saveRDS(p_hal, "data-generated/filled-keepable-halibut-delta-est-rock-mud-predictions-all-S.rds")
-
-p_ye <- predict(m_ye_fixed, newdata = full_s_grid, tmbstan_model = m_ye_stan)
-saveRDS(p_ye, "data-generated/filled-keepable-yelloweye-est-rock-mud-predictions-all-S.rds")
-
-# i_hal <- get_index_sims(p_hal)
-# i_ye <- get_index_sims(p_ye)
 #
-# ggplot(i_hal, aes(year, est)) + geom_line(colour = "darkgreen") +
-#   geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "darkgreen", alpha = 0.2) +
-#   geom_line(data = i_ye, colour = "orange") +
-#   geom_ribbon(data = i_ye, aes(ymin = lwr, ymax = upr), fill = "orange", alpha = 0.2)
+# f <- paste0("data-generated/halibut-", hal_model, "-predictions-all-S.rds")
+# if (file.exists(f)) {
+#   p_hal <- predict(m_hal_fixed, newdata = full_s_grid, tmbstan_model = m_hal_stan)
+#   saveRDS(p_hal, f)
+# } else{
+#   p_hal <- readRDS(f)
+# }
+#
+# f <- paste0("data-generated/yelloweye-", ye_model, "-predictions-all-S.rds")
+# if (file.exists(f)) {
+#   p_ye <- predict(m_ye_fixed, newdata = full_s_grid, tmbstan_model = m_ye_stan)
+#   saveRDS(p_ye, f)
+# } else{
+#   p_ye <- readRDS(f)
+# }
+
+f <- paste0("data-generated/halibut-", hal_model, "-index-all-stan.rds")
+if (file.exists(f)) {
+  i_hal <- get_all_sims(p_hal)
+  saveRDS(i_hal, f)
+} else{
+  i_hal <- readRDS(f)
+}
+
+f <- paste0("data-generated/yelloweye-", ye_model, "-index-all-stan.rds")
+if (file.exists(f)) {
+  i_ye <- get_all_sims(p_ye)
+  saveRDS(i_ye, f)
+} else{
+  i_ye <- readRDS(f)
+}
+
+i_hal_all <- i_hal$all$index
+i_ye_all <- i_ye$all$index
+
+ggplot(i_hal_all, aes(year, est)) + geom_line(colour = "darkgreen") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "darkgreen", alpha = 0.2) +
+  geom_line(data = i_ye_all, colour = "orange") +
+  geom_ribbon(data = i_ye_all, aes(ymin = lwr, ymax = upr), fill = "orange", alpha = 0.2)
+
+i_hal_cda <- i_hal$CDA$index
+i_ye_cda <- i_ye$CDA$index
+
+i_hal_ext <- i_hal$`CDA adjacent`$index
+i_ye_ext <- i_ye$`CDA adjacent`$index
+
+ggplot(i_hal_cda, aes(year, est)) + geom_line(colour = "darkgreen") +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "darkgreen", alpha = 0.2) +
+  geom_line(data = i_ye_cda, colour = "orange") +
+  geom_ribbon(data = i_ye_cda, aes(ymin = lwr, ymax = upr), fill = "orange", alpha = 0.2) +
+  geom_line(data = i_hal_ext, colour = "darkgreen", lty = "dashed") +
+  geom_ribbon(data = i_hal_ext, aes(ymin = lwr, ymax = upr), fill = "darkgreen", alpha = 0.2) +
+  geom_line(data = i_ye_ext, colour = "orange", lty = "dashed") +
+  geom_ribbon(data = i_ye_ext, aes(ymin = lwr, ymax = upr), fill = "orange", alpha = 0.2)
+
+
+
+p_hal <- i_hal$all[[3]]
+p_hal_sims <- i_hal$all[[4]]
+p_hal$est <- apply(p_hal_sims, 1, function(x) {median(x)})
+p_hal$est_sd <- apply(p_hal_sims, 1, function(x) {sd(x)})
+
+p_ye <- i_ye$all[[3]]
+p_ye_sims <- i_ye$all[[4]]
+p_ye$est <- apply(p_ye_sims, 1, function(x) {median(x)})
+p_ye$est_sd <- apply(p_ye_sims, 1, function(x) {sd(x)})
+
+
+d_hal_plots <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
+  filter(latitude < max_map_lat) %>%
+  filter(year %in% c(2018,2019,2020))
+
+p_hal2020 <- p_hal %>%
+  filter(latitude < max_map_lat) %>%
+  filter(year == 2020)
+
+g <- map_predictions(
+  pred_data = p_hal2020,
+  pred_min = 0, #min(exp(p_hal2020$est), na.rm = T),
+  # pred_min = min(exp(p_hal2020$est), na.rm = T),
+  pred_max = quantile(exp(p_hal2020$est), 0.95, na.rm = T),
+  obs_data = d_hal_plots,
+  fill_lab = "Predicted kg/ha",
+  # pred_min = min(exp(p_hal2020$est), na.rm = T),
+  # pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
+  map_lat_limits = c(min_map_lat , max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon),
+  size_lab = "Landable kg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
+  size_aes = density
+) + theme(legend.spacing.y = unit(0.1, "cm"))
+g
+
+
+pyd <- p_ye %>% rename(ye_est = est) %>% distinct()
+phd <- p_hal %>%
+  rename(hal_est = est) %>%
+  dplyr::select(hal_est, X, Y, year)%>% distinct()
+
+ratio_df <- left_join(pyd, phd) %>% mutate(
+  halibut = exp(hal_est),
+  halibut2 = ifelse(exp(hal_est) < 0.01, 0.01, exp(hal_est)),
+  yelloweye = exp(ye_est),
+  yelloweye2 = ifelse(exp(ye_est) < 0.01, 0.01, exp(ye_est)), # make min for yelloweye of 1 per km2
+  ye_per_hal = (yelloweye*100) / (halibut*100), # using halibut 2 doesn't change anything.
+  hal_per_ye = (halibut*100) / (yelloweye2*100)
+)
+
+ratio_df_2020 <- filter(ratio_df, year == 2020)
+
+g1 <- map_predictions(
+  map_lat_limits = c(48.4, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon),
+  pred_data = ratio_df_2020,
+  pred_min = 0,
+  # pred_min = min(ratio_df_2020$ye_per_hal),
+  pred_max = quantile(ratio_df_2020$ye_per_hal, 0.99),
+  fill_aes = ye_per_hal,
+  fill_lab = "Yelloweye to Halibut\nbiomass ratio"
+)
+g1
+
+ggsave(paste0("figs/ye-to-halibut-2020.png"), width = 6, height = 5, dpi = 400)
+#
+# ggsave("figs/filled-ye-to-halibut-2020-keepable-delta.png",
+#        width = 5.5, height = 4.5, dpi = 400
+#        # width = 6, height = 5, dpi = 200
+# )
+
+cv_hal <- i_hal$all[[3]]
+cv_hal$cv <- apply(exp(p_hal), 1, function(x) sd(x) / mean(x))
+
+cv_hal2020 <- cv_hal %>%
+  filter(latitude < max_map_lat) %>%
+  filter(year == 2020)
+
+cv_ye <- i_ye$all[[3]]
+cv_ye$cv <- apply(exp(p_ye), 1, function(x) sd(x) / mean(x))
+
+cv_ye2020 <- cv_ye %>%
+  filter(latitude < max_map_lat) %>%
+  filter(year == 2020)
+
+
+g <- map_predictions(
+  pred_data = cv_hal2020,
+  fill_aes = cv,
+  fill_lab = "CV",
+  pred_min = min(cv_hal2020$cv,cv_ye2020$cv),
+  pred_max = quantile(c(cv_hal2020$cv,cv_ye2020$cv), 0.995),
+  map_lat_limits = c(min_map_lat3, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon)
+)+theme(legend.spacing.y = unit(0.1, "cm"))
+g
+
+ggsave(paste0("figs/halibut-", hal_model, "-CV.png"), width = 6, height = 5, dpi = 400)
+
+
+g <- map_predictions(
+  pred_data = cv_ye2020,
+  fill_aes = cv,
+  fill_lab = "CV",
+  pred_min = min(cv_hal2020$cv,cv_ye2020$cv),
+  pred_max = quantile(c(cv_hal2020$cv,cv_ye2020$cv), 0.995),
+  map_lat_limits = c(min_map_lat3, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon)
+)+theme(legend.spacing.y = unit(0.1, "cm"))
+g
+
+ggsave(paste0("figs/ye-", ye_model, "-CV.png"), width = 6, height = 5, dpi = 400)
+
+
+
+# explore importance of depth
 
 cda_grid <- filter(full_s_grid, region == "CDA")
 hist(cda_grid$depth)
@@ -86,30 +246,58 @@ depth_bin_pred <- function(tmb_model, stan_model, grid, bin_width = 50) {
   return(i)
 }
 
-i_hal_x <- depth_bin_pred(m_hal_fixed, m_hal_stan, ext_grid)
-saveRDS(i_hal_x, "report-data/hal_depth_bins_in_ext.rds")
+f <- "report-data/hal_depth_bins_in_ext.rds"
+if(!file.exists(f)) {
+  i_hal_x <- depth_bin_pred(m_hal_fixed, m_hal_stan, ext_grid)
+  saveRDS(i_hal_x, f)
+}else{
+  i_hal_x <- readRDS(f)
+}
 
-i_ye_x <- depth_bin_pred(m_ye_fixed, m_ye_stan, ext_grid)
-saveRDS(i_ye_x, "report-data/ye_depth_bins_in_ext.rds")
+f <- "report-data/ye_depth_bins_in_ext.rds"
+if(!file.exists(f)) {
+  i_ye_x <- depth_bin_pred(m_ye_fixed, m_ye_stan, ext_grid)
+  saveRDS(i_ye_x, f)
+}else{
+  i_ye_x <- readRDS(f)
+}
 
-i_hal_cda <- depth_bin_pred(m_hal_fixed, m_hal_stan, cda_grid)
-saveRDS(i_hal_cda, "report-data/hal_depth_bins_in_cda.rds")
+f <- "report-data/hal_depth_bins_in_cda.rds"
+if(!file.exists(f)) {
+  i_hal_cda <- depth_bin_pred(m_hal_fixed, m_hal_stan, cda_grid)
+  saveRDS(i_hal_cda, f)
+}else{
+  i_hal_cda <- readRDS(f)
+}
 
-i_ye_cda <- depth_bin_pred(m_ye_fixed, m_ye_stan, cda_grid)
-saveRDS(i_ye_cda, "report-data/ye_depth_bins_in_cda.rds")
+f <- "report-data/ye_depth_bins_in_cda.rds"
+if(!file.exists(f)) {
+  i_ye_cda <- depth_bin_pred(m_ye_fixed, m_ye_stan, cda_grid)
+  saveRDS(i_ye_cda, f)
+}else{
+  i_ye_cda <- readRDS(f)
+}
 
-i_hal_3cd <- depth_bin_pred(m_hal_fixed, m_hal_stan, nonCDA_grid)
-saveRDS(i_hal_3cd, "report-data/hal_depth_bins_in_3cd.rds")
+f <- "report-data/hal_depth_bins_in_3cd.rds"
+if(!file.exists(f)) {
+  i_hal_3cd <- depth_bin_pred(m_hal_fixed, m_hal_stan, nonCDA_grid)
+  saveRDS(i_hal_3cd, f)
+}else{
+  i_hal_3cd <- readRDS(f)
+}
 
-i_ye_3cd <- depth_bin_pred(m_ye_fixed, m_ye_stan, nonCDA_grid)
-saveRDS(i_ye_3cd, "report-data/ye_depth_bins_in_3cd.rds")
+f <- "report-data/ye_depth_bins_in_3cd.rds"
+if(!file.exists(f)) {
+  i_ye_3cd <- depth_bin_pred(m_ye_fixed, m_ye_stan, nonCDA_grid)
+  saveRDS(i_ye_3cd, f)
+}else{
+  i_ye_3cd <- readRDS(f)
+}
 
-i_hal_x <- readRDS("report-data/hal_depth_bins_in_ext.rds")
-i_ye_x <- readRDS("report-data/ye_depth_bins_in_ext.rds")
-i_hal_cda <- readRDS("report-data/hal_depth_bins_in_cda.rds")
-i_ye_cda <- readRDS("report-data/ye_depth_bins_in_cda.rds")
-i_hal_3cd <- readRDS("report-data/hal_depth_bins_in_3cd.rds")
-i_ye_3cd <- readRDS("report-data/ye_depth_bins_in_3cd.rds")
+# i_hal_cda <- readRDS("report-data/hal_depth_bins_in_cda.rds")
+# i_ye_cda <- readRDS("report-data/ye_depth_bins_in_cda.rds")
+# i_hal_3cd <- readRDS("report-data/hal_depth_bins_in_3cd.rds")
+# i_ye_3cd <- readRDS("report-data/ye_depth_bins_in_3cd.rds")
 
 i_hal_3cd <- i_hal_3cd %>% filter(area > 10000)
 i_hal_x <- i_hal_x %>% filter(area > 10000)
@@ -123,7 +311,7 @@ i_ye_cda <- i_ye_cda %>% filter(area > 10000)
 i_hal_all <- bind_rows(i_hal_x, i_hal_cda, i_hal_3cd)
 i_ye_all <- bind_rows(i_ye_x, i_ye_cda, i_ye_3cd)
 
-cols <- c("red", "darkorchid4", "deepskyblue4")
+cols <- c("red", "darkorchid4", "cadetblue3")#"deepskyblue4", "darkcyan"
 
 # density by depth for both species
 i_ye_all %>% filter(year == 2020) %>%
