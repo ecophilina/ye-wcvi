@@ -1,8 +1,11 @@
 # install packages
 
+
 # will need this version to replicate report
-remotes::install_github("pbs-assess/sdmTMB", ref = "delta")
+# remotes::install_github("pbs-assess/sdmTMB", ref = "???")
 devtools::install_github("seananderson/ggsidekick")
+# Do we need instructions for installing other dependencies like "pbsmapping"?
+
 install.packages(c("StanHeaders", "rstan", "tmbstan"),type="source")
 
 if(!require(raster))install.packages("raster")

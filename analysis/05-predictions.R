@@ -73,6 +73,7 @@ ggplot(i_hal_cda, aes(year, est)) + geom_line(colour = "darkgreen") +
 
 
 # spatial predictions for whole grid
+# can calculate individually to check get_all_sims results were up to date.
 # f <- paste0("data-generated/halibut-", hal_model, "-predictions-all-S.rds")
 # if (!file.exists(f)) {
 #   p_hal_sims <- predict(m_hal_fixed, newdata = full_s_grid, tmbstan_model = m_hal_stan)
@@ -103,6 +104,8 @@ p_ye$est <- apply(p_ye_sims, 1, function(x) {median(x)})
 p_ye$est_sd <- apply(p_ye_sims, 1, function(x) {sd(x)})
 
 
+# halibute density maps
+
 d_hal_plots <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
   filter(latitude < max_map_lat) %>%
   filter(year %in% c(2018,2019,2020))
@@ -113,7 +116,6 @@ p_hal2020 <- p_hal %>%
 
 g <- map_predictions(
   pred_data = p_hal2020,
-  fill_aes = est,
   pred_min = 0, #
   # pred_min = min(p_hal2020$est, na.rm = T),
   pred_max = quantile(p_hal2020$est, 0.995, na.rm = T),
@@ -129,7 +131,30 @@ g
 
 ggsave(paste0("figs/halibut-", hal_model, "-map-2020.png"), width = 6, height = 5, dpi = 400)
 
+p_hal2020c <- p_hal2020
+  filter(latitude < max_map_lat2)
 
+d_hal2 <- d_hal_plots %>%
+  filter(latitude < max_map_lat2)
+
+g <- map_predictions(
+  pred_data = p_hal2020c,
+  pred_min = 0, #min(p_hal2020c$est, na.rm = T),
+  pred_max = quantile(p_hal2020c$est, 0.995, na.rm = T),
+  obs_data = d_hal2,
+  fill_lab = "Predicted\nkg/ha",
+  max_size_obs = 6,
+  map_lat_limits = c(min_map_lat2, max_map_lat2),
+  map_lon_limits = c(min_map_lon2, max_map_lon2),
+  size_lab = "Landable\nkg/ha", #
+  size_aes = density
+) + theme(legend.box = 'horizontal') +
+  guides(colour = "none")
+g
+ggsave(paste0("figs/halibut-", hal_model, "-map-2020-closeup.png"), width = 6, height = 5, dpi = 400)
+
+
+# yelloweye density maps
 
 d_ye_plots <- readRDS(("data-generated/yelloweye-model-data-hbll-weights.rds")) %>%
   filter(latitude < 52.15507)  %>% filter(year %in% c(#2017,
@@ -156,6 +181,31 @@ g
 ggsave(paste0("figs/yelloweye-", ye_model, "-map-2020.png"), width = 6, height = 5, dpi = 400)
 
 
+p_ye2020c <- p_ye2020
+filter(latitude < max_map_lat2)
+
+d_ye2 <- d_ye_plots %>%
+  filter(latitude < max_map_lat2)
+
+g <- map_predictions(
+  pred_data = p_ye2020c,
+  pred_min = 0, #min(p_ye2020c$est, na.rm = T),
+  pred_max = quantile(p_ye2020c$est, 0.995, na.rm = T),
+  # pred_max = max(p_ye2020c$est),
+  obs_data = d_ye2,
+  fill_lab = "Predicted\nkg/ha",
+  max_size_obs = 6,
+  map_lat_limits = c(min_map_lat2, max_map_lat2),
+  map_lon_limits = c(min_map_lon2, max_map_lon2),
+  size_lab = "Landable\nkg/ha", #
+  size_aes = density
+) + theme(legend.box = 'horizontal') +
+  guides(colour = "none")
+g
+ggsave(paste0("figs/yelloweye-", ye_model, "-map-2020-closeup.png"), width = 6, height = 5, dpi = 400)
+
+
+# map ratios
 
 pyd <- p_ye %>% rename(ye_est = est) %>% distinct()
 phd <- p_hal %>%
@@ -186,9 +236,11 @@ g1 <- map_predictions(
 g1
 
 ggsave(paste0("figs/ye-to-halibut-2020.png"), width = 6, height = 5, dpi = 400)
-
 #        width = 5.5, height = 4.5, dpi = 400
 #        # width = 6, height = 5, dpi = 200
+
+
+# CV maps
 
 cv_hal <- i_hal$all[[3]]
 cv_hal$cv <- apply(p_hal_sims, 1, function(x){ sd(x) / mean(x)})
@@ -280,49 +332,37 @@ f <- "report-data/hal_depth_bins_in_ext.rds"
 if(!file.exists(f)) {
   i_hal_x <- depth_bin_pred(m_hal_fixed, m_hal_stan, ext_grid)
   saveRDS(i_hal_x, f)
-}else{
-  i_hal_x <- readRDS(f)
-}
+}else{ i_hal_x <- readRDS(f)}
 
 f <- "report-data/ye_depth_bins_in_ext.rds"
 if(!file.exists(f)) {
   i_ye_x <- depth_bin_pred(m_ye_fixed, m_ye_stan, ext_grid)
   saveRDS(i_ye_x, f)
-}else{
-  i_ye_x <- readRDS(f)
-}
+}else{ i_ye_x <- readRDS(f)}
 
 f <- "report-data/hal_depth_bins_in_cda.rds"
 if(!file.exists(f)) {
   i_hal_cda <- depth_bin_pred(m_hal_fixed, m_hal_stan, cda_grid)
   saveRDS(i_hal_cda, f)
-}else{
-  i_hal_cda <- readRDS(f)
-}
+}else{ i_hal_cda <- readRDS(f) }
 
 f <- "report-data/ye_depth_bins_in_cda.rds"
 if(!file.exists(f)) {
   i_ye_cda <- depth_bin_pred(m_ye_fixed, m_ye_stan, cda_grid)
   saveRDS(i_ye_cda, f)
-}else{
-  i_ye_cda <- readRDS(f)
-}
+}else{ i_ye_cda <- readRDS(f) }
 
 f <- "report-data/hal_depth_bins_in_3cd.rds"
 if(!file.exists(f)) {
   i_hal_3cd <- depth_bin_pred(m_hal_fixed, m_hal_stan, nonCDA_grid)
   saveRDS(i_hal_3cd, f)
-}else{
-  i_hal_3cd <- readRDS(f)
-}
+}else{ i_hal_3cd <- readRDS(f) }
 
 f <- "report-data/ye_depth_bins_in_3cd.rds"
 if(!file.exists(f)) {
   i_ye_3cd <- depth_bin_pred(m_ye_fixed, m_ye_stan, nonCDA_grid)
   saveRDS(i_ye_3cd, f)
-}else{
-  i_ye_3cd <- readRDS(f)
-}
+}else{ i_ye_3cd <- readRDS(f) }
 
 # i_hal_cda <- readRDS("report-data/hal_depth_bins_in_cda.rds")
 # i_ye_cda <- readRDS("report-data/ye_depth_bins_in_cda.rds")

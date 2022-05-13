@@ -304,7 +304,7 @@ get_diag <- function(m, response = "density",
 map_predictions <- function(
   pred_data = NULL,
   obs_data = NULL,
-  fill_aes = exp(est),
+  fill_aes = est,
   col_aes = survey,
   pred_min = NULL,
   pred_max = NULL,
