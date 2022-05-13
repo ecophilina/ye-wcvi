@@ -29,11 +29,10 @@ if (!file.exists(f2)) {
   m_ye_stan <- readRDS(f2)
 }
 
-
-
 f <- paste0("data-generated/halibut-", hal_model, "-index-all-stan.rds")
 if (!file.exists(f)) {
   i_hal <- get_all_sims(m_hal_fixed, newdata = full_s_grid, tmbstan_model = m_hal_stan)
+  i_hal <- setNames(i_hal, c("all", paste(unique(full_s_grid$region))))
   saveRDS(i_hal, f)
 } else{
   i_hal <- readRDS(f)
@@ -42,10 +41,12 @@ if (!file.exists(f)) {
 f <- paste0("data-generated/yelloweye-", ye_model, "-index-all-stan.rds")
 if (!file.exists(f)) {
   i_ye <- get_all_sims(m_ye_fixed, newdata = full_s_grid, tmbstan_model = m_ye_stan)
+  i_ye <- setNames(i_ye, c("all", paste(unique(full_s_grid$region))))
   saveRDS(i_ye, f)
 } else{
   i_ye <- readRDS(f)
 }
+
 
 i_hal_all <- i_hal$all$index
 i_ye_all <- i_ye$all$index
@@ -71,16 +72,6 @@ ggplot(i_hal_cda, aes(year, est)) + geom_line(colour = "darkgreen") +
   geom_ribbon(data = i_ye_ext, aes(ymin = lwr, ymax = upr), fill = "orange", alpha = 0.2)
 
 
-f <- paste0("data-generated/halibut-", hal_model, "-predictions-all-S.rds")
-if (!file.exists(f)) {
-  p_hal_sims <- predict(m_hal_fixed, newdata = full_s_grid, tmbstan_model = m_hal_stan)
-  saveRDS(p_hal_sims, f)
-} else{
-  p_hal_sims <- readRDS(f)
-}
-
-
-
 # spatial predictions for whole grid
 # f <- paste0("data-generated/halibut-", hal_model, "-predictions-all-S.rds")
 # if (!file.exists(f)) {
@@ -103,6 +94,7 @@ if (!file.exists(f)) {
 
 p_hal <- i_hal$all[[3]]
 p_hal_sims <- i_hal$all[[4]]
+p_hal$est <- apply(p_hal_sims, 1, function(x) {median(x)})
 p_hal$est_sd <- apply(p_hal_sims, 1, function(x) {sd(x)})
 
 p_ye <- i_ye$all[[3]]
@@ -135,12 +127,14 @@ g <- map_predictions(
 ) + theme(legend.spacing.y = unit(0.1, "cm"))
 g
 
+ggsave(paste0("figs/halibut-", hal_model, "-map-2020.png"), width = 6, height = 5, dpi = 400)
+
 
 
 d_ye_plots <- readRDS(("data-generated/yelloweye-model-data-hbll-weights.rds")) %>%
   filter(latitude < 52.15507)  %>% filter(year %in% c(#2017,
-    2018,
-    2019,2020))
+    2018, 2019, 2020))
+
 p_ye2020 <- p_ye %>%
   filter(latitude < max_map_lat) %>%
   filter(year == 2020)
@@ -148,8 +142,8 @@ p_ye2020 <- p_ye %>%
 g <- map_predictions(
   pred_data = p_ye,
   fill_aes = est,
-  # pred_min = 0,
-  # pred_max = quantile(ep_ye$est, 0.995),
+  pred_min = 0,
+  pred_max = quantile(p_ye$est, 0.995, na.rm = T),
   fill_lab = "Predicted kg/ha", #\n
   obs_data = d_ye_plots,
   map_lat_limits = c(min_map_lat, max_map_lat),
@@ -158,6 +152,8 @@ g <- map_predictions(
   size_aes = density
 ) + theme(legend.spacing.y = unit(0.1, "cm"))
 g
+
+ggsave(paste0("figs/yelloweye-", ye_model, "-map-2020.png"), width = 6, height = 5, dpi = 400)
 
 
 
@@ -190,21 +186,19 @@ g1 <- map_predictions(
 g1
 
 ggsave(paste0("figs/ye-to-halibut-2020.png"), width = 6, height = 5, dpi = 400)
-#
-# ggsave("figs/filled-ye-to-halibut-2020-keepable-delta.png",
+
 #        width = 5.5, height = 4.5, dpi = 400
 #        # width = 6, height = 5, dpi = 200
-# )
 
 cv_hal <- i_hal$all[[3]]
-cv_hal$cv <- apply(exp(p_hal), 1, function(x) sd(x) / mean(x))
+cv_hal$cv <- apply(p_hal_sims, 1, function(x){ sd(x) / mean(x)})
 
 cv_hal2020 <- cv_hal %>%
   filter(latitude < max_map_lat) %>%
   filter(year == 2020)
 
 cv_ye <- i_ye$all[[3]]
-cv_ye$cv <- apply(exp(p_ye), 1, function(x) sd(x) / mean(x))
+cv_ye$cv <- apply(p_ye_sims, 1, function(x) sd(x) / mean(x))
 
 cv_ye2020 <- cv_ye %>%
   filter(latitude < max_map_lat) %>%
@@ -239,7 +233,6 @@ g
 ggsave(paste0("figs/ye-", ye_model, "-CV.png"), width = 6, height = 5, dpi = 400)
 
 
-
 # explore importance of depth
 
 cda_grid <- filter(full_s_grid, region == "CDA")
@@ -266,7 +259,7 @@ depth_bin_pred <- function(tmb_model, stan_model, grid, bin_width = 50) {
     .grid <- filter(grid, depth > min_depth & depth <= max_depth)
     if(nrow(.grid)>1){
     .p <- predict(tmb_model, newdata = .grid, tmbstan_model = stan_model)
-    .i <- get_index_sims(.p, area = .grid$area / 10000)
+    .i <- get_index_sims(.p, area = .grid$area / 10000, agg_function = function(x) sum(x))
     .i <- .i %>% mutate(
       region = unique(.grid$region),
       min_depth = min_depth,
