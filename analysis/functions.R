@@ -469,8 +469,8 @@ map_predictions <- function(
       inherit.aes = F
     ) +
     geom_sf(data = focal_area2_proj,
-            colour = "darkorchid4",
-            # colour = "deeppink4",
+            # colour = "darkorchid4",
+            colour = "deeppink4",
             fill = NA, size = 0.70) + # add focal area2 behind focal area 1
     geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
     geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey75", col = "grey55") +

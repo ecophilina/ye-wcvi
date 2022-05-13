@@ -149,7 +149,9 @@ if (!file.exists(f)) {
 }
 
 cols <- c(
-  "red", "darkorchid4", # #4DAF4A", "#984EA3",
+  "red",
+  "deeppink4",
+  # "darkorchid4", # #4DAF4A", "#984EA3",
   "deepskyblue4"
 )
 

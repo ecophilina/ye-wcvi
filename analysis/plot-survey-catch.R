@@ -49,12 +49,12 @@ surv_dat2 <- anti_join(surv_dat, surv_dat_ext, by = c("X", "Y", "fishing_event_i
 surv_dat2$region <- "non-CDA 3CD"
 surv_dat <- bind_rows(surv_dat2, surv_dat_cda) %>% bind_rows(., surv_dat_ext2)
 
-
 cols <- c(
-  "red", "darkorchid4", # #4DAF4A", "#984EA3",
+  "red",
+  "deeppink4",
+  # "darkorchid4", # #4DAF4A", "#984EA3",
   "deepskyblue4"
 )
-
 
 ggplot(surv_dat, aes(log(density_hal + 1), log(density_ye + 1), fill = region, colour = region)) +
   geom_smooth(method = "lm") +
