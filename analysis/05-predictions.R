@@ -29,27 +29,11 @@ if (!file.exists(f2)) {
   m_ye_stan <- readRDS(f2)
 }
 
-# spatial predictions for whole grid
 
-f <- paste0("data-generated/halibut-", hal_model, "-predictions-all-S.rds")
-if (!file.exists(f)) {
-  p_hal <- predict(m_hal_fixed, newdata = full_s_grid, tmbstan_model = m_hal_stan)
-  saveRDS(p_hal, f)
-} else{
-  p_hal <- readRDS(f)
-}
-
-f <- paste0("data-generated/yelloweye-", ye_model, "-predictions-all-S.rds")
-if (!file.exists(f)) {
-  p_ye <- predict(m_ye_fixed, newdata = full_s_grid, tmbstan_model = m_ye_stan)
-  saveRDS(p_ye, f)
-} else{
-  p_ye <- readRDS(f)
-}
 
 f <- paste0("data-generated/halibut-", hal_model, "-index-all-stan.rds")
 if (!file.exists(f)) {
-  i_hal <- get_all_sims(p_hal)
+  i_hal <- get_all_sims(m_hal_fixed, newdata = full_s_grid, tmbstan_model = m_hal_stan)
   saveRDS(i_hal, f)
 } else{
   i_hal <- readRDS(f)
@@ -57,7 +41,7 @@ if (!file.exists(f)) {
 
 f <- paste0("data-generated/yelloweye-", ye_model, "-index-all-stan.rds")
 if (!file.exists(f)) {
-  i_ye <- get_all_sims(p_ye)
+  i_ye <- get_all_sims(m_ye_fixed, newdata = full_s_grid, tmbstan_model = m_ye_stan)
   saveRDS(i_ye, f)
 } else{
   i_ye <- readRDS(f)
@@ -87,10 +71,38 @@ ggplot(i_hal_cda, aes(year, est)) + geom_line(colour = "darkgreen") +
   geom_ribbon(data = i_ye_ext, aes(ymin = lwr, ymax = upr), fill = "orange", alpha = 0.2)
 
 
+f <- paste0("data-generated/halibut-", hal_model, "-predictions-all-S.rds")
+if (!file.exists(f)) {
+  p_hal_sims <- predict(m_hal_fixed, newdata = full_s_grid, tmbstan_model = m_hal_stan)
+  saveRDS(p_hal_sims, f)
+} else{
+  p_hal_sims <- readRDS(f)
+}
+
+
+
+# spatial predictions for whole grid
+# f <- paste0("data-generated/halibut-", hal_model, "-predictions-all-S.rds")
+# if (!file.exists(f)) {
+#   p_hal_sims <- predict(m_hal_fixed, newdata = full_s_grid, tmbstan_model = m_hal_stan)
+#   saveRDS(p_hal_sims, f)
+# } else{
+#   p_hal_sims <- readRDS(f)
+# }
+# f <- paste0("data-generated/yelloweye-", ye_model, "-predictions-all-S.rds")
+# if (!file.exists(f)) {
+#   p_ye_sims <- predict(m_ye_fixed, newdata = full_s_grid, tmbstan_model = m_ye_stan)
+#   saveRDS(p_ye_sims, f)
+# } else{
+#   p_ye_sims <- readRDS(f)
+# }
+#
+# p_hal <- full_s_grid
+# p_hal$est <- apply(p_hal_sims, 1, function(x) {median(x)})
+
 
 p_hal <- i_hal$all[[3]]
 p_hal_sims <- i_hal$all[[4]]
-p_hal$est <- apply(p_hal_sims, 1, function(x) {median(x)})
 p_hal$est_sd <- apply(p_hal_sims, 1, function(x) {sd(x)})
 
 p_ye <- i_ye$all[[3]]
@@ -109,19 +121,44 @@ p_hal2020 <- p_hal %>%
 
 g <- map_predictions(
   pred_data = p_hal2020,
-  pred_min = 0, #min(exp(p_hal2020$est), na.rm = T),
-  # pred_min = min(exp(p_hal2020$est), na.rm = T),
-  pred_max = quantile(exp(p_hal2020$est), 0.95, na.rm = T),
+  fill_aes = est,
+  pred_min = 0, #
+  # pred_min = min(p_hal2020$est, na.rm = T),
+  pred_max = quantile(p_hal2020$est, 0.995, na.rm = T),
+  # pred_max = max(p_hal2020$est, na.rm = T),
   obs_data = d_hal_plots,
   fill_lab = "Predicted kg/ha",
-  # pred_min = min(exp(p_hal2020$est), na.rm = T),
-  # pred_max = quantile(exp(p_hal2020$est), 0.99, na.rm = T),
   map_lat_limits = c(min_map_lat , max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
-  size_lab = "Landable kg/ha", #2018-2020\observed catch\nper 100 hook\nequivalent
+  size_lab = "Landable kg/ha",
   size_aes = density
 ) + theme(legend.spacing.y = unit(0.1, "cm"))
 g
+
+
+
+d_ye_plots <- readRDS(("data-generated/yelloweye-model-data-hbll-weights.rds")) %>%
+  filter(latitude < 52.15507)  %>% filter(year %in% c(#2017,
+    2018,
+    2019,2020))
+p_ye2020 <- p_ye %>%
+  filter(latitude < max_map_lat) %>%
+  filter(year == 2020)
+
+g <- map_predictions(
+  pred_data = p_ye,
+  fill_aes = est,
+  # pred_min = 0,
+  # pred_max = quantile(ep_ye$est, 0.995),
+  fill_lab = "Predicted kg/ha", #\n
+  obs_data = d_ye_plots,
+  map_lat_limits = c(min_map_lat, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon),
+  size_lab = "Observed kg/ha",
+  size_aes = density
+) + theme(legend.spacing.y = unit(0.1, "cm"))
+g
+
 
 
 pyd <- p_ye %>% rename(ye_est = est) %>% distinct()
@@ -130,10 +167,10 @@ phd <- p_hal %>%
   dplyr::select(hal_est, X, Y, year)%>% distinct()
 
 ratio_df <- left_join(pyd, phd) %>% mutate(
-  halibut = exp(hal_est),
-  halibut2 = ifelse(exp(hal_est) < 0.01, 0.01, exp(hal_est)),
-  yelloweye = exp(ye_est),
-  yelloweye2 = ifelse(exp(ye_est) < 0.01, 0.01, exp(ye_est)), # make min for yelloweye of 1 per km2
+  halibut = hal_est,
+  halibut2 = ifelse(hal_est < 0.01, 0.01, hal_est),
+  yelloweye = ye_est,
+  yelloweye2 = ifelse(ye_est < 0.01, 0.01, ye_est), # make min for yelloweye of 1 per km2
   ye_per_hal = (yelloweye*100) / (halibut*100), # using halibut 2 doesn't change anything.
   hal_per_ye = (halibut*100) / (yelloweye2*100)
 )

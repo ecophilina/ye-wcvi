@@ -67,19 +67,19 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
   # could be 1000000 for m2 to km2, or 4000000 for m2 to # hooks 2x2 km grid cell
   return_sims = TRUE, return_full_obj = TRUE,
   est_function = stats::median,
-  agg_function = function(x) sum(exp(x))){
+  agg_function = function(x) sum((x))){ # don't need exp because type = "response"
 
 # browser()
   if(!is.null(tmbstan_model)){
-    pred_obj_unscaled <- predict(fit_obj, newdata = newdata, tmbstan_model = tmbstan_model)
+    pred_obj_unscaled <- predict(fit_obj, newdata = newdata, tmbstan_model = tmbstan_model, type = "response")
   } else {
   if (!is.null(fit_obj)) {
-    pred_obj_unscaled <- predict(fit_obj, newdata = newdata, sims = sims)
+    pred_obj_unscaled <- predict(fit_obj, newdata = newdata, sims = sims, type = "response")
   }
   if (!is.null(fit_obj_bin) && !is.null(fit_obj_pos)) {
     pred_obj_unscaled_bin <- predict(fit_obj_bin, newdata = newdata, sims = sims)
     pred_obj_unscaled_pos <- predict(fit_obj_pos, newdata = newdata, sims = sims)
-    pred_obj_unscaled <- log(plogis(pred_obj_unscaled_bin) * exp(pred_obj_unscaled_pos))
+    pred_obj_unscaled <- (plogis(pred_obj_unscaled_bin) * exp(pred_obj_unscaled_pos))
   }
   }
 
