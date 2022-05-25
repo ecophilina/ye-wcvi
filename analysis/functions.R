@@ -67,6 +67,7 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
   # could be 1000000 for m2 to km2, or 4000000 for m2 to # hooks 2x2 km grid cell
   return_sims = TRUE, return_full_obj = TRUE,
   est_function = stats::median,
+  area_function = function(x, area) x * area,
   agg_function = function(x) sum((x))){ # don't need exp because type = "response"
 
 # browser()
@@ -79,7 +80,7 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
   if (!is.null(fit_obj_bin) && !is.null(fit_obj_pos)) {
     pred_obj_unscaled_bin <- predict(fit_obj_bin, newdata = newdata, sims = sims)
     pred_obj_unscaled_pos <- predict(fit_obj_pos, newdata = newdata, sims = sims)
-    pred_obj_unscaled <- (plogis(pred_obj_unscaled_bin) * exp(pred_obj_unscaled_pos))
+    pred_obj_unscaled <- plogis(pred_obj_unscaled_bin) * exp(pred_obj_unscaled_pos)
   }
   }
 
@@ -97,12 +98,12 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
     by_region <- list()
 
     ind <- get_index_sims(p, return_sims = F, level = level, area = newdata$area,
-      est_function = est_function, agg_function = agg_function)
+      est_function = est_function, area_function = area_function, agg_function = agg_function)
 
     ind$region <- "all"
 
     i_sims <- get_index_sims(p, return_sims = T, level = level, area = newdata$area,
-      est_function = est_function, agg_function = agg_function)
+      est_function = est_function, area_function = area_function, agg_function = agg_function)
 
     i_sims$region <- "all"
 
@@ -119,11 +120,11 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
 
         ind2 <- get_index_sims(pred, return_sims = F, level = level,
                                area = newdata[newdata$region == unique(newdata$region)[i], ]$area,
-          est_function = est_function, agg_function = agg_function)
+          est_function = est_function, area_function = area_function, agg_function = agg_function)
 
         i_sims2 <- get_index_sims(pred, return_sims = T, level = level,
                                   area = newdata[newdata$region == unique(newdata$region)[i], ]$area,
-          est_function = est_function, agg_function = agg_function)
+          est_function = est_function, area_function = area_function, agg_function = agg_function)
 
         # setNames(ind2, unique(newdata$region)[i])
         ind2$region <- unique(newdata$region)[i]
@@ -153,12 +154,12 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
   } else {
 
     i <- get_index_sims(p, return_sims = F, level = level, area = newdata$area,
-      est_function = est_function, agg_function = agg_function)
+      est_function = est_function, area_function = area_function, agg_function = agg_function)
 
     if(return_sims){
 
       i_sims <- get_index_sims(p, return_sims = T, level = level, area = newdata$area,
-        est_function = est_function, agg_function = agg_function)
+        est_function = est_function, area_function = area_function, agg_function = agg_function)
 
       # list_of_one <- list()
 
