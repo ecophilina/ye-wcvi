@@ -3,6 +3,8 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
+library(lubridate)
+
 dir.create("data-generated", showWarnings = FALSE)
 
 # load misc custom functions
@@ -15,7 +17,9 @@ source("analysis/functions.R")
 # It also appears that 0.009144 is the radius not the diameter; therefore, should all be multiplied by 2.
 # This results in similar, but not identical, value ranges for both surveys, as would be expected given the different habitats they sample.
 
-model_data_prep <- function(trawldata, hblldata, mean_weight) {
+
+
+model_data_prep <- function(trawldata, hblldata, cc, mean_weight) {
   d <- hblldata
 
   d <- d %>%
@@ -41,7 +45,7 @@ model_data_prep <- function(trawldata, hblldata, mean_weight) {
       catch_count, hook_count
     ) %>%
     mutate(lon = longitude, lat = latitude) %>%
-    mutate(survey = "HBLL")
+    mutate(survey = "HBLL", vessel_id = as.character(paste0(year_true, "survey")))
 
   dt <- trawldata %>%
     mutate(
@@ -62,9 +66,36 @@ model_data_prep <- function(trawldata, hblldata, mean_weight) {
       longitude, latitude, fishing_event_id, depth_m, density
     ) %>%
     mutate(lon = longitude, lat = latitude) %>%
-    mutate(survey = "TRAWL")
+    mutate(survey = "TRAWL", vessel_id = as.character(paste0(year_true, "survey")))
 
-  d <- bind_rows(d, dt) %>%
+  cc <- cc %>%
+    filter(year>2006 & year < 2021) %>%
+    mutate(
+      year_pair = case_when(
+        year %in% c(2007, 2008) ~ 2008,
+        year %in% c(2009, 2010) ~ 2010,
+        year %in% c(2011, 2012) ~ 2012,
+        year %in% c(2013, 2014) ~ 2014,
+        year %in% c(2015, 2016) ~ 2016,
+        year %in% c(2017, 2018) ~ 2018,
+        year %in% c(2019, 2020) ~ 2020
+      ),
+      year_true = year,
+      depth_m = best_depth,
+      density = cpue
+    ) %>%
+    select(year_pair, year_true,
+           lon, lat,
+           fishing_event_id, vessel_id, #vessel_registration_number,
+           depth_m, density
+    ) %>%
+    mutate(longitude = lon, latitude = lat) %>%
+    mutate(survey = "NON-SURVEY")
+    # mutate(survey = ifelse(year > 2015, paste0("NON-SURVEY post-2015"), "NON-SURVEY"))
+
+
+
+  d <- bind_rows(d, dt, cc) %>%
     filter(depth_m > 1)
 
   # convert to utms for sdmTMB model
@@ -158,6 +189,43 @@ round(yemeanweightHBLL, 2)
 # 3.2 # 7 lbs =3.18 kg
 
 
+# test inclusion of commercial data
+
+cc <- readRDS("data/hal-ye-ll-cpue-all.rds") %>%
+  filter(fishery_sector %in% c("halibut", "halibut and sablefish")) %>%
+  # filter(fishery_sector %in% c("halibut")) %>%
+  filter(major_stat_area_code %in% c("03", "04", "05")) %>%
+  # season based on summer shallow period versus winter deep period Loher 2011
+  mutate(month = month(best_date), season = ifelse(month > 4 & month < 9, "Summer", "Winter"),
+         vessel_id = as.character(vessel_registration_number),
+         fishing_event_id = row_number()
+  ) %>%
+  filter(lon > -130.2 & lon < -124.75 & lat < 51.5 & lat > 48.3) %>%
+  filter(!is.na(vessel_registration_number)) %>% select(-trip_id)
+
+cc$hal_cpue[is.na(cc$hal_cpue)] <- 0
+cc$hal_kg[is.na(cc$hal_kg)] <- 0
+cc$ye_cpue[is.na(cc$ye_cpue)] <- 0
+cc$ye_kg[is.na(cc$ye_kg)] <- 0
+
+
+# cc$hal_realeased[is.na(cc$hal_realeased)] <- 0
+# cc$ye_realeased[is.na(cc$ye_realeased)] <- 0
+cc_ye <- cc %>% filter(season == "Summer") %>% mutate(cpue = ye_kg/1000)
+cc_hal <- cc %>% filter(season == "Summer") %>% mutate(cpue = hal_kg/1000)
+
+# cc_hal %>%
+#   mutate(pre2016 = ifelse(year < 2016, "yes", "no")) %>%
+#   ggplot() + geom_violin(aes(pre2016, log(cpue+1))) +
+#   facet_wrap(~vessel_registration_number)
+
+# hist(d_hal$density, breaks = 30, xlim = c(0,5))
+# hist(cc$hal_kg/1000, breaks = 30, xlim = c(0,5))
+#
+# hist(d_ye$density, breaks = 30, xlim = c(0,5))
+# hist(cc$ye_kg/1000, breaks = 30, xlim = c(0,5), ylim = c(0,15000))
+
+
 # Prep data
 
 # prep halibut
@@ -166,7 +234,7 @@ halhblldata <- readRDS("data/halibut-surv-sets-all.rds") %>% filter(survey_abbre
 
 halmeanweight <- 4.23 # average kg of commercially retainable halibut per fish caught based on HBLL offload_round_weights/catch_counts
 
-d_hal <- model_data_prep(haltrawldata, halhblldata, mean_weight = halmeanweight) %>%
+d_hal <- model_data_prep(haltrawldata, halhblldata, cc_hal, mean_weight = halmeanweight) %>%
   mutate(year = year_pair)
 # mutate(year = year_true)
 saveRDS(d_hal, "data-generated/halibut-model-data-keepable-weight.rds")
@@ -177,7 +245,7 @@ yehblldata <- readRDS("data/yelloweye-surv-sets-all.rds") %>% filter(survey_abbr
 
 yemeanweight <- round(yemeanweightHBLL, 2)
 
-d_ye <- model_data_prep(yetrawldata, yehblldata, mean_weight = yemeanweight)%>%
+d_ye <- model_data_prep(yetrawldata, yehblldata, cc_ye, mean_weight = yemeanweight)%>%
   mutate(year = year_pair)
 # mutate(year = year_true)
 saveRDS(d_ye, "data-generated/yelloweye-model-data-hbll-weights.rds")
