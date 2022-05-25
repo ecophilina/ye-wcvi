@@ -31,7 +31,7 @@ library(raster)
 # install.packages("marmap") # needs to be installed but not loaded 
 ```
 
-To create the grid, I first created bounding boxes to accomodate the strange shape of the grid more closely. 
+To create the grid, I first created bounding boxes to accommodate the strange shape of the grid more closely. 
 The west and east limits were defined by the 1000 m and 20m bathymetry contours respectively [data from `PBSmapping` (Schnute, Boers, and Haigh, 2021)]. 
 The prediction grid covered the extent of the bounding box and was a 2 km X 2 km resolution. 
 Rockfish Conservation Areas (RCAs) were then removed and area of cells and parts of cells not within RCAs was calculated. 
@@ -223,9 +223,10 @@ ggplot() +
   theme_classic()
 ```
 
-Create grid cells to fill in grid area
+Select the resolution (grid_scale) of the grid you are generating and create cells to fill in grid area.
+If wanting the match the original survey design, use 2000 to create 2 x 2 km grid.
 ```{r}
-grid_scale <- 2000 # currently using 2 x 2 km, but I think we could change this...
+grid_scale <- 1000 # currently using 2 x 2 km, but I think we could change this...
 
 grid1 <- sf::st_make_grid(x = sa_poly,
   offset = c(-1000, 1000),
@@ -241,6 +242,8 @@ ggplot() +
   # geom_sf(data=grid1) +
   geom_sf(data=new_grid) +
   theme_classic()
+
+saveRDS(new_grid, file = here::here(paste0("grids/hbll_shp_grid_expanded", grid_scale, ".rds"))) 
 ```
 
 
@@ -335,7 +338,7 @@ new_grid_norca <- st_difference(new_grid, st_union(cells_in_rcas))
 
 
 # saveRDS(new_grid_norca, here::here("grids/hbll_shp_grid_norca.rds"))
-saveRDS(new_grid_norca, here::here("grids/hbll_shp_grid_norca_expanded.rds"))
+saveRDS(new_grid_norca, here::here(paste0("grids/hbll_shp_grid_norca_expanded", grid_scale, ".rds")))
 
 ggplot() +
   geom_sf(data=new_grid_norca) +
@@ -350,8 +353,15 @@ new_grid_utm$area <- as.numeric(st_area(new_grid_utm))
 new_grid_utm$geometry <- st_centroid(new_grid_utm) %>% st_geometry()
 hbll_s_grid_utm <- as.data.frame(st_coordinates(new_grid_utm$geometry))
 hbll_s_grid_utm$area <- new_grid_utm$area 
+
+
+if(grid_scale > 1500){
 hbll_grid_utm <- dplyr::select(hbll_s_grid_utm, area, X, Y) %>%
   rename(x = X, y = Y) %>% mutate(X = round(x/1000)/100, Y = round(y/1000)/100)
+} else {
+hbll_grid_utm <- dplyr::select(hbll_s_grid_utm, area, X, Y) %>%
+  rename(x = X, y = Y) %>% mutate(X = round(x/1000, 1)/100, Y = round(y/1000, 1)/100)
+}
 
 new_grid_ll <- st_transform(new_grid_norca, crs = 4326)
 new_grid_ll$geometry <- st_centroid(new_grid_ll) %>% st_geometry()
@@ -387,7 +397,7 @@ range(old_grid$Y)
 range(new_grid_norca$Y)
 
 if(all(c(range(old_grid$X),range(old_grid$Y)) == c(range(new_grid_norca$X),range(new_grid_norca$Y))) ){
-saveRDS(new_grid_norca, here::here("grids/hbll_s_grid_norca.rds"))
+saveRDS(new_grid_norca, here::here(paste0("grids/hbll_s_grid_norca", grid_scale, ".rds")))
 }
 
 if(all(
@@ -396,7 +406,7 @@ if(all(
     min(old_grid$Y) >= min(new_grid_norca$Y),
     max(old_grid$Y) <= max(new_grid_norca$Y)
     )){
-saveRDS(new_grid_norca, here::here("grids/hbll_s_grid_norca_expanded.rds"))
+saveRDS(new_grid_norca, here::here(paste0("grids/hbll_s_grid_norca_expanded", grid_scale, ".rds")))
 }
 ```
 
@@ -405,72 +415,72 @@ saveRDS(new_grid_norca, here::here("grids/hbll_s_grid_norca_expanded.rds"))
 
 Download depth data for extent of new grid
 ```{r}
-f <- "data/bath_res1_marmap.rds"
+f <- here::here("data/bath_res1_marmap.rds")
 if(!file.exists(f)){
 # Load package
 library(marmap)
-new_grid_norca <- readRDS(here::here("grids/hbll_s_grid_norca.rds"))
+new_grid_norca <- readRDS(here::here(paste0("grids/hbll_s_grid_norca.rds")))
 # Download bathymetric data and save on disk
 bat <- getNOAA.bathy(min(new_grid_norca$longitude)-2, max(new_grid_norca$longitude)+2,
   min(new_grid_norca$latitude)-2, max(new_grid_norca$latitude)+2, res = 1, keep = TRUE) #resolution of the grid, in minutes (default is 4 or > 4 miles)
-saveRDS(bat, "data/bath_res1_marmap.rds")
+saveRDS(bat, here::here("data/bath_res1_marmap.rds"))
 }
 ```
 
 ```{r}
-f <- "data/bath_res1_marmap2.rds"
+f <- here::here("data/bath_res1_marmap2.rds")
 if(!file.exists(f)){
 # Load package
 library(marmap)
-new_grid_norca <- readRDS(here::here("grids/hbll_s_grid_norca_expanded.rds"))
+new_grid_norca <- readRDS(here::here(paste0("grids/hbll_s_grid_norca_expanded", grid_scale, ".rds")))
 # Download bathymetric data and save on disk
 bat <- getNOAA.bathy(min(new_grid_norca$longitude)-2, max(new_grid_norca$longitude)+2,
   min(new_grid_norca$latitude)-2, max(new_grid_norca$latitude)+2, res = 1, keep = TRUE) #resolution of the grid, in minutes (default is 4 or > 4 miles)
-saveRDS(bat, "data/bath_res1_marmap2.rds")
+saveRDS(bat, here::here("data/bath_res1_marmap2.rds"))
 }
 ```
 
 Explore depth data retrieved
 - chunk just exploratory and not working because track was probably from some example
 ```{r eval=F}
-# Load package
-library(marmap)
-# bat <- readRDS(here::here("data/bath_res1_marmap.rds"))
-bat <- readRDS(here::here("data/bath_res1_marmap2.rds"))
-# Create nice looking color palettes
-blues <- c("lightsteelblue4", "lightsteelblue3", "lightsteelblue2", "lightsteelblue1")
-greys <- c(grey(0.6), grey(0.93), grey(0.99))
-# Plot
-plot(bat, image = TRUE, land = TRUE, lwd = 0.1, bpal = list(c(0, max(bat), greys), c(min(bat), 0, blues)))
-plot(bat, lwd = 0.8, deep = -1000, shallow = -20, step = 20, add = TRUE) # highlight coastline
-
-# Get depth profile along both tracks and remove positive depths (since random fake values can be on land)
-# path.profile() gets depth value for all cells of the bathymetric grid below the gps tracks
-path1 <- path.profile(track1[,-3], bat) ; path1 <- path1[-path1[,4]>0,]
-path2 <- path.profile(track2[,-3], bat) ; path2 <- path2[-path2[,4]>0,]
-# Get depth values for each gps tracking point
-# get.depth() retrieve depth values only for gps tracking points
-depth1 <- get.depth(bat, track1$lon, track1$lat, locator = FALSE, distance = TRUE) ;
-depth2 <- get.depth(bat, track2$lon, track2$lat, locator = FALSE, distance = TRUE) ;
-# Add depth values to tracks 1 and 2 and remove positive depths
-track1$depth <- depth1$depth ; track1 <- track1[-track1$depth > 0,]
-track2$depth <- depth2$depth ; track2 <- track2[-track2$depth > 0,]
-# Plot
-layout(matrix(c(1, 2, 1, 3, 4, 4), ncol = 2, byrow = TRUE), height = c(1, 1, 1))
-## Bathymetric map with gps tracks
-plot(bat, land = TRUE, image = TRUE, lwd = 0.2, bpal = list(c(min(bat,na.rm=TRUE), 0, blues), c(0, max(bat, na.rm=TRUE), greys)), ylim=c(-36.5,-35.25))
-plot(bat, deep = 0, shallow = 0, step = 0, lwd = 0.8, add = TRUE)
-lines(track1, col = "brown3")
-lines(track2, col = "darkorange1")
-legend("topright", legend = c("Track 1", "Track 2"), lwd = 1, col = c("brown3", "darkorange1"), pch = 1, pt.cex = 0.5, bg="white")
-## Depths profiles along gps tracks
-plotProfile(path1, main = "Track 1")
-plotProfile(path2, main = "Track 2")
-## Depth as a function of time since the deployment of gps tags
-par(mar=c(5,4,1,2))
-plot(track1$time, track1$depth, xlab = "Time (arbitrary unit)", ylab = "Depth (m)", type = "o", cex = 0.5, col = "brown3", xlim = range(c(track1$time, track2$time)), ylim = range(c(track1$depth, track2$depth)))
-lines(track2$time, track2$depth, type = "o", cex = 0.5, col = "darkorange1")
-legend("bottomright", legend = c("Track 1", "Track 2"), lwd = 1, col = c("brown3", "darkorange1"), pch = 1, pt.cex = 0.5)
+## Load package
+# library(marmap)
+# # bat <- readRDS(here::here("data/bath_res1_marmap.rds"))
+# bat <- readRDS(here::here("data/bath_res1_marmap2.rds"))
+# # Create nice looking color palettes
+# blues <- c("lightsteelblue4", "lightsteelblue3", "lightsteelblue2", "lightsteelblue1")
+# greys <- c(grey(0.6), grey(0.93), grey(0.99))
+# # Plot
+# plot(bat, image = TRUE, land = TRUE, lwd = 0.1, bpal = list(c(0, max(bat), greys), c(min(bat), 0, blues)))
+# plot(bat, lwd = 0.8, deep = -1000, shallow = -20, step = 20, add = TRUE) # highlight coastline
+# 
+# # Get depth profile along both tracks and remove positive depths (since random fake values can be on land)
+# # path.profile() gets depth value for all cells of the bathymetric grid below the gps tracks
+# path1 <- path.profile(track1[,-3], bat) ; path1 <- path1[-path1[,4]>0,]
+# path2 <- path.profile(track2[,-3], bat) ; path2 <- path2[-path2[,4]>0,]
+# # Get depth values for each gps tracking point
+# # get.depth() retrieve depth values only for gps tracking points
+# depth1 <- get.depth(bat, track1$lon, track1$lat, locator = FALSE, distance = TRUE) ;
+# depth2 <- get.depth(bat, track2$lon, track2$lat, locator = FALSE, distance = TRUE) ;
+# # Add depth values to tracks 1 and 2 and remove positive depths
+# track1$depth <- depth1$depth ; track1 <- track1[-track1$depth > 0,]
+# track2$depth <- depth2$depth ; track2 <- track2[-track2$depth > 0,]
+# # Plot
+# layout(matrix(c(1, 2, 1, 3, 4, 4), ncol = 2, byrow = TRUE), height = c(1, 1, 1))
+# ## Bathymetric map with gps tracks
+# plot(bat, land = TRUE, image = TRUE, lwd = 0.2, bpal = list(c(min(bat,na.rm=TRUE), 0, blues), c(0, max(bat, na.rm=TRUE), greys)), ylim=c(-36.5,-35.25))
+# plot(bat, deep = 0, shallow = 0, step = 0, lwd = 0.8, add = TRUE)
+# lines(track1, col = "brown3")
+# lines(track2, col = "darkorange1")
+# legend("topright", legend = c("Track 1", "Track 2"), lwd = 1, col = c("brown3", "darkorange1"), pch = 1, pt.cex = 0.5, bg="white")
+# ## Depths profiles along gps tracks
+# plotProfile(path1, main = "Track 1")
+# plotProfile(path2, main = "Track 2")
+# ## Depth as a function of time since the deployment of gps tags
+# par(mar=c(5,4,1,2))
+# plot(track1$time, track1$depth, xlab = "Time (arbitrary unit)", ylab = "Depth (m)", type = "o", cex = 0.5, col = "brown3", xlim = range(c(track1$time, track2$time)), ylim = range(c(track1$depth, track2$depth)))
+# lines(track2$time, track2$depth, type = "o", cex = 0.5, col = "darkorange1")
+# legend("bottomright", legend = c("Track 1", "Track 2"), lwd = 1, col = c("brown3", "darkorange1"), pch = 1, pt.cex = 0.5)
 ```
 
 Extract depth for grid cells
@@ -498,8 +508,8 @@ plot(rast_water_area)
 
 # depth for complete cells only
 # hbll_grid <- readRDS(here::here("grids/hbll_s_grid_norca.rds"))
-hbll_grid <- readRDS(here::here("grids/hbll_s_grid_norca_expanded.rds"))
-grid_scale <- 2000 #scale of prediction grid in m
+hbll_grid <- readRDS(here::here(paste0("grids/hbll_s_grid_norca_expanded", grid_scale, ".rds")))
+# grid_scale <- 2000 #scale of prediction grid in m
 grid <- raster(
   ext = extent(hbll_grid)+c(-1000, 1000, -1000, 1000), # need to add 1km in all directions to allow coordinates to be the centroids of 2x2km cells
   resolution = grid_scale, crs = CRS(proj))
@@ -512,7 +522,7 @@ extracted_depth <- cbind(grid.df, depth)
 hbll_grid_full_cells <- left_join(hbll_grid, extracted_depth)
 
 # depth for partial cells too
-new_grid_norca <- readRDS(here::here("grids/hbll_shp_grid_norca_expanded.rds"))
+new_grid_norca <- readRDS(here::here(paste0("grids/hbll_shp_grid_norca_expanded", grid_scale, ".rds")))
 new_grid_norca <- st_as_sf(new_grid_norca)
 new_grid_norca <- st_transform(new_grid_norca, crs = 3156)
 
@@ -521,6 +531,7 @@ new_grid_norca <- st_transform(new_grid_norca, crs = 3156)
 # mean_depth <- unlist(lapply(get_depth, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
 
 # weighted depths
+# library(raster)
 get_depth2 <- raster::extract(x=rast_bat, y=new_grid_norca, na.rm = T, exact=T, weights=T, sp = T)
 mean_depth2 <- sapply(get_depth2, function(x) if (!is.null(x)) {sum(apply(x, 1, prod), na.rm = T) / sum(x[,2], na.rm = T)} else NA)
 
@@ -529,31 +540,33 @@ get_water_area <- raster::extract(x=rast_water_area, y=new_grid_norca, na.rm = T
 water_area <- sapply(get_water_area, function(x) if (!is.null(x)) {sum(apply(x, 1, prod))} else NA)
 
 
-all_depths <- bind_cols(hbll_grid_full_cells, #mean_depth = mean_depth, prop_water = water_area,
+all_depths <- bind_cols(hbll_grid_full_cells, #mean_depth = mean_depth, 
+  prop_water = water_area,
   wm_depth = mean_depth2) %>% 
   mutate(cell_depth = -depth, #depth_uw = -mean_depth, 
     depth_wm = -wm_depth, depth = -wm_depth) %>% dplyr::select(#-mean_depth, 
       -wm_depth)
+# all_depths <- all_depths %>% mutate(X = round(x/1000,1)/100, Y = round(y/1000, 1)/100)
 
-saveRDS(all_depths, here::here("grids/exrtracted_depths_norca_expanded.rds"))
+saveRDS(all_depths, here::here(paste0("grids/exrtracted_depths_norca_expanded", grid_scale, ".rds")))
 
 
 # ggplot(all_depths) + geom_point( aes(cell_depth, depth_uw, colour = area),alpha=0.2) # unweighted
 ggplot(all_depths) + geom_point( aes(cell_depth, depth_wm, colour = area), alpha=0.2) # weighted
 # weighted seems closer to the full cells only way of doing this...
-ggplot(all_depths) + geom_point(aes(depth_wm, depth_uw, colour = area),alpha=0.2)
+# ggplot(all_depths) + geom_point(aes(depth_wm, depth_uw, colour = area),alpha=0.2)
 
 
 ggplot(all_depths) + geom_jitter(aes(area, prop_water*area, colour = log(depth)), alpha=0.2) # weighted
 
 # will apply this filter after extracting substrate
-hbll_grid_keep <- all_depths %>%
+hbll_grid_keep <- all_depths %>% 
   # filter(depth_all < 1100) %>% filter(depth_all > 10) 
   filter(depth > 0) 
 
 # ggplot(all_depths) +
 ggplot(hbll_grid_keep) +
-  geom_point(aes(X,Y, colour = log(depth)), alpha = 0.75) +
+  geom_point(aes(x,y, colour = log(depth)), alpha = 0.75) +
   scale_colour_viridis_c(direction = -1) +
   # geom_point(aes(X,Y, colour = -cell_depth), alpha = 0.2) +
   theme_classic()
@@ -564,13 +577,13 @@ ggplot(hbll_grid_keep) +
 Convert tif projection and save as high res rasters
 ```{r eval = F}
 # f <- "data/highres-sandy-raster.grd" 
-f <- "data/highres-sandy-raster-expanded.grd" 
+f <- here::here("data/highres-sandy-raster-expanded.grd") 
 if (!file.exists(f)) {
 # retrieve substate layers if not done so before
-rocky <- raster("data/substrate/rocky.tif")
-mixed <- raster("data/substrate/mixed.tif")
-muddy <- raster("data/substrate/muddy.tif")
-sandy <- raster("data/substrate/sandy.tif")
+rocky <- raster(here::here("data/substrate/rocky.tif"))
+mixed <- raster(here::here("data/substrate/mixed.tif"))
+muddy <- raster(here::here("data/substrate/muddy.tif"))
+sandy <- raster(here::here("data/substrate/sandy.tif"))
 
 # original projection
 proj <- "+proj=aea +lat_1=50 +lat_2=58.5 +lat_0=45 +lon_0=-126 +x_0=1000000 +y_0=0"
@@ -604,7 +617,7 @@ hres_sandy <- raster::projectRaster(sandy, new_sandy) #, method = "ngb")
 Extract variables for new grid
 ```{r}
 # load previously saved raster
-rocky <- raster("data/highres-rocky-raster.grd")
+rocky <- raster(here::here("data/highres-rocky-raster.grd"))
 ## with weights
 get_rocky2 <- raster::extract(x=rocky, y=new_grid_norca, na.rm = T, exact=T, weights=T, sp = T)
 mean_rocky2 <- sapply(get_rocky2, function(x) if (!is.null(x)) {sum(apply(x, 1, prod), na.rm = T) / sum(x[,2], na.rm = T)} else NA)
@@ -612,7 +625,7 @@ mean_rocky2 <- sapply(get_rocky2, function(x) if (!is.null(x)) {sum(apply(x, 1, 
 # get_rocky <- raster::extract(x=rocky, y=new_grid_norca, na.rm = T, exact=T, sp = T)
 # mean_rocky <- unlist(lapply(get_rocky, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
 
-muddy <- raster("data/highres-muddy-raster.grd")
+muddy <- raster(here::here("data/highres-muddy-raster.grd"))
 ## with weights
 get_muddy <- raster::extract(x=muddy, y=new_grid_norca, na.rm = T, exact=T, weights=T, sp = T)
 mean_muddy <- sapply(get_muddy, function(x) if (!is.null(x)) {sum(apply(x, 1, prod), na.rm = T) / sum(x[,2], na.rm = T)} else NA)
@@ -620,14 +633,14 @@ mean_muddy <- sapply(get_muddy, function(x) if (!is.null(x)) {sum(apply(x, 1, pr
 # get_muddy <- raster::extract(x=muddy, y=new_grid_norca, na.rm = T, exact=T, sp = T)
 # mean_muddy <- unlist(lapply(get_muddy, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
 
-mixed <- raster("data/highres-mixed-raster.grd")
+mixed <- raster(here::here("data/highres-mixed-raster.grd"))
 get_mixed <- raster::extract(x=mixed, y=new_grid_norca, na.rm = T, exact=T, weights=T, sp = T)
 mean_mixed <-  sapply(get_mixed, function(x) if (!is.null(x)) {sum(apply(x, 1, prod), na.rm = T) / sum(x[,2], na.rm = T)} else NA)
 ## or without weights
 # get_mixed <- raster::extract(x=mixed, y=new_grid_norca, na.rm = T, exact=T, sp = T)
 # mean_mixed <- unlist(lapply(get_mixed, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
 
-sandy <- raster("data/highres-sandy-raster.grd")
+sandy <- raster(here::here("data/highres-sandy-raster.grd"))
 get_sandy <- raster::extract(x=sandy, y=new_grid_norca, na.rm = T, exact=T, weights=T, sp = T)
 mean_sandy <-  sapply(get_sandy, function(x) if (!is.null(x)) {sum(apply(x, 1, prod), na.rm = T) / sum(x[,2], na.rm = T)} else NA)
 
@@ -640,7 +653,7 @@ all_covs <- bind_cols(all_depths, rocky = mean_rocky2, #rocky_uw = mean_rocky,
 #   geom_point(aes(rocky, rocky_uw, colour = log(area)), alpha = 0.25) +
 #   theme_classic()
 
-saveRDS(all_covs, here::here("grids/norca_grid_w_substrate_expanded.rds"))
+saveRDS(all_covs, here::here(paste0("grids/norca_grid_w_substrate_expanded", grid_scale, ".rds")))
 ```
 
 Correct the area estimates by the proportion water
@@ -651,7 +664,23 @@ Correct the area estimates by the proportion water
 # all_covs <- readRDS(here::here("grids/norca_grid_w_substrate_expanded.rds")) %>% 
 #   rename(old_depth = depth) %>% dplyr::select( -depth_wm, -cell_depth) %>%  left_join(depths_only)
 
-all_covs2 <- all_covs %>% mutate(area = area * prop_water) %>% filter(area > 0)
-saveRDS(all_covs2, here::here("grids/norca_grid_w_substrate_expanded.rds"))
+all_covs2 <- all_covs %>% mutate(cell_area = area, area = area * prop_water) %>% filter(area > 0)
+saveRDS(all_covs2, here::here(paste0("grids/norca_grid_w_substrate_expanded", grid_scale, ".rds")))
+```
+
+
+```{r}
+ggplot(all_covs) +
+  geom_point(aes(x,y, colour = prop_water), alpha = 0.75) +
+  scale_colour_viridis_c(direction = -1) +
+  # geom_point(aes(X,Y, colour = -cell_depth), alpha = 0.2) +
+  theme_classic()
+
+ggplot(all_covs2) +
+  geom_point(aes(area, prop_water), alpha = 0.75) +
+  scale_colour_viridis_c(direction = -1) +
+  # geom_point(aes(X,Y, colour = -cell_depth), alpha = 0.2) +
+  theme_classic()
+
 ```
 
