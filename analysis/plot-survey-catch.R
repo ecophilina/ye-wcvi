@@ -4,10 +4,10 @@ library(lubridate)
 library(sf)
 
 d_hal_plotsS <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
-  filter(latitude < 50.5)
+  filter(latitude < 50.5) %>% filter(survey != "NON-SURVEY")
 
 d_ye_plotsS <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>%
-  filter(latitude < 50.5)
+  filter(latitude < 50.5) %>% filter(survey != "NON-SURVEY")
 
 ye_obs <- d_ye_plotsS %>%
   # mutate(catch_count_ye = (catch_count/hook_count)*100, catch_equiv_ye = catch_equiv) %>%
@@ -97,17 +97,29 @@ surv_dat %>%
 
 ggsave("figs/surv-hal-by-depth.png", width = 6, height = 6)
 
+hist(surv_dat$density_hal, breaks = 30)
+
 surv_dat %>%
-  filter(depth < 400 & year_true > 2006) %>%
-  filter(density_hal > 0) %>%
-  ggplot(., aes(depth, log10(density_ye / density_hal),
+  filter(depth < 400) %>%
+  # filter(year_true > 2006) %>%
+  # filter(density_hal > 0) %>%
+  # filter(region != "non-CDA 3CD") %>%
+  ggplot(., aes(depth,
+                # log10(density_ye/density_hal),
+                log10((density_ye+0.01)/(density_hal+0.01)),
     colour = region, fill = region, shape = survey, group = region
   )) +
   geom_point(alpha = 0.6) +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 170) +
   geom_smooth() +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
-  # coord_cartesian(expand = F, ylim = c(0, 0.8)) +
+  coord_cartesian(expand = F,
+                  xlim = c(0, 400),
+                  ylim = c(-3.4, 3.4)) +
+  ggtitle(paste0("Survey data from 2004 to 2020")) +
   ggsidekick::theme_sleek() #+ theme(legend.position = "none")
 
-ggsave("figs/surv-ratio-by-depth.png", width = 6, height = 3)
+ggsave("figs/surv-ratio-by-depth-w-zeros.png", width = 6, height = 4)
+
