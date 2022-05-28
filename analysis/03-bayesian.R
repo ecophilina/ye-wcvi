@@ -30,9 +30,10 @@ if (include_cc) {
 
 
 # Load both data sets
-
+# make sure the substrate data has been updated since any new fishing events were added
 substrate <- readRDS(file = "data-generated/events_w_substrate_1km_buffer.rds") %>%
   select(X, Y, fishing_event_id, any_rock, rocky, mixed, muddy)
+
 d_hal <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
   filter(latitude < latitude_cutoff & depth_m < 600) %>%
   left_join(select(substrate, -X, -Y)) %>% filter(muddy >= 0)
@@ -227,6 +228,10 @@ ye_priors <- priors #use same for ye
 }
 
 # HAL -------------------------------------------------------
+f <- paste0("models/halibut-model-", hal_model, "-tmbfit.rds")
+
+if (!file.exists(f)) {
+
 m_hal <- sdmTMB(
   hal_formula,
   priors = hal_priors,
@@ -244,6 +249,10 @@ m_hal <- sdmTMB(
   family = delta_gamma()
 )
 
+saveRDS(m_hal, paste0("models/halibut-model-", hal_model, "-tmbfit.rds"))
+} else {
+m_hal <- readRDS(paste0("models/halibut-model-", hal_model, "-tmbfit.rds"))
+}
 
 # m_hal_sr <- m_hal
 # m_hal2 <- m_hal
@@ -270,8 +279,6 @@ tidy(m_hal, conf.int = TRUE, model = 2)
 tidy(m_hal, "ran_pars", conf.int = TRUE)
 tidy(m_hal, "ran_pars", conf.int = TRUE, model = 2)
 
-saveRDS(m_hal, paste0("models/halibut-model-", hal_model, "-tmbfit.rds"))
-m_hal <- readRDS(paste0("models/halibut-model-", hal_model, "-tmbfit.rds"))
 
 visreg_delta(m_hal, xvar = "depth_scaled", scale = "response",
              model = 1, nn = 10)
@@ -378,8 +385,10 @@ qqnorm(q);qqline(q)
 
 s <- simulate(m_hal_fixed, tmbstan_model = m_hal_stan, nsim = 50L)
 
-pos2 <- which(d_hal$present == 1 & d_hal$survey != "NON-SURVEY")
-bayesplot::pp_check(d_hal$density[pos2], t(s[pos2,1:50]), bayesplot::ppc_dens_overlay) + scale_x_log10()
+bayesplot::pp_check(d_hal$density[pos], t(s[pos,1:50]), bayesplot::ppc_dens_overlay) + scale_x_log10()
+
+# pos2 <- which(d_hal$present == 1 & d_hal$survey != "NON-SURVEY")
+# bayesplot::pp_check(d_hal$density[pos2], t(s[pos2,1:50]), bayesplot::ppc_dens_overlay) + scale_x_log10()
 
 s <- simulate(m_hal_fixed, tmbstan_model = m_hal_stan, nsim = 50L, model = 1)
 table(s[,1])/sum(table(s[,1]))
@@ -388,7 +397,9 @@ table(s[,3])/sum(table(s[,3]))
 table(d_hal$present)/sum(table(d_hal$present))
 
 # YE -------------------------------------------------------
+f <- paste0("models/yelloweye-model-", ye_model, "-tmbfit.rds")
 
+if (!file.exists(f)) {
 
 m_ye <- sdmTMB(
   ye_formula,
@@ -408,6 +419,11 @@ m_ye <- sdmTMB(
   # family = tweedie()
 )
 
+saveRDS(m_ye, paste0("models/yelloweye-model-", ye_model, "-tmbfit.rds"))
+} else {
+m_ye <- readRDS(paste0("models/yelloweye-model-", ye_model, "-tmbfit.rds"))
+}
+
 # # reml = F
 # m_ye1 <- m_ye
 # m_ye2 <- m_ye
@@ -420,8 +436,6 @@ m_ye <- sdmTMB(
 
 # m_ye <- run_extra_optimization(m_ye, nlminb_loops = 1, newton_loops = 1)
 
-saveRDS(m_ye, paste0("models/yelloweye-model-", ye_model, "-tmbfit.rds"))
-m_ye <- readRDS(paste0("models/yelloweye-model-", ye_model, "-tmbfit.rds"))
 
 m_ye
 m_ye$sd_report
@@ -520,8 +534,8 @@ bayesplot::mcmc_pairs(post, pars = pars, off_diag_fun = "hex")
 bayesplot::mcmc_trace(post, pars = pars, regex_pars = regex_pars)
 s <- simulate(m_ye_fixed, tmbstan_model = m_ye_stan, nsim = 50L)
 
-pos2 <- which(d_ye$present == 1 & d_ye$survey != "NON-SURVEY")
-bayesplot::pp_check(d_ye$density[pos2], t(s[pos2,1:50]), bayesplot::ppc_dens_overlay) + scale_x_log10()
+# pos2 <- which(d_ye$present == 1 & d_ye$survey != "NON-SURVEY")
+# bayesplot::pp_check(d_ye$density[pos2], t(s[pos2,1:50]), bayesplot::ppc_dens_overlay) + scale_x_log10()
 
 pos <- which(d_ye$present == 1)
 bayesplot::pp_check(d_ye$density[pos], t(s[pos,1:50]), bayesplot::ppc_dens_overlay) + scale_x_log10()
