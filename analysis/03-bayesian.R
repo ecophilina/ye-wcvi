@@ -19,8 +19,8 @@ if (include_cc) {
   # hal_model <- "w-cc2-rocky-muddy-400kn-delta-IID-aniso"
   # ye_model <- "w-cc2-rocky-muddy-400kn-delta-spatial-aniso"
   #
-  hal_model <- "w-cc2-wcvi-poly3-500kn-delta-AR1-aniso"
-  ye_model <- "w-cc2-wcvi-poly3-500kn-delta-spatial-aniso"
+  hal_model <- "w-effort-500kn-delta-AR1-aniso"
+  ye_model <- "w-effort-500kn-delta-spatial-aniso"
   latitude_cutoff <- 51 # include only west coast Vancouver Island
 
 } else {
@@ -45,6 +45,8 @@ years <- sort(unique(d_ye$year))
 if (include_cc) {
 
   d_hal <- d_hal %>% filter(year %in% years) %>%
+    filter(!is.na(vessel_id)) %>%
+    filter(survey != "NON-SURVEY" | (dist_km_fished < 3 & dist_km_fished > 0.2)) %>%
     # filter(!(survey == "NON-SURVEY" & year < 2015)) %>%
     mutate(
       fyear = as.factor(year),
@@ -55,6 +57,9 @@ if (include_cc) {
       wt = ifelse(survey != "NON-SURVEY", 1, 1e-8))
 
   d_ye <- d_ye %>% filter(year %in% years) %>%
+    filter(!is.na(vessel_id)) %>%
+    filter(survey != "NON-SURVEY" | (dist_km_fished < 3 & dist_km_fished > 0.2)) %>%
+    # exclude samples after restrictions introduced
     filter(!(survey == "NON-SURVEY" & year > 2015)) %>%
     mutate(
       fyear = as.factor(year),
@@ -125,24 +130,86 @@ if (include_cc) {
 
 # mesh <- make_mesh(d_hal, c("X", "Y"), mesh = mesh)
 
-# HAL -------------------------------------------------------
-
+# Choose priors --------------------------------------------
 year_prior_sd <- 10
 q_sd <- 5
 poly_sd <- 20
 
-
 if(include_cc) {
-priors <- sdmTMBpriors(
-  b = normal(rep(0, 17),
-             scale = c(
-               rep(year_prior_sd, 7),
-               rep(q_sd, 2),
-               rep(poly_sd, 8)
-             )
+
+  formula1 <- density ~ 0 +
+    fyear +
+    survey +
+    rocky +
+    muddy +
+    poly(depth_scaled, 2) + (1|vessel_id)
+
+  priors1 <- sdmTMBpriors(
+    b = normal(rep(0, 13),
+               scale = c(
+                 rep(year_prior_sd, 7),
+                 rep(q_sd, 2),
+                 rep(poly_sd, 4)
+               )
+    )
   )
-)
+
+  formula2 <- density ~ 0 +
+    fyear +
+    survey +
+    poly(rocky, 2) +
+    poly(muddy, 2) +
+    poly(depth_scaled, 2) + (1|vessel_id)
+
+  priors2 <- sdmTMBpriors(
+    b = normal(rep(0, 15),
+               scale = c(
+                 rep(year_prior_sd, 7),
+                 rep(q_sd, 2),
+                 rep(poly_sd, 6)
+               )
+    )
+  )
+
+  formula3 <- density ~ 0 +
+    fyear +
+    survey +
+    poly(rocky, 3) +
+    poly(muddy, 3) +
+    poly(depth_scaled, 2) + (1|vessel_id)
+
+  priors3 <- sdmTMBpriors(
+    b = normal(rep(0, 17),
+               scale = c(
+                 rep(year_prior_sd, 7),
+                 rep(q_sd, 2),
+                 rep(poly_sd, 8)
+               )
+    )
+  )
+
+  hal_formula <- formula1
+  ye_formula <- formula1
+
+  hal_priors <- priors1
+  ye_priors <- priors1
+
+  hal_spatiotemporal <- list("off", "ar1")
+
 } else {
+
+  fixed_formula <- density ~ 0 +
+    fyear +
+    survey +
+    poly(rocky, 3) +
+    poly(muddy, 3) +
+    poly(depth_scaled, 2)
+
+  hal_formula <- fixed_formula
+  ye_formula <- fixed_formula
+
+  hal_spatiotemporal <- list("off", "iid")
+
 priors <- sdmTMBpriors(
   b = normal(rep(0, 16),
     scale = c(
@@ -154,43 +221,22 @@ priors <- sdmTMBpriors(
   # matern_s = pc_matern(range_gt = 0.1, sigma_lt = 2),
   # matern_st = pc_matern(range_gt = 0.1, sigma_lt = 2)
 )
-}
-
-
-if(include_cc) {
-
-fixed_formula <- density ~ 0 +
-  fyear +
-  survey +
-  poly(rocky, 3) +
-  poly(muddy, 3) +
-  poly(depth_scaled, 2) + (1|vessel_id)
-
-hal_spatiotemporal <- list("off", "ar1")
-
-} else {
-
-fixed_formula <- density ~ 0 +
-  fyear +
-  survey +
-  poly(rocky, 3) +
-  poly(muddy, 3) +
-  poly(depth_scaled, 2)
-
-hal_spatiotemporal <- list("off", "iid")
+hal_priors <- priors
+ye_priors <- priors #use same for ye
 
 }
 
-
+# HAL -------------------------------------------------------
 m_hal <- sdmTMB(
-  fixed_formula,
+  hal_formula,
+  priors = hal_priors,
+  # priors = priors1,
   # weights = d_hal$wt,
   data = d_hal,
   mesh = mesh,
   spatial = "on",
   spatiotemporal = hal_spatiotemporal,
   share_range = FALSE,
-  priors = priors,
   time = "year",
   silent = FALSE,
   anisotropy = TRUE,
@@ -198,9 +244,26 @@ m_hal <- sdmTMB(
   family = delta_gamma()
 )
 
+
+# m_hal_sr <- m_hal
+# m_hal2 <- m_hal
+# AIC(m_hal_sr, m_hal2) # with REML, Share_range = F is 20 AIC lower
+#
+# # with REML = F
+# m_hal1 <- m_hal
+# m_hal2 <- m_hal
+# m_hal3 <- m_hal
+# AIC(m_hal1, m_hal2, m_hal3)
+# df       AIC
+# m_hal1 38 -13511.39
+# m_hal2 42 -13447.79
+# m_hal3 46 -13420.87
+# m_hal <- m_hal1
+
+
 print(m_hal)
 plot_anisotropy(m_hal)
-plot_anisotropy(m_hal, model = 2)
+# plot_anisotropy(m_hal, model = 2)
 m_hal$sd_report
 tidy(m_hal, conf.int = TRUE)
 tidy(m_hal, conf.int = TRUE, model = 2)
@@ -208,43 +271,47 @@ tidy(m_hal, "ran_pars", conf.int = TRUE)
 tidy(m_hal, "ran_pars", conf.int = TRUE, model = 2)
 
 saveRDS(m_hal, paste0("models/halibut-model-", hal_model, "-tmbfit.rds"))
-# m_hal <- readRDS(paste0("models/halibut-model-", hal_model, "-tmbfit.rds"))
+m_hal <- readRDS(paste0("models/halibut-model-", hal_model, "-tmbfit.rds"))
 
-# visreg_delta(m_hal, xvar = "depth_scaled", scale = "response",
-#              model = 1, nn = 10)
-#
-# visreg_delta(m_hal, xvar = "rocky", scale = "response",
-#              model = 1, nn = 10)
-#
-# visreg_delta(m_hal, xvar = "muddy", scale = "response",
-#              model = 1, nn = 10)
-#
-# visreg_delta(m_hal, xvar = "depth_scaled", scale = "response",
-#              model = 2, nn = 10)
-#
-# visreg_delta(m_hal, xvar = "rocky", scale = "response",
-#              model = 2, nn = 10)
-#
-# visreg_delta(m_hal, xvar = "muddy", scale = "response",
-#              model = 2, nn = 10)
+visreg_delta(m_hal, xvar = "depth_scaled", scale = "response",
+             model = 1, nn = 10)
+
+visreg_delta(m_hal, xvar = "rocky", scale = "response",
+             model = 1, nn = 10)
+
+visreg_delta(m_hal, xvar = "muddy", scale = "response",
+             model = 1, nn = 10)
+
+visreg_delta(m_hal, xvar = "depth_scaled", scale = "response",
+             model = 2, nn = 10)
+
+visreg_delta(m_hal, xvar = "rocky", scale = "response",
+             model = 2, nn = 10)
+
+visreg_delta(m_hal, xvar = "muddy", scale = "response",
+             model = 2, nn = 10)
 
 
 pars <- sdmTMB:::get_pars(m_hal)
 kappa_map <- factor(rep(NA, length(pars$ln_kappa)))
 H_map <- factor(rep(NA, length(pars$ln_H_input)))
+G_map <- factor(rep(NA, length(pars$ln_tau_G)))
 
 m_hal_fixed <- update(
   m_hal,
   control = sdmTMBcontrol(
     start = list(
       ln_kappa = pars$ln_kappa,
-      ln_H_input = pars$ln_H_input
+      ln_H_input = pars$ln_H_input,
+      ln_tau_G = pars$ln_tau_G
     ),
     map = list(
       ln_kappa = kappa_map,
-      ln_H_input = H_map
+      ln_H_input = H_map,
+      ln_tau_G = G_map
     )
   ),
+  bayesian = TRUE,
   do_fit = FALSE
 )
 
@@ -324,13 +391,15 @@ table(d_hal$present)/sum(table(d_hal$present))
 
 
 m_ye <- sdmTMB(
-  fixed_formula,
+  ye_formula,
+  priors = ye_priors,
+  # formula3,
+  # priors = priors3,
   # weights = d_ye$wt,
   data = d_ye,
   mesh = mesh2,
   spatial = "on",
   spatiotemporal = list("off", "off"),
-  priors = priors,
   time = "year",
   silent = FALSE,
   reml = TRUE,
@@ -339,41 +408,65 @@ m_ye <- sdmTMB(
   # family = tweedie()
 )
 
+# # reml = F
+# m_ye1 <- m_ye
+# m_ye2 <- m_ye
+# m_ye3 <- m_ye
+# AIC(m_ye1, m_ye2, m_ye3)
+# # df       AIC
+# # m_ye1 35 -9156.979
+# # m_ye2 39 -9105.042
+# # m_ye3 43 -9083.522
+
+# m_ye <- run_extra_optimization(m_ye, nlminb_loops = 1, newton_loops = 1)
+
 saveRDS(m_ye, paste0("models/yelloweye-model-", ye_model, "-tmbfit.rds"))
-# m_ye <- readRDS(paste0("models/yelloweye-model-", ye_model, "-tmbfit.rds"))
+m_ye <- readRDS(paste0("models/yelloweye-model-", ye_model, "-tmbfit.rds"))
 
 m_ye
 m_ye$sd_report
 plot_anisotropy(m_ye)
-plot_anisotropy(m_ye, model = 2)
+# plot_anisotropy(m_ye, model = 2)
 tidy(m_ye, conf.int = TRUE)
 tidy(m_ye, conf.int = TRUE, model = 2)
 tidy(m_ye, "ran_pars", conf.int = TRUE)
 tidy(m_ye, "ran_pars", conf.int = TRUE, model = 2)
 
-#
-# visreg_delta(m_ye, xvar = "depth_scaled", model = 1,
-#              scale = "response", nn = 10)
-#
-# visreg_delta(m_ye, xvar = "depth_scaled", model = 2,
-#                scale = "response", nn = 10)
+visreg_delta(m_ye, xvar = "rocky", model = 1,
+             scale = "response", nn = 10)
+visreg_delta(m_ye, xvar = "rocky", model = 2,
+               scale = "response", nn = 10)
+
+visreg_delta(m_ye, xvar = "muddy", model = 1,
+             scale = "response", nn = 10)
+visreg_delta(m_ye, xvar = "muddy", model = 2,
+               scale = "response", nn = 10)
+
+visreg_delta(m_ye, xvar = "depth_scaled", model = 1,
+             scale = "response", nn = 10)
+visreg_delta(m_ye, xvar = "depth_scaled", model = 2,
+               scale = "response", nn = 10)
 
 pars <- sdmTMB:::get_pars(m_ye)
 kappa_map <- factor(rep(NA, length(pars$ln_kappa)))
 H_map <- factor(rep(NA, length(pars$ln_H_input)))
+G_map <- factor(rep(NA, length(pars$ln_tau_G)))
 
 m_ye_fixed <- update(
   m_ye,
   control = sdmTMBcontrol(
     start = list(
       ln_kappa = pars$ln_kappa,
-      ln_H_input = pars$ln_H_input
+      ln_H_input = pars$ln_H_input,
+      ln_tau_G = pars$ln_tau_G
     ),
     map = list(
       ln_kappa = kappa_map,
-      ln_H_input = H_map
+      ln_H_input = H_map,
+      ln_tau_G = G_map
     )
   ),
+  bayesian = TRUE,
   do_fit = FALSE
 )
 
@@ -429,6 +522,9 @@ s <- simulate(m_ye_fixed, tmbstan_model = m_ye_stan, nsim = 50L)
 
 pos2 <- which(d_ye$present == 1 & d_ye$survey != "NON-SURVEY")
 bayesplot::pp_check(d_ye$density[pos2], t(s[pos2,1:50]), bayesplot::ppc_dens_overlay) + scale_x_log10()
+
+pos <- which(d_ye$present == 1)
+bayesplot::pp_check(d_ye$density[pos], t(s[pos,1:50]), bayesplot::ppc_dens_overlay) + scale_x_log10()
 
 s <- simulate(m_ye_fixed, tmbstan_model = m_ye_stan, nsim = 50L, model = 1)
 table(s[,1])/sum(table(s[,1]))
