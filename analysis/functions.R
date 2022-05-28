@@ -72,14 +72,16 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
 
 # browser()
   if(!is.null(tmbstan_model)){
-    pred_obj_unscaled <- predict(fit_obj, newdata = newdata, tmbstan_model = tmbstan_model, type = "response")
+    pred_obj_unscaled <- predict(fit_obj, newdata = newdata, tmbstan_model = tmbstan_model,
+                                 re_form_iid = NA, type = "response")
   } else {
   if (!is.null(fit_obj)) {
-    pred_obj_unscaled <- predict(fit_obj, newdata = newdata, sims = sims, type = "response")
+    pred_obj_unscaled <- predict(fit_obj, newdata = newdata, sims = sims,
+                                 re_form_iid = NA, type = "response")
   }
   if (!is.null(fit_obj_bin) && !is.null(fit_obj_pos)) {
-    pred_obj_unscaled_bin <- predict(fit_obj_bin, newdata = newdata, sims = sims)
-    pred_obj_unscaled_pos <- predict(fit_obj_pos, newdata = newdata, sims = sims)
+    pred_obj_unscaled_bin <- predict(fit_obj_bin, newdata = newdata, re_form_iid = NA, sims = sims)
+    pred_obj_unscaled_pos <- predict(fit_obj_pos, newdata = newdata, re_form_iid = NA, sims = sims)
     pred_obj_unscaled <- plogis(pred_obj_unscaled_bin) * exp(pred_obj_unscaled_pos)
   }
   }

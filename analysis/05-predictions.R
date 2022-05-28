@@ -32,14 +32,19 @@ obs_cols <- c("white", "#98FB98", "#FFDAB9")
 obs_cols <- c("white", "#98FB98")
 }
 
-# load grid
-full_s_grid <- readRDS(paste0("report-data/full_filled_grid_w_ext_", grid_scale,".rds"))
+# load grid and add in fyear and dummy vessel id
+full_s_grid <- readRDS(paste0("report-data/full_filled_grid_w_ext_", grid_scale,".rds")) %>%
+  mutate(fyear = as.factor(year),
+         vessel_id = as.factor("survey"))
 
-# load models
-# hal_model <- "rocky-muddy-300kn-delta-IID-aniso"
-hal_model <- "w-cc2-rocky-muddy-400kn-delta-IID-aniso"
-# ye_model <- "rocky-muddy-300kn-delta-spatial-aniso"
-ye_model <- "w-cc2-rocky-muddy-300kn-delta-spatial-aniso"
+# # load models if 03 not just run
+hal_model <- "w-effort-500kn-delta-AR1-aniso"
+ye_model <- "w-effort-500kn-delta-spatial-aniso"
+#
+# # hal_model <- "rocky-muddy-300kn-delta-IID-aniso"
+# # hal_model <- "w-cc2-rocky-muddy-400kn-delta-IID-aniso"
+# # ye_model <- "rocky-muddy-300kn-delta-spatial-aniso"
+# # ye_model <- "w-cc2-rocky-muddy-300kn-delta-spatial-aniso"
 
 
 f <- paste0("models/halibut-model-", hal_model, "-stan.rds")
@@ -55,7 +60,7 @@ if (file.exists(f2)) {
   m_ye_fixed <- readRDS(paste0("models/yelloweye-model-", ye_model, "-tmb.rds"))
   m_ye_stan <- readRDS(f2)
   # temporary fixed for working in dev branch with models from main
-  m_ye_fixed$tmb_data$simulate_t <- rep(1L, length(unique(m_ye_fixed$data$year)))
+  # m_ye_fixed$tmb_data$simulate_t <- rep(1L, length(unique(m_ye_fixed$data$year)))
 }
 
 
