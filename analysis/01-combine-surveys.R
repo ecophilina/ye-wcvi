@@ -3,7 +3,6 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-library(lubridate)
 
 dir.create("data-generated", showWarnings = FALSE)
 
@@ -35,7 +34,7 @@ model_data_prep <- function(trawldata, hblldata, cc, mean_weight) {
       ),
       year_true = year,
       density = catch_count * mean_weight / (hook_count * 0.0024384 * 0.009144 * 10000 * 2)
-      # hook spacing = 0.0024384 km
+      # hook spacing = 0.0024384 km (8 feet?)
       # assumed catch radius = 0.009144 km (30 feet)
       # this area swept calc was for km2, so * 10000 gives it in hectares
     ) %>%
@@ -67,7 +66,7 @@ model_data_prep <- function(trawldata, hblldata, cc, mean_weight) {
     ) %>%
     mutate(lon = longitude, lat = latitude) %>%
     mutate(survey = "TRAWL", vessel_id = as.character(paste0(year_true, "survey")))
-
+# browser()
   cc <- cc %>%
     filter(year>2006 & year < 2021) %>%
     mutate(
@@ -86,8 +85,9 @@ model_data_prep <- function(trawldata, hblldata, cc, mean_weight) {
     ) %>%
     select(year_pair, year_true,
            lon, lat,
-           fishing_event_id, vessel_id, #vessel_registration_number,
-           depth_m, density
+           fishing_event_id,
+           vessel_id, #vessel_registration_number,
+           depth_m, density, dist_km_fished, hook_count
     ) %>%
     mutate(longitude = lon, latitude = lat) %>%
     mutate(survey = "NON-SURVEY")
@@ -189,30 +189,14 @@ round(yemeanweightHBLL, 2)
 # 3.2 # 7 lbs =3.18 kg
 
 
-# test inclusion of commercial data
+# get commercial ll cpue
 
-cc <- readRDS("data/hal-ye-ll-cpue-all.rds") %>%
-  filter(fishery_sector %in% c("halibut", "halibut and sablefish")) %>%
-  # filter(fishery_sector %in% c("halibut")) %>%
-  filter(major_stat_area_code %in% c("03", "04", "05")) %>%
-  # season based on summer shallow period versus winter deep period Loher 2011
-  mutate(month = month(best_date), season = ifelse(month > 4 & month < 9, "Summer", "Winter"),
-         vessel_id = as.character(vessel_registration_number),
-         fishing_event_id = row_number()
-  ) %>%
-  filter(lon > -130.2 & lon < -124.75 & lat < 51.5 & lat > 48.3) %>%
-  filter(!is.na(vessel_registration_number)) %>% select(-trip_id)
-
-cc$hal_cpue[is.na(cc$hal_cpue)] <- 0
-cc$hal_kg[is.na(cc$hal_kg)] <- 0
-cc$ye_cpue[is.na(cc$ye_cpue)] <- 0
-cc$ye_kg[is.na(cc$ye_kg)] <- 0
-
+cc <- readRDS("data/hal-ye-ll-cpue-w-effort.rds") %>% filter(dist_km_fished < 5 & dist_km_fished > 0.1)
 
 # cc$hal_realeased[is.na(cc$hal_realeased)] <- 0
 # cc$ye_realeased[is.na(cc$ye_realeased)] <- 0
-cc_ye <- cc %>% filter(season == "Summer") %>% mutate(cpue = ye_kg/1000)
-cc_hal <- cc %>% filter(season == "Summer") %>% mutate(cpue = hal_kg/1000)
+cc_ye <- cc %>% filter(season == "Summer") %>% mutate(cpue = ye_kg/ha_fished)
+cc_hal <- cc %>% filter(season == "Summer") %>% mutate(cpue = hal_kg/ha_fished)
 
 # cc_hal %>%
 #   mutate(pre2016 = ifelse(year < 2016, "yes", "no")) %>%
