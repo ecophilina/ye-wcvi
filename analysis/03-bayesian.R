@@ -279,6 +279,11 @@ tidy(m_hal, conf.int = TRUE, model = 2)
 tidy(m_hal, "ran_pars", conf.int = TRUE)
 tidy(m_hal, "ran_pars", conf.int = TRUE, model = 2)
 
+visreg_delta(m_hal, xvar = "vessel_id", #scale = "response",
+             model = 1)
+
+visreg_delta(m_hal, xvar = "vessel_id", #scale = "response",
+             model = 2)
 
 visreg_delta(m_hal, xvar = "depth_scaled", scale = "response",
              model = 1, nn = 10)
