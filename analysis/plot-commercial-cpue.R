@@ -35,14 +35,7 @@ library(sf)
 f <- "data-generated/commercialcpue.rds"
 
 if (!file.exists(f)) {
-  cc <- readRDS("data/hal-ye-ll-cpue-anon.rds") %>%
-    filter(fishery_sector %in% c("halibut", "halibut and sablefish")) %>%
-    # filter(fishery_sector %in% c("halibut")) %>%
-    filter(major_stat_area_code %in% c("03", "04", "05")) %>%
-    # season based on summer shallow period versus winter deep period Loher 2011
-    mutate(month = month(best_date), season = ifelse(month > 4 & month < 9, "Summer", "Winter")) %>%
-    filter(lon > -130.2 & lon < -124.75 & lat < 51.5 & lat > 48.3)
-
+  cc <- readRDS("data/hal-ye-ll-cpue-w-effort.rds")
   # add utms
 
   cc <- sdmTMB::add_utm_columns(cc,
@@ -91,7 +84,7 @@ if (!file.exists(f)) {
 
   cc1 <- cc3$data
 
-  cc1 <- cc1 %>% filter(depth > 0) %>%
+  cc1 <- cc1 %>% filter(depth > 0)
 
   cc_akima <- cc3$data %>%
     filter(akima_depth > 0) %>%
@@ -148,6 +141,15 @@ if (!file.exists(f)) {
   cc <- readRDS(f)
 }
 
+cc <- cc %>% mutate(ye_count = ye_cpue,
+                    ye_cpue = ye_kg/ha_fished,
+                    hal_count = hal_cpue,
+                    hal_cpue = hal_kg/ha_fished,
+                    ye_cpue2 = ifelse(ye_cpue < 0.01, 0.01, ye_cpue),
+                    hal_cpue2 = ifelse(hal_cpue < 0.01, 0.01, hal_cpue)
+                    )
+
+
 cols <- c(
   "red",
   "deeppink4",
@@ -157,15 +159,16 @@ cols <- c(
 
 cc %>%
   filter(depth < 600) %>%
-  filter(region != "3CD5A N of 50º") %>% # filter(hal_cpue > 0) %>%
-  ggplot(., aes(depth, log10(ye_kg + 1),
+  filter(region != "3CD5A N of 50º") %>%
+  filter(hal_cpue > 0) %>%
+  ggplot(., aes(depth, log10(ye_cpue + 1),
     colour = region, fill = region
   )) +
   geom_point(alpha = 0.1) +
   geom_smooth() +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
-  coord_cartesian(expand = F, ylim = c(0, 2.8)) +
+  coord_cartesian(expand = F, ylim = c(0, 0.18)) +
   facet_grid(
     # cols=vars(region),
     rows = vars(season)
@@ -178,14 +181,14 @@ ggsave("figs/comm-cpue-YE-by-depth.png", width = 6, height = 6)
 cc %>%
   filter(depth < 600) %>%
   filter(region != "3CD5A N of 50º") %>% # filter(hal_cpue > 0) %>%
-  ggplot(., aes(depth, log10(hal_kg + 1),
+  ggplot(., aes(depth, log10(hal_cpue + 1),
     colour = region, fill = region
   )) +
   geom_point(alpha = 0.1) +
   geom_smooth() +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
-  coord_cartesian(expand = F, ylim = c(0, 3.8)) +
+  coord_cartesian(expand = F, ylim = c(0, 0.48)) +
   facet_grid(
     # cols=vars(region),
     rows = vars(season)
@@ -201,7 +204,7 @@ cc %>%
   filter(region != "3CD5A N of 50º") %>%
   filter(hal_cpue > 0) %>%
   # ggplot(., aes(depth, log10(ye_cpue / hal_cpue),
-  ggplot(., aes(depth, log10(ye_kg / hal_kg),
+  ggplot(., aes(depth, log10(ye_cpue / hal_cpue),
     colour = region, fill = region
   )) +
   geom_point(alpha = 0.1) +
@@ -225,11 +228,12 @@ cc %>%
   filter(year <= 2015)%>%
   ggplot(., aes(depth,
                 # log10(ye_cpue / hal_cpue),
+                log10(ye_cpue2 / hal_cpue2),
                 # log10((ye_cpue +0.1)/ (hal_cpue+0.1)),
-                log10((ye_kg +0.1)/ (hal_kg+0.1)),
+                # log10((ye_cpue +0.1)/ (hal_cpue+0.1)),
     colour = region, fill = region
   )) +
-  geom_point(alpha = 0.6) +
+  geom_point(alpha = 0.2) +
   geom_hline(yintercept = 0) +
   geom_vline(xintercept = 170) +
   geom_smooth() +
@@ -237,7 +241,7 @@ cc %>%
   scale_colour_manual(values = cols) +
   coord_cartesian(expand = F,
                   xlim = c(0, 400),
-                  ylim = c(-4.4, 4.4)) +
+                  ylim = c(-2.4, 2.4)) +
                   # ylim = c(-3.4, 3.4)) +
   ggtitle(paste0("Commercial data from 2006 to 2015")) +
   ggsidekick::theme_sleek() #+ theme(legend.position = "none")
@@ -252,11 +256,12 @@ cc %>%
   filter(year > 2015)%>%
   ggplot(., aes(depth,
                 # log10(ye_cpue / hal_cpue),
+                log10(ye_cpue2 / hal_cpue2),
                 # log10((ye_cpue +0.1)/ ((hal_cpue)+0.1)),
-                log10((ye_kg +0.1)/ (hal_kg+0.1)),
+                # log10((ye_cpue +0.1)/ (hal_cpue+0.1)),
                 colour = region, fill = region
   )) +
-  geom_point(alpha = 0.6) +
+  geom_point(alpha = 0.2) +
   geom_hline(yintercept = 0) +
   geom_vline(xintercept = 170) +
   geom_smooth() +
@@ -265,7 +270,7 @@ cc %>%
   coord_cartesian(expand = F,
                   xlim = c(0, 400),
                   # ylim = c(-3.4, 3.4)) +
-                  ylim = c(-4.4, 4.4)) +
+                  ylim = c(-2.4, 2.4)) +
   ggtitle(paste0("Commercial data from 2016 to 2022")) +
   ggsidekick::theme_sleek() #+ theme(legend.position = "none")
 
@@ -324,7 +329,7 @@ cc %>%
     .,
     aes(
       # log(hal_cpue + 1), log(ye_cpue + 1),
-      log(hal_kg + 1), log(ye_kg + 1),
+      log(hal_cpue + 1), log(ye_cpue + 1),
       colour = period, fill = period
     )
     # colour= region, fill= region)
@@ -345,7 +350,7 @@ cc %>%
   ) +
   ggsidekick::theme_sleek()
 
-ggsave("figs/comm-kg-cor-by-season-region.png", width = 7, height = 6)
+ggsave("figs/comm-true-cpue-cor-by-season-region.png", width = 7, height = 6)
 
 # correlations/tradeoffs between species pre and post 2016 introduction of YE quota
 cc %>%
@@ -356,7 +361,7 @@ cc %>%
     .,
     aes(
       # log(hal_cpue + 1), log(ye_cpue + 1),
-      log(hal_kg + 1), log(ye_kg + 1),
+      log(hal_cpue + 1), log(ye_cpue + 1),
       colour = region, fill = region
     )
   ) +
@@ -373,7 +378,7 @@ cc %>%
   ) +
   ggsidekick::theme_sleek()
 
-ggsave("figs/comm-cpue-cor-by-pre-vs-post-2016.png", width = 7, height = 4)
+ggsave("figs/comm-true-cpue-cor-by-pre-vs-post-2016.png", width = 7, height = 4)
 
 
 # check if license type important?
@@ -428,7 +433,7 @@ cc %>%
   ) +
   ggsidekick::theme_sleek()
 
-ggsave("figs/comm-cpue-cor-by-season-region-sector.png", width = 7, height = 6)
+ggsave("figs/comm-true-cpue-cor-by-season-region-sector.png", width = 7, height = 6)
 
 
 #
