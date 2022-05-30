@@ -168,7 +168,7 @@ g <- map_predictions(
   size_lab = "Landable kg/ha",
   size_aes = density
 ) + theme(legend.spacing.y = unit(0.1, "cm"))
-g
+# g
 
 ggsave(paste0("figs/halibut-", hal_model, "_", grid_scale, "-map-2020.png"),
        width = 6, height = 5,
@@ -316,16 +316,68 @@ phd <- p_hal %>%
 
 ratio_df <- left_join(pyd, phd) %>% mutate(
   halibut = hal_est,
-  halibut2 = ifelse(hal_est < 0.01, 0.01, hal_est),
+  halibut2 = ifelse(hal_est < 0.001, 0.001, hal_est),
   yelloweye = ye_est,
-  yelloweye2 = ifelse(ye_est < 0.01, 0.01, ye_est), # make min for yelloweye of 1 per km2
-  ye_per_hal = (yelloweye*100) / (halibut*100),
-  ye_per_hal2 = (yelloweye + 0.001) / (halibut+ 0.001),# using halibut 2 doesn't change anything.
-  hal_per_ye = (halibut*100) / (yelloweye2*100),
-  hal_per_ye2 = (halibut+ 0.001)/(yelloweye + 0.001)
+  yelloweye2 = ifelse(ye_est < 0.001, 0.001, ye_est), # make min for yelloweye of 1 per km2
+  ye_per_hal = (yelloweye)/(halibut),
+  ye_per_hal2 = (yelloweye2)/(halibut2),# using halibut 2 doesn't change anything.
+  ye_per_hal3 = (yelloweye +0.01)/(halibut+0.01),# using halibut 2 doesn't change anything.
+  hal_per_ye = (halibut)/(yelloweye2),
+  hal_per_ye2 = (halibut2)/(yelloweye2)
 )
 
-ratio_df_2020 <- filter(ratio_df, year == 2020)
+ratio_df_2020 <- filter(ratio_df, year == 2020) %>% filter(depth> 20)
+
+ggplot(ratio_df_2020) + geom_violin(aes(region,log10(ye_per_hal2)))
+
+ratio_df_2020 %>%
+  filter(region %in% c("CDA", "CDA adjacent"
+                       , "non-CDA 3CD"
+                                       )) %>%
+  ggplot(aes(depth,log10(ye_per_hal), colour = region, fill = region)) +
+  geom_point( alpha = 0.05)+
+  geom_smooth() +
+  scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
+
+# ratio_df_2020 %>%
+#   filter(region %in% c("CDA", "CDA adjacent"#, "non-CDA 3CD"
+#   )) %>%
+#   ggplot(aes(depth,log10(ye_per_hal2), colour = region)) +
+#   geom_point( alpha = 0.2)+
+#   geom_smooth() +
+#   scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
+#
+# ratio_df_2020 %>%
+#   filter(region %in% c("CDA", "CDA adjacent"
+#                        , "non-CDA 3CD"
+#   )) %>%
+#   ggplot(aes(depth,log10(ye_per_hal3), colour = region, fill = region)) +
+#   geom_point( alpha = 0.05)+
+#   geom_smooth() +
+#   scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
+
+ggsave("figs/model-raw-ratio-by-depth-2020.png", width = 6, height = 4)
+
+
+ratio_df_2020 %>%
+  filter(region %in% c("CDA", "CDA adjacent", "non-CDA 3CD"
+  )) %>%
+  ggplot(aes(depth,log10(hal_per_ye), colour = region, fill = region)) +
+  geom_point( alpha = 0.05)+
+  geom_smooth() +
+  scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
+
+ggsave("figs/model-ratio-hal-to-ye-by-depth-2020.png", width = 6, height = 4)
+
+ratio_df_2020 %>%
+  filter(region %in% c("CDA", "CDA adjacent"#, "non-CDA 3CD"
+  )) %>%
+  ggplot(aes(depth,log10(hal_per_ye2), colour = region)) +
+  geom_point( alpha = 0.2)+
+  geom_smooth() +
+  scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
+
+
 
 g1 <- map_predictions(
   map_lat_limits = c(48.4, max_map_lat),
@@ -344,23 +396,6 @@ ggsave(paste0("figs/ye-to-halibut-", hal_model, "-2020.png"), width = 6, height 
 #        # width = 6, height = 5, dpi = 200
 
 
-ggplot(ratio_df_2020) + geom_violin(aes(region,log10(ye_per_hal2)))
-
-ratio_df_2020 %>%
-  filter(region %in% c("CDA", "CDA adjacent"#, "non-CDA 3CD"
-                                       )) %>%
-  ggplot(aes(depth,log10(ye_per_hal2), colour = region)) +
-  geom_point( alpha = 0.2)+
-  geom_smooth() +
-  scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
-
-ratio_df_2020 %>%
-  filter(region %in% c("CDA", "CDA adjacent"#, "non-CDA 3CD"
-  )) %>%
-  ggplot(aes(depth,log10(hal_per_ye2), colour = region)) +
-  geom_point( alpha = 0.2)+
-  geom_smooth() +
-  scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
 
 
 # CV maps
