@@ -111,6 +111,8 @@ ggplot(i_hal_cda, aes(year, est)) + geom_line(colour = "darkgreen") +
   geom_ribbon(data = i_ye_ext, aes(ymin = lwr, ymax = upr), fill = "orange", alpha = 0.2)
 
 
+
+
 # spatial predictions for whole grid
 # can calculate individually to check get_all_sims results were up to date.
 # f <- paste0("data-generated/halibut-", hal_model, "_", grid_scale, "-predictions-all-S.rds")
@@ -326,11 +328,11 @@ ratio_df <- left_join(pyd, phd) %>% mutate(
   hal_per_ye2 = (halibut2)/(yelloweye2)
 )
 
-ratio_df_2020 <- filter(ratio_df, year == 2020) %>% filter(depth> 20)
+ratio_df_2020 <- filter(ratio_df, year == 2020)
 
 ggplot(ratio_df_2020) + geom_violin(aes(region,log10(ye_per_hal2)))
 
-ratio_df_2020 %>%
+ratio_df_2020 %>% filter(depth> 20) %>%
   filter(region %in% c("CDA", "CDA adjacent"
                        , "non-CDA 3CD"
                                        )) %>%
@@ -395,6 +397,19 @@ ggsave(paste0("figs/ye-to-halibut-", hal_model, "-2020.png"), width = 6, height 
 #        width = 5.5, height = 4.5, dpi = 400
 #        # width = 6, height = 5, dpi = 200
 
+g1 <- map_predictions(
+  map_lat_limits = c(48.4, max_map_lat),
+  map_lon_limits = c(min_map_lon, max_map_lon),
+  pred_data = ratio_df_2020,
+  pred_min = 0,
+  # pred_min = min(ratio_df_2020$ye_per_hal),
+  pred_max = quantile(ratio_df_2020$hal_per_ye2, 0.99),
+  fill_aes = hal_per_ye2,
+  fill_lab = "Halibut to Yelloweye\nbiomass ratio"
+)
+g1
+
+ggsave(paste0("figs/halibut-to-ye-truncated-", hal_model, "-2020.png"), width = 6, height = 5, dpi = 400)
 
 
 
