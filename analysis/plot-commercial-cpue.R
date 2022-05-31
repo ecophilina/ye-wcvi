@@ -146,7 +146,9 @@ cc <- cc %>% mutate(ye_count = ye_cpue,
                     hal_count = hal_cpue,
                     hal_cpue = hal_kg/ha_fished,
                     ye_cpue2 = ifelse(ye_cpue < 0.01, 0.01, ye_cpue),
-                    hal_cpue2 = ifelse(hal_cpue < 0.01, 0.01, hal_cpue)
+                    hal_cpue2 = ifelse(hal_cpue < 0.01, 0.01, hal_cpue),
+                    ye_cpue3 = ifelse(ye_cpue < 0.001, 0.001, ye_cpue),
+                    hal_cpue3 = ifelse(hal_cpue < 0.001, 0.001, hal_cpue)
                     )
 
 
@@ -176,7 +178,7 @@ cc %>%
   ggsidekick::theme_sleek() #+ theme(legend.position = "none")
 
 # ggsave("figs/comm-cpue-YE-by-depth.pdf", width = 6, height = 6)
-ggsave("figs/comm-cpue-YE-by-depth.png", width = 6, height = 6)
+ggsave("figs/comm-cpue-YE-by-depth.png", width = 6, height = 4)
 
 cc %>%
   filter(depth < 600) %>%
@@ -196,7 +198,7 @@ cc %>%
   ggsidekick::theme_sleek() #+ theme(legend.position = "none")
 
 # ggsave("figs/comm-cpue-hal-by-depth.pdf", width = 6, height = 6)
-ggsave("figs/comm-cpue-hal-by-depth.png", width = 6, height = 6)
+ggsave("figs/comm-cpue-hal-by-depth.png", width = 6, height = 4)
 
 
 cc %>%
@@ -218,7 +220,7 @@ cc %>%
   ) +
   ggsidekick::theme_sleek() #+ theme(legend.position = "none")
 
-ggsave("figs/comm-kg-ratio-by-depth.png", width = 6, height = 6)
+ggsave("figs/comm-true-cpue-ratio-by-depth.png", width = 6, height = 6)
 
 cc %>%
   filter(depth < 400) %>%
@@ -228,7 +230,8 @@ cc %>%
   filter(year <= 2015)%>%
   ggplot(., aes(depth,
                 # log10(ye_cpue / hal_cpue),
-                log10(ye_cpue2 / hal_cpue2),
+                # log10(ye_cpue2 / hal_cpue2),
+                log10(ye_cpue3 / hal_cpue3),
                 # log10((ye_cpue +0.1)/ (hal_cpue+0.1)),
                 # log10((ye_cpue +0.1)/ (hal_cpue+0.1)),
     colour = region, fill = region
@@ -241,12 +244,13 @@ cc %>%
   scale_colour_manual(values = cols) +
   coord_cartesian(expand = F,
                   xlim = c(0, 400),
-                  ylim = c(-2.4, 2.4)) +
-                  # ylim = c(-3.4, 3.4)) +
+                  # ylim = c(-2.4, 2.4)) +
+                  ylim = c(-3.4, 3.4)) +
+  ylab("log10(YE/halibut) truncated CPUE at 0.001") +
   ggtitle(paste0("Commercial data from 2006 to 2015")) +
   ggsidekick::theme_sleek() #+ theme(legend.position = "none")
 
-ggsave("figs/comm-kg-ratio-by-depth-summer-w-zeros-pre2016.png", width = 6, height = 4)
+ggsave("figs/comm-true-cpue-ratio-by-depth-summer-w-zeros-pre2016.png", width = 6, height = 4)
 
 cc %>%
   filter(depth < 400) %>%
@@ -256,7 +260,8 @@ cc %>%
   filter(year > 2015)%>%
   ggplot(., aes(depth,
                 # log10(ye_cpue / hal_cpue),
-                log10(ye_cpue2 / hal_cpue2),
+                # log10(ye_cpue2 / hal_cpue2),
+                log10(ye_cpue3 / hal_cpue3),
                 # log10((ye_cpue +0.1)/ ((hal_cpue)+0.1)),
                 # log10((ye_cpue +0.1)/ (hal_cpue+0.1)),
                 colour = region, fill = region
@@ -269,12 +274,13 @@ cc %>%
   scale_colour_manual(values = cols) +
   coord_cartesian(expand = F,
                   xlim = c(0, 400),
-                  # ylim = c(-3.4, 3.4)) +
-                  ylim = c(-2.4, 2.4)) +
+                  ylim = c(-3.4, 3.4)) +
+                  # ylim = c(-2.4, 2.4)) +
+  ylab("log10(YE/halibut) truncated CPUE at 0.001") +
   ggtitle(paste0("Commercial data from 2016 to 2022")) +
   ggsidekick::theme_sleek() #+ theme(legend.position = "none")
 
-ggsave("figs/comm-kg-ratio-by-depth-summer-w-zeros-post2015.png", width = 6, height = 4)
+ggsave("figs/comm-true-cpue-ratio-by-depth-summer-w-zeros-post2015.png", width = 6, height = 4)
 # # distribution of depths for fishing events in different regions
 # cc %>% filter(depth < 600 & hal_cpue > 0 & region != "3CD5A N of 50º")%>%
 #   filter(year > 2015) %>%

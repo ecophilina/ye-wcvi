@@ -210,7 +210,7 @@ i_ye_2020 %>%
   facet_grid(rows = vars(region)) +
   scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
 
-ggsave(paste0("figs/pred-densities-by-", bin_width, "m-bin-depth-", grid_scale, "-region.png"), width = 4, height = 5, dpi = 400)
+ggsave(paste0("figs/pred-densities-by-", bin_width, "m-bin-depth-", grid_scale, "-region.png"), width = 4, height = 3, dpi = 400)
 
 
 i_ye_2020 %>%
@@ -234,7 +234,7 @@ ratio_all <- left_join(.i_hal_all, .i_ye_all) %>% mutate(ratio = ye/halibut)
 ratio_all %>% filter(year == 2018) %>%
   ggplot(aes(min_depth, ratio, colour = region)) + geom_line() + scale_colour_manual(values = cols)
 
-ggsave(paste0("figs/ratio-by-", bin_width, "m-bin-depth-", grid_scale, "-region.png"), width = 5, height = 3, dpi = 400)
+ggsave(paste0("figs/ratio-by-", bin_width, "m-bin-depth-", grid_scale, "-region.png"), width = 4, height = 2, dpi = 400)
 
 
 # to get CI for above

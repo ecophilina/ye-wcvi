@@ -31,6 +31,15 @@ g_1 <- i_hal$CDA[[3]] %>% filter(region %in% c("CDA")) %>% select(X, Y, year, ar
 g_2 <- i_hal$`CDA adjacent`[[3]] %>% filter(region %in% c("CDA adjacent")) %>% select(X, Y, year, area)
 g_3 <- i_hal$`non-CDA 3CD`[[3]] %>% filter(region %in% c("non-CDA 3CD")) %>% select(X, Y, year, area)
 
+g1 <- g_1 %>% filter(area == grid_scale/10) %>% select(-area)
+g2 <- g_2 %>% filter(area == grid_scale/10) %>% select(-area)
+g3 <- g_3 %>% filter(area == grid_scale/10) %>% select(-area)
+# g4 <- g_4 %>% filter(area == grid_scale/10) %>% select(-area)
+
+g1_2020 <- filter(g1, year == 2020)
+g2_2020 <- filter(g2, year == 2020)
+g3_2020 <- filter(g3, year == 2020)
+# g4_2020 <- filter(g4, year == 2020)
 
 .file <- paste0(hal_model, "-100.rds")
 
@@ -75,16 +84,6 @@ saveRDS(.s_hal, paste0("data-generated/hal_sims_for_ratios_by_region", .file))
 saveRDS(.s_ye, paste0("data-generated/ye_sims_for_ratios_by_region", .file))
 }
 
-
-g1 <- g_1 %>% filter(area == grid_scale/10) %>% select(-area)
-g2 <- g_2 %>% filter(area == grid_scale/10) %>% select(-area)
-g3 <- g_3 %>% filter(area == grid_scale/10) %>% select(-area)
-# g4 <- g_4 %>% filter(area == grid_scale/10) %>% select(-area)
-
-g1_2020 <- filter(g1, year == 2020)
-g2_2020 <- filter(g2, year == 2020)
-g3_2020 <- filter(g3, year == 2020)
-# g4_2020 <- filter(g4, year == 2020)
 
 
 
@@ -516,7 +515,7 @@ p3 <- ggplot(data.frame(l = "lab", x = 1, y = 1)) +
 p1$labels$x <- p2$labels$x <- " "
 (p2 | p1)/p3 + patchwork::plot_layout(heights = c(15,0.25))
 
-ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions.png"), width = 8, height = 5)
+ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions.png"), width = 7, height = 4)
 
 
 # # flipped ratio
