@@ -67,6 +67,8 @@ s_ye_3 <- bind_cols(g_3, as.data.frame(s_ye_3))%>% filter(area == grid_scale/10)
 .s_ye <- bind_rows(
   mutate(s_ye_1, Area = "CDA"),
   mutate(s_ye_2, Area = "CDA adjacent"),
+  mutate(s_ye_1, Area = "CDA expanded"),
+  mutate(s_ye_2, Area = "CDA expanded"),
   mutate(s_ye_3, Area = "non-CDA 3CD")
   # ,mutate(s_ye_4, Area = "5B")
 ) %>% pivot_longer(cols = starts_with("V"),
@@ -75,6 +77,8 @@ s_ye_3 <- bind_cols(g_3, as.data.frame(s_ye_3))%>% filter(area == grid_scale/10)
 .s_hal <- bind_rows(
   mutate(s_hal_1, Area = "CDA"),
   mutate(s_hal_2, Area = "CDA adjacent"),
+  mutate(s_hal_1, Area = "CDA expanded"),
+  mutate(s_hal_2, Area = "CDA expanded"),
   mutate(s_hal_3, Area = "non-CDA 3CD")
   # ,mutate(s_hal_4, Area = "5B")
 ) %>% pivot_longer(cols = starts_with("V"),
@@ -99,13 +103,14 @@ glimpse(.s_ye)
 # left_join was crashing R so trying this
 .s_ye <- .s_ye %>% select(ye_est)
 .dat <- cbind(.s_hal, .s_ye)
-
 .dat <- .dat %>% mutate(
-  halibut = exp(hal_est) * (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
-  yelloweye = exp(ye_est) * (100 * 0.0024384 * 0.009144 * 10000), # convert kg/ha to kg/100 hooks
+  halibut = hal_est * (100 * 0.0024384 * 0.009144 * 10000 * 2), # convert kg/ha to kg/100 hooks
+  yelloweye = ye_est * (100 * 0.0024384 * 0.009144 * 10000 * 2), # convert kg/ha to kg/100 hooks
   ye_per_hal = yelloweye / (halibut), # not correcting for <1
   hal_per_ye = (halibut) / yelloweye # not correcting for <1
 )
+
+# .dat %>% View()
 
 avoiding_ye <- .dat[order(.dat$yelloweye, decreasing = F), ] %>% group_by(Area, year, .iteration) %>%
   mutate(ordered = 1:n(),
@@ -211,7 +216,8 @@ saveRDS(avoiding_ye_sum, paste0("report-data/avoiding_ye_regions", .file))
 
 # chose which areas to plot
 
-areas_to_plot <- c("CDA","CDA adjacent","non-CDA 3CD")
+# areas_to_plot <- c("CDA","CDA adjacent","non-CDA 3CD")
+areas_to_plot <- c("CDA","CDA expanded","non-CDA 3CD")
 
 # #### make plots ####
 maximize_hal_sum <- readRDS( paste0("report-data/maximize_hal_regions", .file))
@@ -420,7 +426,11 @@ p1 <- ggplot(avoiding_ye_sum %>%
       # , round((nrow(g4_2020))*.95)
       , round((nrow(g1_2020)))
       , round((nrow(g2_2020)))
+      , round((nrow(g2_2020) + nrow(g2_2020)))
       , round((nrow(g2_2020))*1.25)
+      , round((nrow(g2_2020))*1.5)
+      , round((nrow(g2_2020))*1.75)
+      , round((nrow(g2_2020))*2)
       # , round((nrow(g4_2020)))
     ))) +
   geom_line(
@@ -431,6 +441,7 @@ p1 <- ggplot(avoiding_ye_sum %>%
     ymin = lwr_mean_ye_hal,
     ymax = upr_mean_ye_hal,
     fill = Area), alpha=0.2) +
+  scale_y_continuous(limits = c(0, 1.75)) +
   # scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
   # scale_x_log10(breaks = c(10, 100, 1000, 10000, 100000), labels = c(10, 100, 1000, "10000", "100000")) +
   # coord_cartesian(expand = F, ylim = c(0, 0.7)) +
@@ -477,7 +488,12 @@ p2 <- ggplot(maximize_hal_sum %>%
       # , round((nrow(g4_2020))*.95)
       , round((nrow(g1_2020)))
       , round((nrow(g2_2020)))
+      , round((nrow(g1_2020)))
+      , round((nrow(g2_2020) + nrow(g2_2020)))
       , round((nrow(g2_2020))*1.25)
+      , round((nrow(g2_2020))*1.5)
+      , round((nrow(g2_2020))*1.75)
+      , round((nrow(g2_2020))*2)
       # , round((nrow(g4_2020)))
     ))) +
   geom_line(
@@ -488,6 +504,7 @@ p2 <- ggplot(maximize_hal_sum %>%
     ymin = lwr_mean_ye_hal,
     ymax = upr_mean_ye_hal,
     fill = Area), alpha=0.2) +
+  scale_y_continuous(limits = c(0, 1.75)) +
   # scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
   # scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
   # coord_cartesian(expand = F, ylim = c(0, 0.7)) +
@@ -515,7 +532,7 @@ p3 <- ggplot(data.frame(l = "lab", x = 1, y = 1)) +
 p1$labels$x <- p2$labels$x <- " "
 (p2 | p1)/p3 + patchwork::plot_layout(heights = c(15,0.25))
 
-ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions.png"), width = 7, height = 4)
+ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions2.png"), width = 7, height = 4)
 
 
 # # flipped ratio
