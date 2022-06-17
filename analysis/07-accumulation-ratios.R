@@ -7,9 +7,10 @@ library(tidyr)
 library(ggsidekick) # for fourth_root_power_trans and theme_sleek
 theme_set(ggsidekick::theme_sleek())
 
-
-hal_model <- "w-effort-500kn-delta-AR1-aniso"
-ye_model <- "w-effort-500kn-delta-spatial-aniso"
+# hal_model <- "w-effort-500kn-delta-AR1-aniso"
+hal_model <- "w-good-depths-500kn-delta-AR1-aniso"
+# ye_model <- "w-effort-500kn-delta-spatial-aniso"
+ye_model <- "w-good-depths-500kn-delta-iid-aniso"
 
 grid_scale <- 1000
 
@@ -31,6 +32,7 @@ g_1 <- i_hal$CDA[[3]] %>% filter(region %in% c("CDA")) %>% select(X, Y, year, ar
 g_2 <- i_hal$`CDA adjacent`[[3]] %>% filter(region %in% c("CDA adjacent")) %>% select(X, Y, year, area)
 g_3 <- i_hal$`non-CDA 3CD`[[3]] %>% filter(region %in% c("non-CDA 3CD")) %>% select(X, Y, year, area)
 
+# area in these grids is in hectares
 g1 <- g_1 %>% filter(area == grid_scale/10) %>% select(-area)
 g2 <- g_2 %>% filter(area == grid_scale/10) %>% select(-area)
 g3 <- g_3 %>% filter(area == grid_scale/10) %>% select(-area)
@@ -41,7 +43,7 @@ g2_2020 <- filter(g2, year == 2020)
 g3_2020 <- filter(g3, year == 2020)
 # g4_2020 <- filter(g4, year == 2020)
 
-.file <- paste0(hal_model, "-100.rds")
+.file <- paste0(ye_model, "-100.rds")
 
 if (!file.exists(paste0("data-generated/ye_sims_for_ratios_by_area", .file))) {
 
@@ -104,8 +106,9 @@ glimpse(.s_ye)
 .s_ye <- .s_ye %>% select(ye_est)
 .dat <- cbind(.s_hal, .s_ye)
 .dat <- .dat %>% mutate(
-  halibut = hal_est * (100 * 0.0024384 * 0.009144 * 10000 * 2), # convert kg/ha to kg/100 hooks
-  yelloweye = ye_est * (100 * 0.0024384 * 0.009144 * 10000 * 2), # convert kg/ha to kg/100 hooks
+  # so 0.0024384 * 0.009144 * 2 converts kg/km2 to kg/500 hooks but mine are not yet in km2 they are in kg/ha
+  halibut = hal_est * 100 * (500 * 0.0024384 * 0.009144 * 2),
+  yelloweye = ye_est * 100 * (500 * 0.0024384 * 0.009144 * 2),
   ye_per_hal = yelloweye / (halibut), # not correcting for <1
   hal_per_ye = (halibut) / yelloweye # not correcting for <1
 )
@@ -137,11 +140,11 @@ avoiding_ye <- .dat[order(.dat$yelloweye, decreasing = F), ] %>% group_by(Area, 
 
 # check that denominator was successfully truncated to 1
 # before
-range(avoiding_ye$ye_cumsum*100/avoiding_ye$ordered)
+range(avoiding_ye$ye_cumsum/avoiding_ye$ordered)
 # after
 range(avoiding_ye$ye_mean2)
 # before
-range(avoiding_ye$hal_cumsum*100/avoiding_ye$ordered)
+range(avoiding_ye$hal_cumsum/avoiding_ye$ordered)
 # after
 range(avoiding_ye$hal_mean2)
 
@@ -150,11 +153,19 @@ avoiding_ye_sum <- avoiding_ye %>% ungroup() %>% group_by(ordered, year, pair_na
     lwr_mean_ye_hal = quantile(mean_ratio, 0.025),
     upr_mean_ye_hal = quantile(mean_ratio, 0.975),
     mean_ye_per_hal = mean(mean_ratio),
-    lwr_mean_hal_ye = ifelse(quantile(mean_hal_ratio, 0.025)<1, 1, quantile(mean_hal_ratio, 0.025)),
+    lwr_mean_hal_ye = #ifelse(
+      quantile(mean_hal_ratio, 0.025#) <1, 1, quantile(mean_hal_ratio, 0.025)
+      ),
     upr_mean_hal_ye = quantile(mean_hal_ratio, 0.975),
+    mean_hal_per_ye = mean(mean_hal_ratio),
     halibut = mean(halibut),
+    total_hal = mean(hal_cumsum),
+    lwr_hal = quantile(hal_cumsum, 0.025),
+    upr_hal = quantile(hal_cumsum, 0.975),
     yelloweye = mean(yelloweye),
-    mean_hal_per_ye = mean(mean_hal_ratio)
+    total_ye = mean(ye_cumsum),
+    lwr_ye = quantile(ye_cumsum, 0.025),
+    upr_ye = quantile(ye_cumsum, 0.975)
   ) %>% ungroup()
 
 
@@ -184,21 +195,30 @@ maximize_hal <- .dat[order(.dat$halibut, decreasing = T), ] %>% group_by(Area, y
 
 # check that denominator was successfully truncated to 1
 # before
-range(maximize_hal$ye_cumsum*100/maximize_hal$ordered)
+range(maximize_hal$ye_cumsum/maximize_hal$ordered)
 # after
 range(maximize_hal$ye_mean2)
 # before -- not needed
-range(maximize_hal$hal_cumsum*100/maximize_hal$ordered)
+range(maximize_hal$hal_cumsum/maximize_hal$ordered)
 
 maximize_hal_sum <- maximize_hal %>% ungroup() %>% group_by(ordered, year, pair_name, Area) %>%
   summarise(
     lwr_mean_ye_hal = quantile(mean_ratio, 0.025),
     upr_mean_ye_hal = quantile(mean_ratio, 0.975),
     mean_ye_per_hal = mean(mean_ratio),
-    lwr_mean_hal_ye = ifelse(quantile(mean_hal_ratio, 0.025)<1, 1, quantile(mean_hal_ratio, 0.025)),
+    lwr_mean_hal_ye =
+      # ifelse(
+        quantile(mean_hal_ratio, 0.025#)<1, 1, quantile(mean_hal_ratio, 0.025)
+      ),
     upr_mean_hal_ye = quantile(mean_hal_ratio, 0.975),
     halibut = mean(halibut),
+    total_hal = mean(hal_cumsum),
+    lwr_hal = quantile(hal_cumsum, 0.025),
+    upr_hal = quantile(hal_cumsum, 0.975),
     yelloweye = mean(yelloweye),
+    total_ye = mean(ye_cumsum),
+    lwr_ye = quantile(ye_cumsum, 0.025),
+    upr_ye = quantile(ye_cumsum, 0.975),
     mean_hal_per_ye = mean(mean_hal_ratio)
   ) %>% ungroup()
 
@@ -224,215 +244,65 @@ maximize_hal_sum <- readRDS( paste0("report-data/maximize_hal_regions", .file))
 avoiding_ye_sum <- readRDS( paste0("report-data/avoiding_ye_regions", .file))
 
 
-# mean_ye_hal
-ggplot(avoiding_ye_sum %>%
-    filter(Area %in% areas_to_plot)%>%
-    filter(ordered %in% c(
-      round((nrow(g2_2020))*.001),
-      round((nrow(g2_2020))*.002),
-      round((nrow(g2_2020))*.005),
-      round((nrow(g2_2020))*.01),
-      round((nrow(g2_2020))*.03), round((nrow(g2_2020))*.04),
-      round((nrow(g2_2020))*.05), round((nrow(g2_2020))*.1)
-      , round((nrow(g2_2020))*.15)
-      , round((nrow(g2_2020))*.2)
-      , round((nrow(g2_2020))*.3), round((nrow(g2_2020))*.4)
-      , round((nrow(g2_2020))*.5)
-      , round((nrow(g2_2020))*.75), round((nrow(g2_2020))*1)
-      , round((nrow(g2_2020))*1.5)
-      , round((nrow(g2_2020))*3)
-      , round((nrow(g2_2020))*6)
-      , round((nrow(g2_2020))*10)
-      , round((nrow(g2_2020))*100)
-      # , round((nrow(g4_2020)))
-    ))) +
-  geom_line(
-    aes(x = ordered*grid_scale/1000,
-      y = mean_ye_per_hal, #lty = "solid",
-      colour = Area), size = 1) +
-  geom_ribbon(aes(x = ordered*grid_scale/1000,
-    ymin = lwr_mean_ye_hal,
-    ymax = upr_mean_ye_hal,
-    fill = Area), alpha=0.2) +
-  scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
-  # scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
-  # scale_x_continuous(breaks = c(0, 500, 1000)) +
-  # coord_cartesian(ylim = c(0.00000001, 0.15)) +
-  # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
-  scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
-  ylab("Mean ratio of YE to halibut") +
-  xlab(expression("Total area of cells selected to minimize YE ("~km^2~")")) +
-  facet_wrap(~pair_name, ncol = 4)+
-  theme(legend.position = c(0.85, 0.2))
-
-ggsave(paste0("figs/expected_YE_when_avoiding_YE_CI", hal_model, "_regions.png"), width = 6.5, height = 3.5)
-
-# flipped ratio
-ggplot(avoiding_ye_sum %>%
-    filter(Area %in% areas_to_plot)%>%
-    filter(ordered %in% c(
-      round((nrow(g2_2020))*.001),
-      round((nrow(g2_2020))*.002),
-      round((nrow(g2_2020))*.005),
-      round((nrow(g2_2020))*.01),
-      round((nrow(g2_2020))*.03), round((nrow(g2_2020))*.04),
-      round((nrow(g2_2020))*.05), round((nrow(g2_2020))*.1)
-      , round((nrow(g2_2020))*.15)
-      , round((nrow(g2_2020))*.2)
-      , round((nrow(g2_2020))*.3), round((nrow(g2_2020))*.4)
-      , round((nrow(g2_2020))*.5)
-      , round((nrow(g2_2020))*.75), round((nrow(g2_2020))*1)
-      , round((nrow(g2_2020))*1.5)
-      , round((nrow(g2_2020))*3)
-      , round((nrow(g2_2020))*6)
-      , round((nrow(g2_2020))*10)
-      , round((nrow(g2_2020))*100)
-      # , round((nrow(g4_2020)))
-    ))) +
-  geom_line(
-    aes(x = ordered*grid_scale/1000,
-      y = mean_hal_per_ye, #lty = "solid",
-      colour = Area), size = 1) +
-  geom_ribbon(aes(x = ordered*grid_scale/1000,
-    ymin = lwr_mean_hal_ye,
-    ymax = upr_mean_hal_ye,
-    fill = Area), alpha=0.2) +
-  scale_y_log10(
-    breaks = c(0.5, 1, 10, 100, 1000, 10000, 100000), labels = c(0.5, 1, 10, 100, 1000, "10000", "100000")
-    ) +
-  # scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
-  # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
-  scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
-  ylab("Mean ratio of halibut to YE (ratio + 1)") +
-  xlab(expression("Total area of cells selected to minimize YE ("~km^2~")")) +
-  # facet_wrap(~pair_name, ncol = 2)+
-  # theme(legend.position = c(0.65, 0.1))
-  facet_wrap(~pair_name, ncol = 4)+
-  theme(legend.position = c(0.85, 0.2))
-
-ggsave(paste0("figs/expected_hal_when_avoiding_YE_CI", hal_model, "_regions.png"), width = 6.5, height = 3.5)
-
-ggplot(maximize_hal_sum %>%
-    filter(Area %in% areas_to_plot)%>%
-    filter(ordered %in% c(
-      round((nrow(g2_2020))*.001),
-      round((nrow(g2_2020))*.002),
-      round((nrow(g2_2020))*.005),
-      round((nrow(g2_2020))*.01),
-      round((nrow(g2_2020))*.03), round((nrow(g2_2020))*.04),
-      round((nrow(g2_2020))*.05), round((nrow(g2_2020))*.1)
-      , round((nrow(g2_2020))*.15)
-      , round((nrow(g2_2020))*.2)
-      , round((nrow(g2_2020))*.3), round((nrow(g2_2020))*.4)
-      , round((nrow(g2_2020))*.5)
-      , round((nrow(g2_2020))*.75), round((nrow(g2_2020))*1)
-      , round((nrow(g2_2020))*1.5)
-      , round((nrow(g2_2020))*3)
-      , round((nrow(g2_2020))*6)
-      , round((nrow(g2_2020))*10)
-      , round((nrow(g2_2020))*100)
-      # , round((nrow(g4_2020)))
-    ))) +
-  geom_line(
-    aes(x = ordered*grid_scale/1000,
-      y = mean_ye_per_hal, #lty = "solid",
-      colour = Area), size = 1) +
-  geom_ribbon(aes(x = ordered*grid_scale/1000,
-    ymin = lwr_mean_ye_hal,
-    ymax = upr_mean_ye_hal,
-    fill = Area), alpha=0.2) +
-  scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
-  scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
-  # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
-  scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
-  ylab("Mean ratio of YE to halibut") +
-  xlab("Total area of cells selected to maximize halibut (km2)") +
-  facet_wrap(~pair_name, ncol = 4)+
-  theme(legend.position = c(0.85, 0.2))
-
-ggsave(paste0("figs/expected_YE_when_maximize_hal_CI", hal_model, "_regions.png"), width = 6.5, height = 3.5)
-
-
-
-# mean_ye_hal
-ggplot(maximize_hal_sum %>%
-    filter(Area %in% areas_to_plot)%>%
-    filter(ordered %in% c(
-      round((nrow(g2_2020))*.001),
-      round((nrow(g2_2020))*.002),
-      round((nrow(g2_2020))*.005),
-      round((nrow(g2_2020))*.01),
-      round((nrow(g2_2020))*.03), round((nrow(g2_2020))*.04),
-      round((nrow(g2_2020))*.05), round((nrow(g2_2020))*.1)
-      , round((nrow(g2_2020))*.15)
-      , round((nrow(g2_2020))*.2)
-      , round((nrow(g2_2020))*.3), round((nrow(g2_2020))*.4)
-      , round((nrow(g2_2020))*.5)
-      , round((nrow(g2_2020))*.75), round((nrow(g2_2020))*1)
-      , round((nrow(g2_2020))*1.5)
-      , round((nrow(g2_2020))*3)
-      , round((nrow(g2_2020))*6)
-      , round((nrow(g2_2020))*10)
-      , round((nrow(g2_2020))*100)
-      # , round((nrow(g4_2020)))
-    ))) +
-  geom_line(
-    aes(x = ordered*grid_scale/1000,
-      y = mean_hal_per_ye, #lty = "solid",
-      colour = Area), size = 1) +
-  geom_ribbon(aes(x = ordered*grid_scale/1000,
-    ymin = lwr_mean_hal_ye,
-    ymax = upr_mean_hal_ye,
-    fill = Area), alpha=0.2) +
-  scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
-  scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
-  # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
-  scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
-  ylab("Mean ratio of halibut to YE") +
-  xlab("Total area of cells selected to maximize halibut (km2)") +
-  facet_wrap(~pair_name, ncol = 4)+
-  theme(legend.position = c(0.85, 0.2))
-
-ggsave(paste0("figs/expected_hal_when_maximize_hal_CI", hal_model, "_regions.png"), width = 6.5, height = 3.5)
-
-
 # chose which areas to plot
-p1 <- ggplot(avoiding_ye_sum %>%
+chosen_increments <- c(
+  round((nrow(g1_2020))*.001),
+  round((nrow(g1_2020))*.002),
+  round((nrow(g1_2020))*.005),
+  round((nrow(g1_2020))*.01)
+  , round((nrow(g1_2020))*.03)
+  , round((nrow(g1_2020))*.04)
+  , round((nrow(g1_2020))*.05)
+  , round((nrow(g1_2020))*.1)
+  , round((nrow(g1_2020))*.13)
+  , round((nrow(g1_2020))*.16)
+  , round((nrow(g1_2020))*.2)
+  , round((nrow(g1_2020))*.23)
+  , round((nrow(g1_2020))*.26)
+  , round((nrow(g1_2020))*.3)
+  , round((nrow(g1_2020))*.32)
+  , round((nrow(g1_2020))*.35)
+  , round((nrow(g1_2020))*.37)
+  , round((nrow(g1_2020))*.4)
+  , round((nrow(g1_2020))*.41)
+  , round((nrow(g1_2020))*.43)
+  , round((nrow(g1_2020))*.46)
+  , round((nrow(g1_2020))*.5)
+  , round((nrow(g1_2020))*.55)
+  , round((nrow(g1_2020))*.6)
+  , round((nrow(g1_2020))*.7)
+  , round((nrow(g1_2020))*.85)
+  , round((nrow(g1_2020))*.9)
+  , round((nrow(g1_2020))*.95)
+  , round((nrow(g1_2020))*.99)
+  , round((nrow(g1_2020)))
+  # if using cda adjacent on it's own
+  , round((nrow(g2_2020))*.75)
+  , round((nrow(g2_2020))*.85)
+  , round((nrow(g2_2020))*.9)
+  , round((nrow(g2_2020))*.95)
+  , round((nrow(g2_2020))*.99)
+  , round((nrow(g2_2020)))
+  # combined area cda and adjacent
+  , round((nrow(g1_2020) + nrow(g2_2020))*0.7)
+  , round((nrow(g1_2020) + nrow(g2_2020))*0.8)
+  , round((nrow(g1_2020) + nrow(g2_2020))*0.85)
+  , round((nrow(g1_2020) + nrow(g2_2020))*0.9)
+  , round((nrow(g1_2020) + nrow(g2_2020))*0.95)
+  , round((nrow(g1_2020) + nrow(g2_2020))*0.99)
+  , round((nrow(g1_2020) + nrow(g2_2020)))
+  # how far to extend beyond combined area
+  , round((nrow(g1_2020) + nrow(g2_2020))*1.1)
+  , round((nrow(g1_2020) + nrow(g2_2020))*1.2)
+  , round((nrow(g1_2020) + nrow(g2_2020))*1.3)
+  , round((nrow(g1_2020) + nrow(g2_2020))*1.4)
+  , round((nrow(g1_2020) + nrow(g2_2020))*1.5)
+)
+
+(p1 <- ggplot(avoiding_ye_sum %>%
     filter(Area %in% areas_to_plot)%>%
     filter(pair_name =="2019-2020")%>%
-    filter(ordered %in% c(
-      # round((nrow(g2_2020))*.001),
-      # round((nrow(g2_2020))*.002),
-      # round((nrow(g2_2020))*.005),
-      round((nrow(g2_2020))*.01),
-      round((nrow(g2_2020))*.03), round((nrow(g2_2020))*.04),
-      round((nrow(g2_2020))*.05), round((nrow(g2_2020))*.1)
-      , round((nrow(g2_2020))*.15)
-      , round((nrow(g2_2020))*.2)
-      , round((nrow(g2_2020))*.3), round((nrow(g2_2020))*.4)
-      , round((nrow(g2_2020))*.5)
-      , round((nrow(g2_2020))*.75)
-      , round((nrow(g2_2020))*.85)
-      , round((nrow(g2_2020))*.95)
-      , round((nrow(g2_2020))*1)
-      , round((nrow(g1_2020))*.85)
-      , round((nrow(g2_2020))*.85)
-      # , round((nrow(g4_2020))*.85)
-      , round((nrow(g1_2020))*.9)
-      , round((nrow(g2_2020))*.9)
-      # , round((nrow(g4_2020))*.9)
-      , round((nrow(g1_2020))*.95)
-      , round((nrow(g2_2020))*.95)
-      # , round((nrow(g4_2020))*.95)
-      , round((nrow(g1_2020)))
-      , round((nrow(g2_2020)))
-      , round((nrow(g2_2020) + nrow(g2_2020)))
-      , round((nrow(g2_2020))*1.25)
-      , round((nrow(g2_2020))*1.5)
-      , round((nrow(g2_2020))*1.75)
-      , round((nrow(g2_2020))*2)
-      # , round((nrow(g4_2020)))
-    ))) +
+    filter(ordered %in% chosen_increments)) +
   geom_line(
     aes(x = ordered*grid_scale/1000,
       y = mean_ye_per_hal, #lty = "solid",
@@ -441,14 +311,11 @@ p1 <- ggplot(avoiding_ye_sum %>%
     ymin = lwr_mean_ye_hal,
     ymax = upr_mean_ye_hal,
     fill = Area), alpha=0.2) +
-  scale_y_continuous(limits = c(0, 1.75)) +
-  # scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
+  # scale_y_log10(
+  #   limits = c(1e-10, 1.7),
+  #   breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
   # scale_x_log10(breaks = c(10, 100, 1000, 10000, 100000), labels = c(10, 100, 1000, "10000", "100000")) +
-  # coord_cartesian(expand = F, ylim = c(0, 0.7)) +
-  # labs(tag="A")+
-  # scale_fill_viridis_d(option= "C", direction = -1, end = 0.8) +
-  # scale_colour_viridis_d(option= "C", direction = -1, end = 0.8) +
-  # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
+    coord_cartesian(expand = F, ylim = c(0, 0.55)) +
   scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
   ylab("Mean ratio of YE to halibut") +
   xlab(expression("Total area of cells ("~km^2~")")) +
@@ -458,44 +325,12 @@ p1 <- ggplot(avoiding_ye_sum %>%
     legend.position = c(0.2, 0.85)
     # legend.position = "none"
     )
+)
 
-p2 <- ggplot(maximize_hal_sum %>%
+(p2 <- ggplot(maximize_hal_sum %>%
     filter(Area %in% areas_to_plot)%>%
     filter(pair_name =="2019-2020")%>%
-    filter(ordered %in% c(
-      # round((nrow(g2_2020))*.001),
-      # round((nrow(g2_2020))*.002),
-      # round((nrow(g2_2020))*.005),
-      round((nrow(g2_2020))*.01),
-      round((nrow(g2_2020))*.03), round((nrow(g2_2020))*.04),
-      round((nrow(g2_2020))*.05), round((nrow(g2_2020))*.1)
-      , round((nrow(g2_2020))*.15)
-      , round((nrow(g2_2020))*.2)
-      , round((nrow(g2_2020))*.3), round((nrow(g2_2020))*.4)
-      , round((nrow(g2_2020))*.5)
-      , round((nrow(g2_2020))*.75)
-      , round((nrow(g2_2020))*.85)
-      , round((nrow(g2_2020))*.95)
-      , round((nrow(g2_2020))*1)
-      , round((nrow(g1_2020))*.85)
-      , round((nrow(g2_2020))*.85)
-      # , round((nrow(g4_2020))*.85)
-      , round((nrow(g1_2020))*.9)
-      , round((nrow(g2_2020))*.9)
-      # , round((nrow(g4_2020))*.9)
-      , round((nrow(g1_2020))*.95)
-      , round((nrow(g2_2020))*.95)
-      # , round((nrow(g4_2020))*.95)
-      , round((nrow(g1_2020)))
-      , round((nrow(g2_2020)))
-      , round((nrow(g1_2020)))
-      , round((nrow(g2_2020) + nrow(g2_2020)))
-      , round((nrow(g2_2020))*1.25)
-      , round((nrow(g2_2020))*1.5)
-      , round((nrow(g2_2020))*1.75)
-      , round((nrow(g2_2020))*2)
-      # , round((nrow(g4_2020)))
-    ))) +
+    filter(ordered %in% chosen_increments)) +
   geom_line(
     aes(x = ordered*grid_scale/1000,
       y = mean_ye_per_hal, #lty = "solid",
@@ -504,17 +339,12 @@ p2 <- ggplot(maximize_hal_sum %>%
     ymin = lwr_mean_ye_hal,
     ymax = upr_mean_ye_hal,
     fill = Area), alpha=0.2) +
-  scale_y_continuous(limits = c(0, 1.75)) +
-  # scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
-  # scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
-  # coord_cartesian(expand = F, ylim = c(0, 0.7)) +
-  # labs(tag="B")+
-  # scale_fill_viridis_d(option= "C", direction = -1, end = 0.8) +
-  # scale_colour_viridis_d(option= "C", direction = -1, end = 0.8) +
-  # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
+  # scale_y_log10(
+  #   limits = c(1e-10, 1.7),
+  #   breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
+  # scale_x_log10(breaks = c(10, 100, 1000, 10000, 100000), labels = c(10, 100, 1000, "10000", "100000")) +
+  coord_cartesian(expand = F, ylim = c(0, 0.55)) +
   scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
-  # scale_fill_brewer(palette = "Set1", direction = 1) +
-  # scale_colour_brewer(palette = "Set1", direction = 1) +
   ylab("Mean ratio of YE to halibut") +
   xlab(expression("Total area of cells ("~km^2~")")) +
   ggtitle("A. Maximizing halibut") +
@@ -523,6 +353,7 @@ p2 <- ggplot(maximize_hal_sum %>%
     # legend.position = c(0.2, 0.85)
     legend.position = "none"
     )
+)
 
 p3 <- ggplot(data.frame(l = "lab", x = 1, y = 1)) +
   geom_text(aes(x, y), label = expression("Total area of cells ("~km^2~")"), colour="grey30") +
@@ -532,52 +363,273 @@ p3 <- ggplot(data.frame(l = "lab", x = 1, y = 1)) +
 p1$labels$x <- p2$labels$x <- " "
 (p2 | p1)/p3 + patchwork::plot_layout(heights = c(15,0.25))
 
-ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions2.png"), width = 7, height = 4)
+ggsave(paste0("figs/expected_ye_to_hal", ye_model, "_both_scenarios_regions2.png"), width = 7, height = 4)
+
+# JUST AVOIDING
+(p4 <- ggplot(avoiding_ye_sum %>%
+                filter(Area %in% areas_to_plot)%>%
+                filter(pair_name =="2019-2020")%>%
+                filter(ordered %in% chosen_increments)) +
+    geom_line(
+      aes(x = ordered*grid_scale/1000,
+          y = mean_ye_per_hal, #lty = "solid",
+          colour = Area), size = 1) +
+    geom_ribbon(aes(x = ordered*grid_scale/1000,
+                    ymin = lwr_mean_ye_hal,
+                    ymax = upr_mean_ye_hal,
+                    fill = Area), alpha=0.2) +
+    coord_cartesian(
+      ylim = c(0, 0.55),
+      expand = F) +
+    scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+    ylab("Mean ratio of YE to halibut") +
+    xlab(expression("Total area of cells ("~km^2~")")) +
+    labs(tag="B.") +
+    theme(
+      plot.tag.position = c(0.1, 0.95),
+      # axis.title.y = element_blank(), axis.text.y = element_blank(),
+      # legend.position = c(0.9, 0.8)
+      legend.position = "none"
+    )
+)
 
 
 # # flipped ratio
+(p5 <- ggplot(avoiding_ye_sum %>%
+                filter(Area %in% areas_to_plot)%>%
+                filter(pair_name =="2019-2020")%>%
+                filter(ordered %in% chosen_increments)) +
+    geom_line(
+      aes(x = ordered*grid_scale/1000,
+          y = mean_hal_per_ye, #lty = "solid",
+          colour = Area), size = 1) +
+    geom_ribbon(aes(x = ordered*grid_scale/1000,
+                    ymin = lwr_mean_hal_ye,
+                    ymax = upr_mean_hal_ye,
+                    fill = Area), alpha=0.2) +
+    # scale_y_continuous(limits = c(0, 750)) +
+    coord_cartesian(expand = F) +
+    scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+    ylab("Mean ratio of halibut to YE") +
+    xlab(expression("Total area of cells ("~km^2~")")) +
+    # ggtitle("B. Minimizing YE ") +
+    theme(
+      plot.tag.position = c(0.15, 0.9),
+      # axis.title.y = element_blank(), axis.text.y = element_blank(),
+      # legend.position = c(0.85, 0.75)
+      legend.position = "none"
+    )
+)
+
+p4 <- p4 + labs(tag="A.") + theme(
+  plot.tag.position = c(0.15, 0.9),
+  axis.title.x = element_blank(), axis.text.x = element_blank(),
+  legend.position = c(0.85, 0.75)
+  # legend.position = "none"
+)
+
+
+p5 <- p5 + labs(tag="B.") + theme(
+  plot.tag.position = c(0.15, 0.9),
+  # axis.title.x = element_blank(), axis.text.x = element_blank(),
+  # legend.position = c(0.85, 0.75)
+  legend.position = "none"
+)
+
+# p4$labels$x <- " "
+# p4$theme$axis.text.x <- p1$theme$axis.text.y
+(p4/p5) + patchwork::plot_layout()
+
+ggsave(paste0("figs/expected_ye_to_hal", ye_model, "_both_ratios_regions2.png"), width = 5, height = 7)
+
+
+(p6 <- ggplot(avoiding_ye_sum %>%
+                filter(Area %in% areas_to_plot)%>%
+                filter(pair_name =="2019-2020")%>%
+                filter(ordered %in% chosen_increments)) +
+    geom_line(
+      aes(x = ordered*grid_scale/1000,
+          y = total_hal/1000, #lty = "solid", # /1000 to convert to tonnes, x10 for 1000 hooks per km^2
+          colour = Area), size = 1) +
+    geom_ribbon(aes(x = ordered*grid_scale/1000,
+                    ymin = lwr_hal/1000,
+                    ymax = upr_hal/1000,
+                    fill = Area), alpha=0.2) +
+    # scale_y_log10(limits = c(1e-10, )) +
+    # scale_y_log10(
+    #   breaks = c(0.1, 1, 10, 100, 1000), labels = c(0.1, 1, 10, 100, "1000")
+    #   ) +
+    coord_cartesian(expand = F, ylim = c(0, 100)) +
+    labs(tag="C.")+
+    scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+    ylab("Cumulative halibut") +
+    xlab(expression("Total area of cells ("~km^2~")")) +
+    # ggtitle("B. Minimizing YE ") +
+    theme(
+      plot.tag.position = c(0.15, 0.9),
+      # axis.title.y = element_blank(), axis.text.y = element_blank(),
+      legend.position = c(0.2, 0.8)
+      # legend.position = "none"
+    )
+)
+
+(p7 <- ggplot(avoiding_ye_sum %>%
+                filter(Area %in% areas_to_plot)%>%
+                filter(pair_name =="2019-2020")%>%
+                filter(ordered %in% chosen_increments)) +
+    geom_line(
+      aes(x = ordered*grid_scale/1000,
+          y = total_ye/1000, #lty = "solid", # /1000 to convert to tonnes, x10 for 1000 hooks per km^2
+          colour = Area), size = 1) +
+    geom_ribbon(aes(x = ordered*grid_scale/1000,
+                    ymin = lwr_ye/1000,
+                    ymax = upr_ye/1000,
+                    fill = Area), alpha=0.2) +
+    # scale_y_log10(limits = c(1e-10, )) +
+    # scale_y_log10(
+    #   breaks = c(0.1, 1, 10, 100, 1000), labels = c(0.1, 1, 10, 100, "1000")
+    #   ) +
+    coord_cartesian(expand = F, ylim = c(0, 30)) +
+    labs(tag="D.")+
+    scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+    ylab("Cumulative YE") +
+    xlab(expression("Total area of cells ("~km^2~")")) +
+    # ggtitle("B. Minimizing YE ") +
+    theme(
+      plot.tag.position = c(0.15, 0.9),
+      # axis.title.y = element_blank(), axis.text.y = element_blank(),
+      # legend.position = c(0.2, 0.8)
+      legend.position = "none"
+    )
+)
+
+
+p4 <- p4 + labs(tag="C.") + theme(
+  plot.tag.position = c(0.15, 0.9),
+  axis.title.x = element_blank(), axis.text.x = element_blank(),
+  # legend.position = c(0.85, 0.75)
+  legend.position = "none"
+)
+
+p5 <- p5 + labs(tag="D.") + theme(
+  # axis.title.x = element_blank(), axis.text.x = element_blank()
+  legend.position = c(0.85, 0.75)
+  # legend.position = "none"
+)
+
+p6 <- p6 + labs(tag="B.") + theme(
+  axis.title.x = element_blank(), axis.text.x = element_blank(),
+  # legend.position = c(0.85, 0.3)
+  legend.position = "none"
+)
+
+p7 <- p7 + labs(tag="A.") + theme(
+  axis.title.x = element_blank(), axis.text.x = element_blank()
+  )
+
+(p7/p6/p4/p5) + patchwork::plot_layout()
+
+ggsave(paste0("figs/expected_ye_to_hal", ye_model, "_w_cumulative_totals_500hooks.png"), width = 5.5, height = 10)
+
+# 2158204.29 kg is total tac in 20
+# 0.9106 % of TAC in 2021?
+# could be in the order of 20000kg?
+#
+#
+# # mean_ye_hal
 # ggplot(avoiding_ye_sum %>%
-#     filter(Area %in% areas_to_plot)%>%
-#     filter(pair_name =="2019-2020")%>%
-#     filter(ordered %in% c(
-#       # round((nrow(cda_2020))*.001), round((nrow(cda_2020))*.005),
-#       round((nrow(cda_2020))*.01),
-#       round((nrow(cda_2020))*.02),
-#       round((nrow(cda_2020))*.03), round((nrow(cda_2020))*.04),
-#       round((nrow(cda_2020))*.05), round((nrow(cda_2020))*.1)
-#       , round((nrow(cda_2020))*.15)
-#       , round((nrow(cda_2020))*.2)
-#       , round((nrow(cda_2020))*.3)
-#       , round((nrow(cda_2020))*.4)
-#       , round((nrow(cda_2020))*.5)
-#       , round((nrow(cda_2020))*.75)
-#       , round((nrow(cda_2020))*1)
-#       , round((nrow(cda_2020))*1.5)
-#     ))) +
+#          filter(Area %in% areas_to_plot)%>%
+#          filter(ordered %in% chosen_increments)) +
 #   geom_line(
 #     aes(x = ordered*grid_scale/1000,
-#       y = mean_hal_per_ye, #lty = "solid",
-#       colour = Area), size = 1) +
+#         y = mean_ye_per_hal, #lty = "solid",
+#         colour = Area), size = 1) +
 #   geom_ribbon(aes(x = ordered*grid_scale/1000,
-#     ymin = lwr_mean_hal_ye,
-#     ymax = upr_mean_hal_ye,
-#     fill = Area), alpha=0.2) +
-#   # coord_cartesian(
-#   #   # expand = F,
-#   #   # xlim = c(0, nrow(cda_2020)/2),
-#   #   ylim = c(1,(10001))
-#   # ) +
-#   scale_y_log10(breaks = c(1, 10, 100, 1000, 10000)) +
-#   # scale_y_continuous(breaks = c(1, 10, 100, 1000, 10000)) +
-#   # scale_x_continuous(breaks = c(0, 500, 1000, 2000)) +
-#   # scale_color_identity(name = "Area",
-#   #   breaks = c("darkgreen","darkblue", "red"),
-#   #   labels = c("5A", "5A3CD (non-CDA)", "CDA"),
-#   #   guide = "legend") +
-#   scale_fill_brewer(palette = "Set1", direction = -1) +
-#   scale_colour_brewer(palette = "Set1", direction = -1) +
+#                   ymin = lwr_mean_ye_hal,
+#                   ymax = upr_mean_ye_hal,
+#                   fill = Area), alpha=0.2) +
+#   scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
+#   # scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
+#   # scale_x_continuous(breaks = c(0, 500, 1000)) +
+#   # coord_cartesian(ylim = c(0.00000001, 0.15)) +
+#   # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
+#   scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+#   ylab("Mean ratio of YE to halibut") +
+#   xlab(expression("Total area of cells selected to minimize YE ("~km^2~")")) +
+#   facet_wrap(~pair_name, ncol = 4)+
+#   theme(legend.position = c(0.85, 0.2))
+#
+# ggsave(paste0("figs/expected_YE_when_avoiding_YE_CI", ye_model, "_regions.png"), width = 6.5, height = 3.5)
+#
+# # flipped ratio
+# ggplot(avoiding_ye_sum %>%
+#          filter(Area %in% areas_to_plot)%>%
+#          filter(ordered %in% chosen_increments)) +
+#   geom_line(
+#     aes(x = ordered*grid_scale/1000,
+#         y = mean_hal_per_ye, #lty = "solid",
+#         colour = Area), size = 1) +
+#   geom_ribbon(aes(x = ordered*grid_scale/1000,
+#                   ymin = lwr_mean_hal_ye,
+#                   ymax = upr_mean_hal_ye,
+#                   fill = Area), alpha=0.2) +
+#   scale_y_log10(
+#     breaks = c(0.5, 1, 10, 100, 1000, 10000, 100000), labels = c(0.5, 1, 10, 100, 1000, "10000", "100000")
+#   ) +
+#   # scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
+#   # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
+#   scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
 #   ylab("Mean ratio of halibut to YE (ratio + 1)") +
 #   xlab(expression("Total area of cells selected to minimize YE ("~km^2~")")) +
 #   # facet_wrap(~pair_name, ncol = 2)+
 #   # theme(legend.position = c(0.65, 0.1))
+#   facet_wrap(~pair_name, ncol = 4)+
 #   theme(legend.position = c(0.85, 0.2))
+#
+# ggsave(paste0("figs/expected_hal_when_avoiding_YE_CI", ye_model, "_regions.png"), width = 6.5, height = 3.5)
+#
+# ggplot(maximize_hal_sum %>%
+#          filter(Area %in% areas_to_plot)%>%
+#          filter(ordered %in% chosen_increments)) +
+#   geom_line(
+#     aes(x = ordered*grid_scale/1000,
+#         y = mean_ye_per_hal, #lty = "solid",
+#         colour = Area), size = 1) +
+#   geom_ribbon(aes(x = ordered*grid_scale/1000,
+#                   ymin = lwr_mean_ye_hal,
+#                   ymax = upr_mean_ye_hal,
+#                   fill = Area), alpha=0.2) +
+#   scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
+#   scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
+#   # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
+#   scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+#   ylab("Mean ratio of YE to halibut") +
+#   xlab("Total area of cells selected to maximize halibut (km2)") +
+#   facet_wrap(~pair_name, ncol = 4)+
+#   theme(legend.position = c(0.85, 0.2))
+#
+# ggsave(paste0("figs/expected_YE_when_maximize_hal_CI", ye_model, "_regions.png"), width = 6.5, height = 3.5)
+#
+# # mean_ye_hal
+# ggplot(maximize_hal_sum %>%
+#          filter(Area %in% areas_to_plot)%>%
+#          filter(ordered %in% chosen_increments)) +
+#   geom_line(
+#     aes(x = ordered*grid_scale/1000,
+#         y = mean_hal_per_ye, #lty = "solid",
+#         colour = Area), size = 1) +
+#   geom_ribbon(aes(x = ordered*grid_scale/1000,
+#                   ymin = lwr_mean_hal_ye,
+#                   ymax = upr_mean_hal_ye,
+#                   fill = Area), alpha=0.2) +
+#   scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
+#   scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
+#   # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
+#   scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+#   ylab("Mean ratio of halibut to YE") +
+#   xlab("Total area of cells selected to maximize halibut (km2)") +
+#   facet_wrap(~pair_name, ncol = 4)+
+#   theme(legend.position = c(0.85, 0.2))
+#
+# ggsave(paste0("figs/expected_hal_when_maximize_hal_CI", ye_model, "_regions.png"), width = 6.5, height = 3.5)
+#
