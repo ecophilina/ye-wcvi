@@ -93,13 +93,24 @@ depth_bin_pred <- function(tmb_model, stan_model, grid, bin_width = 50) {
     max_depth = seq(bin_width, 600, by = bin_width)
   )
 
+  p <- predict(tmb_model, tmbstan_model = stan_model,
+               # nsims = 500,
+               # re_form_iid = NA,
+               newdata = grid)
+
   i <- furrr::future_pmap_dfr(bins, function(min_depth, max_depth) {
     # i <- purrr::pmap_dfr(bins, function(min_depth, max_depth) {
-    .grid <- filter(grid, depth > min_depth & depth <= max_depth)
-    if(nrow(.grid)>1){
-      .p <- predict(tmb_model, tmbstan_model = stan_model,
-                    # re_form_iid = NA,
-                    newdata = .grid)
+    # .grid <- filter(grid, depth > min_depth & depth <= max_depth)
+
+    to_use <- sample(seq_len(1000), 1000)
+    .p <- p[grid$depth > min_depth & grid$depth <= max_depth, to_use]
+    .grid <- grid[grid$depth > min_depth & grid$depth <= max_depth, to_use]
+    attributes(.p) <- attributes(p)
+
+    if(nrow(.grid)>50){
+      # .p <- predict(tmb_model, tmbstan_model = stan_model,
+      #               # re_form_iid = NA,
+      #               newdata = .grid)
       .i <- get_index_sims(.p, area = .grid$area / 10000)
       .i <- .i %>% mutate(
         region = unique(.grid$region),
