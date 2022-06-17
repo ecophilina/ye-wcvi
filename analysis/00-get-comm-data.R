@@ -126,8 +126,8 @@ cc <- cc %>%
     gear_km_fished = ifelse(skate_ft < 3000, number_skates_set * prop_fished * skate_ft * 0.0003048, NA), # convert from ft to km
     dist_km_fished = ifelse(dist_km < 10, dist_km * prop_fished, NA),
     # convert to hectares for both hook count and distance
-    ha_swept = hook_count * 0.0024384 * 0.009144 * 10000 * 2,
-    ha_fished = dist_km_fished * 0.009144 * 10000 * 2 # more of this
+    ha_swept = hook_count * 0.0024384 * 0.009144 * 100 * 2,
+    ha_fished = dist_km_fished * 0.009144 * 100 * 2 # more of this
   )
 
 # filter to study area
