@@ -58,25 +58,28 @@ if (!file.exists(f)) {
   # ggplot(filter(bctopo, z > 0), aes(x, y, colour = z)) + geom_point()
   # bath <- rename(bctopo, lon = x, lat = y, depth = z)
 
-  # ## this bath option only has 1km resolution
-  # ## make depth raster
-  # bat <- readRDS(here::here("data/bath_res1_marmap2.rds"))
-  # rast_bat <- marmap::as.raster(bat)
-  # #
-  # ## change projection to match grid
-  # ## I believe this is 3156
-  # # library(raster)
-  # proj <- "+proj=utm +zone=9 +datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0  +units=m +no_defs"
-  # rast_bat <- raster::projectRaster(rast_bat, crs = proj)
-  # depth2 <- raster::extract(x = rast_bat, y = cc[, (ncol(cc)-1):ncol(cc)], buffer = 1000, fun = median, na.rm = T, exact = F)
-  # cc2 <- cbind(cc, depth2) %>% mutate(X = x / 1000, Y = y / 1000, depth = -depth2)
-  # ggplot(cc2, aes(log(best_depth),log(depth))) + geom_point()
-  # cc3 <- gfplot:::interp_survey_bathymetry(cc2)
+  ## this bath option only has 1km resolution
+  ## make depth raster
+  bat <- readRDS(here::here("data/bath_res1_marmap2.rds"))
+  rast_bat <- marmap::as.raster(bat)
   #
+  ## change projection to match grid
+  ## I believe this is 3156
+  # library(raster)
+  proj <- "+proj=utm +zone=9 +datum=NAD83 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0  +units=m +no_defs"
+  rast_bat <- raster::projectRaster(rast_bat, crs = proj)
+  depth2 <- raster::extract(x = rast_bat, y = cc[, (ncol(cc)-1):ncol(cc)], buffer = 1000, fun = median, na.rm = T, exact = F)
+  cc2 <- cbind(cc, depth2) %>% mutate(X = x / 1000, Y = y / 1000, bath_depth = -depth2, depth = best_depth)
+
+  ggplot(cc2, aes(log(best_depth),log(bath_depth))) + geom_point() +
+    geom_abline(slope = 1, intercept = 0)
+
+  # cc3 <- gfplot:::interp_survey_bathymetry(cc2)
+
   # I think best_depth is much better!
 
   # instead just fill in missing data from above function
-  cc2 <- cc %>% mutate(X = x / 1000, Y = y / 1000, depth = best_depth)
+  # cc2 <- cc %>% mutate(X = x / 1000, Y = y / 1000, depth = best_depth)
   cc3 <- gfplot:::interp_survey_bathymetry(cc2)
   # ggplot(cc3$data, aes(x, y, colour = akima_depth)) + geom_point()
 
@@ -94,9 +97,6 @@ if (!file.exists(f)) {
 
   hist(cc$depth, breaks = 40)
   hist(cc$akima_depth, breaks = 40)
-
-  ggplot(cc, aes(lon, lat, colour = depth)) +
-    geom_point()
 
   cc$hal_cpue[is.na(cc$hal_cpue)] <- 0
   cc$hal_kg[is.na(cc$hal_kg)] <- 0
@@ -136,20 +136,83 @@ if (!file.exists(f)) {
   cc <- bind_rows(ccN, ccS2) %>% dplyr::select(-lat, -lon)
   cc <- bind_rows(cc, ccS_cda) %>% bind_rows(., ccS_ext2)
 
+  cc <- cc %>%
+    mutate(discrepency = depth - bath_depth,
+           ye_count = ye_cpue,
+           ye_cpue = ye_kg/ha_fished,
+           hal_count = hal_cpue,
+           hal_cpue = hal_kg/ha_fished,
+           ye_cpue2 = ifelse(ye_cpue < 0.1, 0.1, ye_cpue),
+           hal_cpue2 = ifelse(hal_cpue < 0.1, 0.1, hal_cpue),
+           ye_cpue3 = ifelse(ye_cpue < 0.01, 0.01, ye_cpue),
+           hal_cpue3 = ifelse(hal_cpue < 0.01, 0.01, hal_cpue)
+    ) %>%
+    filter(dist_km_fished < 5 & dist_km_fished > 0.1) %>%
+    filter(depth > 20 & depth < 1000) %>%
+    filter(discrepency < 400 & discrepency > -500)
+
   saveRDS(cc, f)
 } else {
   cc <- readRDS(f)
 }
 
-cc <- cc %>% mutate(ye_count = ye_cpue,
-                    ye_cpue = ye_kg/ha_fished,
-                    hal_count = hal_cpue,
-                    hal_cpue = hal_kg/ha_fished,
-                    ye_cpue2 = ifelse(ye_cpue < 0.01, 0.01, ye_cpue),
-                    hal_cpue2 = ifelse(hal_cpue < 0.01, 0.01, hal_cpue),
-                    ye_cpue3 = ifelse(ye_cpue < 0.001, 0.001, ye_cpue),
-                    hal_cpue3 = ifelse(hal_cpue < 0.001, 0.001, hal_cpue)
-                    )
+
+cc <- cc %>%
+  filter(!(region == "CDA" & depth > 130)) %>% # removes single depth outlier in CDA
+  filter(dist_km_fished < 3 & dist_km_fished > 0.2)
+
+hist(cc$discrepency)
+
+cc %>%
+  # filter(depth < 600) %>%
+  ggplot() + geom_point(aes(X, Y, colour = discrepency)) +
+  scale_color_gradient2() + facet_wrap(~region, scales = "free")
+
+cc %>%
+  # filter(depth < 600) %>%
+  ggplot() + geom_point(aes(X, Y, colour = -log(depth)), alpha = 0.5) +
+  facet_wrap(~region, scales = "free")
+
+
+# check that a could extreme outliers from CDA were removed
+cc %>%
+  # filter(depth < 600) %>%
+  ggplot() + geom_point(aes(depth, bath_depth, colour = discrepency)) +
+  scale_color_gradient2() + facet_wrap(~region)
+
+cc %>%
+  # filter(depth < 600) %>%
+  ggplot() + geom_point(aes(depth, X, colour = discrepency)) +
+  scale_color_gradient2() + facet_wrap(~region)
+
+
+ggplot(cc, aes(bath_depth, depth)) + geom_point(aes(colour = discrepency)) +
+  geom_abline(slope = 1, intercept = 0) +
+  scale_color_gradient2()
+
+
+ggplot(cc, aes(X, Y, colour = depth)) +
+  geom_point() #+ scale_color_continuous(trans = "log10")
+
+cc %>% filter (depth < 800 & ye_cpue > 0) %>%
+  ggplot(aes(X, Y, colour =  discrepency)) +
+  geom_point() + scale_color_gradient2()
+
+hist(cc$ye_cpue)
+
+cc %>% filter (depth < 1000 & ye_cpue > 0) %>%
+  ggplot(aes(X, Y, colour =  -log(ye_cpue))) +
+  geom_point()
+
+# load map custom functions
+source("analysis/functions.R")
+map_predictions(obs_data = cc %>% mutate(X = X/100, Y = Y/100) %>% filter (depth < 1000 & ye_cpue > 0),
+                size_aes = ye_cpue,
+                obs_col = c("blue","red"),
+                col_aes = fishery_sector)
+
+
+
 
 
 cols <- c(
@@ -170,7 +233,9 @@ cc %>%
   geom_smooth() +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
-  coord_cartesian(expand = F, ylim = c(0, 0.18)) +
+  coord_cartesian(
+    ylim = c(0, 2),
+    expand = F) +
   facet_grid(
     # cols=vars(region),
     rows = vars(season)
@@ -190,7 +255,9 @@ cc %>%
   geom_smooth() +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
-  coord_cartesian(expand = F, ylim = c(0, 0.48)) +
+  coord_cartesian(
+    ylim = c(0, 3),
+    expand = F) +
   facet_grid(
     # cols=vars(region),
     rows = vars(season)
@@ -230,8 +297,8 @@ cc %>%
   filter(year <= 2015)%>%
   ggplot(., aes(depth,
                 # log10(ye_cpue / hal_cpue),
-                # log10(ye_cpue2 / hal_cpue2),
-                log10(ye_cpue3 / hal_cpue3),
+                log10(ye_cpue2 / hal_cpue2),
+                # log10(ye_cpue3 / hal_cpue3),
                 # log10((ye_cpue +0.1)/ (hal_cpue+0.1)),
                 # log10((ye_cpue +0.1)/ (hal_cpue+0.1)),
     colour = region, fill = region
@@ -260,8 +327,8 @@ cc %>%
   filter(year > 2015)%>%
   ggplot(., aes(depth,
                 # log10(ye_cpue / hal_cpue),
-                # log10(ye_cpue2 / hal_cpue2),
-                log10(ye_cpue3 / hal_cpue3),
+                log10(ye_cpue2 / hal_cpue2),
+                # log10(ye_cpue3 / hal_cpue3),
                 # log10((ye_cpue +0.1)/ ((hal_cpue)+0.1)),
                 # log10((ye_cpue +0.1)/ (hal_cpue+0.1)),
                 colour = region, fill = region
