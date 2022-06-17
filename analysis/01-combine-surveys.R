@@ -33,10 +33,10 @@ model_data_prep <- function(trawldata, hblldata, cc, mean_weight) {
         year %in% c(2019, 2020) ~ 2020  # no WCVI
       ),
       year_true = year,
-      density = catch_count * mean_weight / (hook_count * 0.0024384 * 0.009144 * 10000 * 2)
+      density = (catch_count * mean_weight / (hook_count * 0.0024384 * 0.009144 * 100 * 2))
       # hook spacing = 0.0024384 km (8 feet?)
       # assumed catch radius = 0.009144 km (30 feet)
-      # this area swept calc was for km2, so * 10000 gives it in hectares
+      # this area swept calc was for km2, so * 100 gives it in hectares
     ) %>%
     select(
       survey_abbrev, year_pair, year_true,
@@ -191,8 +191,7 @@ round(yemeanweightHBLL, 2)
 
 # get commercial ll cpue
 
-cc <- readRDS("data/hal-ye-ll-cpue-w-effort.rds") %>% filter(dist_km_fished < 5 & dist_km_fished > 0.1)
-
+cc <- readRDS("data/hal-ye-ll-cpue-w-effort.rds")
 # cc$hal_realeased[is.na(cc$hal_realeased)] <- 0
 # cc$ye_realeased[is.na(cc$ye_realeased)] <- 0
 cc_ye <- cc %>% filter(season == "Summer") %>% mutate(cpue = ye_kg/ha_fished)
