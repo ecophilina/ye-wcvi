@@ -162,7 +162,8 @@ if (!file.exists(f)) {
     geom_sf(data = focal_area2_proj,
             # colour = "darkorchid4",
             colour = "deeppink4",
-            fill = NA, size = 0.70) + # add focal area2 behind coast
+            lty = "twodash",
+            fill = NA, size = 0.60) + # add focal area2 behind coast
     geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
     geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey99", col = "grey55") +
     coord_sf(
@@ -192,6 +193,6 @@ if (!file.exists(f)) {
       legend.justification = c(1, 1),
       panel.background = element_rect(color = NA, size = 1, fill = "grey70"))
   g
-  ggsave("figs/map-stitched-grid-overlap-expanded-red-purple.png", width = 5.5, height = 5.5, dpi = 400)
+  ggsave("figs/map-stitched-grid-overlap-expanded-dashed.png", width = 5.5, height = 5.5, dpi = 400)
 }
 
