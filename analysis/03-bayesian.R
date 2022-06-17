@@ -19,8 +19,11 @@ if (include_cc) {
   # hal_model <- "w-cc2-rocky-muddy-400kn-delta-IID-aniso"
   # ye_model <- "w-cc2-rocky-muddy-400kn-delta-spatial-aniso"
   #
-  hal_model <- "w-effort-500kn-delta-AR1-aniso"
-  ye_model <- "w-effort-500kn-delta-spatial-aniso"
+  # hal_model <- "w-good-depths-500kn-delta-AR1-aniso"
+  # ye_model <- "w-good-depths-500kn-delta-iid-aniso"
+
+  hal_model <- "w-deeper-500kn-delta-AR1-aniso"
+  ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
   latitude_cutoff <- 51 # include only west coast Vancouver Island
 
 } else {
@@ -35,10 +38,10 @@ substrate <- readRDS(file = "data-generated/events_w_substrate_1km_buffer.rds") 
   select(X, Y, fishing_event_id, any_rock, rocky, mixed, muddy)
 
 d_hal <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
-  filter(latitude < latitude_cutoff & depth_m < 600) %>%
+  filter(latitude < latitude_cutoff & depth_m < 1000) %>%
   left_join(select(substrate, -X, -Y)) %>% filter(muddy >= 0)
 d_ye <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>%
-  filter(latitude < latitude_cutoff & depth_m < 600) %>%
+  filter(latitude < latitude_cutoff & depth_m < 1000) %>%
   left_join(select(substrate, -X, -Y)) %>% filter(muddy >= 0)
 
 years <- sort(unique(d_ye$year))
@@ -61,8 +64,9 @@ if (include_cc) {
     filter(!is.na(vessel_id)) %>%
     filter(survey != "NON-SURVEY" | (dist_km_fished < 3 & dist_km_fished > 0.2)) %>%
     # exclude samples after restrictions introduced
-    filter(!(survey == "NON-SURVEY" & year > 2015)) %>%
+    # filter(!(survey == "NON-SURVEY" & year > 2015)) %>%
     mutate(
+      survey = ifelse(survey == "NON-SURVEY" & year > 2015, "RESTRICTED", survey),
       fyear = as.factor(year),
       vessel_id = ifelse(survey != "NON-SURVEY", "survey", vessel_id),
       vessel_id = as.factor(vessel_id),
@@ -70,25 +74,45 @@ if (include_cc) {
       # year = year_true,
       wt = ifelse(survey != "NON-SURVEY", 1, 1e-8))
 
+  # crs_utm9 <- 3156 # Pick a projection, here UTM9
+  # st_crs(bc_coast) <- 4326 # 'WGS84'; necessary on some installs
+  # bc_coast2 <- st_transform(bc_coast, crs_utm9)
+
   mesh <- make_mesh(d_hal, c("X", "Y"), n_knots = 500)
+
+  # mesh <- add_barrier_mesh(
+  #   mesh,
+  #   bc_coast2,
+  #   range_fraction = 0.1,
+  #   proj_scaling = 100000,
+  #   plot = TRUE
+  # )
+
   mesh$mesh$n
   d1 <- filter(d_hal, survey != "NON-SURVEY")
   d2 <- filter(d_hal, survey == "NON-SURVEY")
-
   plot(mesh$mesh, asp = 1, main = "")
   points(d2$X, d2$Y, pch = ".", col = "red")
   points(d1$X, d1$Y, pch = ".", col = "blue")
 
 
   mesh2 <- make_mesh(d_ye, c("X", "Y"), n_knots = 500)
-  mesh$mesh$n
+  # mesh2 <- add_barrier_mesh(
+  #   mesh2,
+  #   bc_coast2,
+  #   range_fraction = 0.1,
+  #   proj_scaling = 100000,
+  #   plot = TRUE
+  # )
+
+  mesh2$mesh$n
   d1 <- filter(d_ye, survey != "NON-SURVEY")
   d2 <- filter(d_ye, survey == "NON-SURVEY")
-
+  d3 <- filter(d_ye, survey == "RESTRICTED")
   plot(mesh2$mesh, asp = 1, main = "")
   points(d2$X, d2$Y, pch = ".", col = "red")
   points(d1$X, d1$Y, pch = ".", col = "blue")
-
+  points(d3$X, d3$Y, pch = ".", col = "orange")
 
 } else {
 
@@ -193,7 +217,16 @@ if(include_cc) {
   ye_formula <- formula1
 
   hal_priors <- priors1
-  ye_priors <- priors1
+  # ye_priors <- priors1
+  ye_priors <- sdmTMBpriors(
+    b = normal(rep(0, 14),
+               scale = c(
+                 rep(year_prior_sd, 7),
+                 rep(q_sd, 3),
+                 rep(poly_sd, 4)
+               )
+    )
+  )
 
   hal_spatiotemporal <- list("off", "ar1")
 
@@ -279,29 +312,29 @@ tidy(m_hal, conf.int = TRUE, model = 2)
 tidy(m_hal, "ran_pars", conf.int = TRUE)
 tidy(m_hal, "ran_pars", conf.int = TRUE, model = 2)
 
-visreg_delta(m_hal, xvar = "vessel_id", #scale = "response",
-             model = 1)
-
-visreg_delta(m_hal, xvar = "vessel_id", #scale = "response",
-             model = 2)
-
-visreg_delta(m_hal, xvar = "depth_scaled", scale = "response",
-             model = 1, nn = 10)
-
-visreg_delta(m_hal, xvar = "rocky", scale = "response",
-             model = 1, nn = 10)
-
-visreg_delta(m_hal, xvar = "muddy", scale = "response",
-             model = 1, nn = 10)
-
-visreg_delta(m_hal, xvar = "depth_scaled", scale = "response",
-             model = 2, nn = 10)
-
-visreg_delta(m_hal, xvar = "rocky", scale = "response",
-             model = 2, nn = 10)
-
-visreg_delta(m_hal, xvar = "muddy", scale = "response",
-             model = 2, nn = 10)
+# visreg_delta(m_hal, xvar = "vessel_id", #scale = "response",
+#              model = 1)
+#
+# visreg_delta(m_hal, xvar = "vessel_id", #scale = "response",
+#              model = 2)
+#
+# visreg_delta(m_hal, xvar = "depth_scaled", scale = "response",
+#              model = 1, nn = 10)
+#
+# visreg_delta(m_hal, xvar = "rocky", scale = "response",
+#              model = 1, nn = 10)
+#
+# visreg_delta(m_hal, xvar = "muddy", scale = "response",
+#              model = 1, nn = 10)
+#
+# visreg_delta(m_hal, xvar = "depth_scaled", scale = "response",
+#              model = 2, nn = 10)
+#
+# visreg_delta(m_hal, xvar = "rocky", scale = "response",
+#              model = 2, nn = 10)
+#
+# visreg_delta(m_hal, xvar = "muddy", scale = "response",
+#              model = 2, nn = 10)
 
 
 pars <- sdmTMB:::get_pars(m_hal)
@@ -415,7 +448,8 @@ m_ye <- sdmTMB(
   data = d_ye,
   mesh = mesh2,
   spatial = "on",
-  spatiotemporal = list("off", "off"),
+  spatiotemporal = list("off", "iid"),
+  share_range = FALSE,
   time = "year",
   silent = FALSE,
   reml = TRUE,
@@ -429,6 +463,7 @@ saveRDS(m_ye, paste0("models/yelloweye-model-", ye_model, "-tmbfit.rds"))
 m_ye <- readRDS(paste0("models/yelloweye-model-", ye_model, "-tmbfit.rds"))
 }
 
+
 # # reml = F
 # m_ye1 <- m_ye
 # m_ye2 <- m_ye
@@ -438,7 +473,12 @@ m_ye <- readRDS(paste0("models/yelloweye-model-", ye_model, "-tmbfit.rds"))
 # # m_ye1 35 -9156.979
 # # m_ye2 39 -9105.042
 # # m_ye3 43 -9083.522
-
+#
+# with good_depths & reml = T
+# df      AIC
+# m_ye_iid_on_m1                36 25907.13
+# m_ye_iid_on_m2_shared_range   36 25872.15
+# m_ye_iid_on_m2                37 25860.02
 # m_ye <- run_extra_optimization(m_ye, nlminb_loops = 1, newton_loops = 1)
 
 
@@ -451,20 +491,25 @@ tidy(m_ye, conf.int = TRUE, model = 2)
 tidy(m_ye, "ran_pars", conf.int = TRUE)
 tidy(m_ye, "ran_pars", conf.int = TRUE, model = 2)
 
-visreg_delta(m_ye, xvar = "rocky", model = 1,
-             scale = "response", nn = 10)
-visreg_delta(m_ye, xvar = "rocky", model = 2,
-               scale = "response", nn = 10)
-
-visreg_delta(m_ye, xvar = "muddy", model = 1,
-             scale = "response", nn = 10)
-visreg_delta(m_ye, xvar = "muddy", model = 2,
-               scale = "response", nn = 10)
-
-visreg_delta(m_ye, xvar = "depth_scaled", model = 1,
-             scale = "response", nn = 10)
-visreg_delta(m_ye, xvar = "depth_scaled", model = 2,
-               scale = "response", nn = 10)
+# visreg_delta(m_ye, xvar = "vessel_id", scale = "response",
+#              model = 1)
+# visreg_delta(m_ye, xvar = "vessel_id", scale = "response",
+#              model = 2)
+#
+# visreg_delta(m_ye, xvar = "rocky", model = 1,
+#              scale = "response", nn = 10)
+# visreg_delta(m_ye, xvar = "rocky", model = 2,
+#                scale = "response", nn = 10)
+#
+# visreg_delta(m_ye, xvar = "muddy", model = 1,
+#              scale = "response", nn = 10)
+# visreg_delta(m_ye, xvar = "muddy", model = 2,
+#                scale = "response", nn = 10)
+#
+# visreg_delta(m_ye, xvar = "depth_scaled", model = 1,
+#              scale = "response", nn = 10)
+# visreg_delta(m_ye, xvar = "depth_scaled", model = 2,
+#                scale = "response", nn = 10)
 
 pars <- sdmTMB:::get_pars(m_ye)
 kappa_map <- factor(rep(NA, length(pars$ln_kappa)))
