@@ -144,7 +144,8 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
 
         # setNames(pred, unique(newdata$region)[i])
 
-        by_region[[i+1]] <- list(index = ind2, sims = i_sims2, grid = newdata
+        by_region[[i+1]] <- list(index = ind2, sims = i_sims2,
+                                 grid = newdata[newdata$region == unique(newdata$region)[i], ]
           , sim.predictions = pred # this takes up a lot of space so if not using it...
         )
         setNames(by_region[i+1], paste(unique(newdata$region)[i]))
