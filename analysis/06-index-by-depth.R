@@ -44,8 +44,11 @@ full_s_grid <- readRDS(paste0("report-data/full_filled_grid_w_ext_", grid_scale,
          vessel_id = as.factor("survey"))
 
 # # load models if 03 not just run
-hal_model <- "w-effort-500kn-delta-AR1-aniso"
-ye_model <- "w-effort-500kn-delta-spatial-aniso"
+# hal_model <- "w-effort-500kn-delta-AR1-aniso"
+# ye_model <- "w-effort-500kn-delta-spatial-aniso"
+hal_model <- "w-deeper-500kn-delta-AR1-aniso"
+ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
+
 #
 # # hal_model <- "rocky-muddy-300kn-delta-IID-aniso"
 # # hal_model <- "w-cc2-rocky-muddy-400kn-delta-IID-aniso"
@@ -83,31 +86,31 @@ hist(nonCDA_grid$depth)
 sum(nonCDA_grid$depth*nonCDA_grid$area)/sum(nonCDA_grid$area)
 
 # bin_width <- 50
-bin_width <- 20
+bin_width <- 25
 # bin_width <- 10
 
-depth_bin_pred <- function(tmb_model, stan_model, grid, bin_width = 50) {
+
+depth_bin_pred <- function(tmb_model, stan_model, grid, bin_width = 50, nsims = 1000) {
 
   bins <- tibble(
     min_depth = seq(0, 600 - bin_width, by = bin_width),
     max_depth = seq(bin_width, 600, by = bin_width)
   )
 
-  p <- predict(tmb_model, tmbstan_model = stan_model,
-               # nsims = 500,
-               # re_form_iid = NA,
-               newdata = grid)
+  p <- predict(tmb_model, tmbstan_model = stan_model, newdata = grid, nsim = nsims)
+  to_use <- sample(seq_len(nsims), nsims) # here in case we need to subsample these
 
   i <- furrr::future_pmap_dfr(bins, function(min_depth, max_depth) {
     # i <- purrr::pmap_dfr(bins, function(min_depth, max_depth) {
     # .grid <- filter(grid, depth > min_depth & depth <= max_depth)
 
-    to_use <- sample(seq_len(1000), 1000)
     .p <- p[grid$depth > min_depth & grid$depth <= max_depth, to_use]
-    .grid <- grid[grid$depth > min_depth & grid$depth <= max_depth, to_use]
-    attributes(.p) <- attributes(p)
+    .grid <- grid[grid$depth > min_depth & grid$depth <= max_depth, ]
 
     if(nrow(.grid)>50){
+      # browser()
+      attributes(.p)["time"] <- attributes(p)["time"]
+      attributes(.p)["link"] <- attributes(p)["link"]
       # .p <- predict(tmb_model, tmbstan_model = stan_model,
       #               # re_form_iid = NA,
       #               newdata = .grid)
@@ -154,33 +157,37 @@ if(!file.exists(f)) {
   saveRDS(i_ye_cda, f)
 }else{ i_ye_cda <- readRDS(f) }
 
-# f <- paste0("report-data/hal-", hal_model, "-depth_bins_in_3cd_", bin_width, "_", grid_scale, ".rds")
-# if(!file.exists(f)) {
-#   i_hal_3cd <- depth_bin_pred(m_hal_fixed, m_hal_stan, nonCDA_grid, bin_width = bin_width)
-#   saveRDS(i_hal_3cd, f)
-# }else{ i_hal_3cd <- readRDS(f) }
-#
-# f <- paste0("report-data/ye-", ye_model, "-depth_bins_in_3cd_", bin_width, "_", grid_scale, ".rds")
-# if(!file.exists(f)) {
-#   i_ye_3cd <- depth_bin_pred(m_ye_fixed, m_ye_stan, nonCDA_grid, bin_width = bin_width)
-#   saveRDS(i_ye_3cd, f)
-# }else{ i_ye_3cd <- readRDS(f) }
-#
+f <- paste0("report-data/hal-", hal_model, "-depth_bins_in_3cd_", bin_width, "_", grid_scale, ".rds")
+if(!file.exists(f)) {
+  i_hal_3cd <- depth_bin_pred(m_hal_fixed, m_hal_stan, nonCDA_grid,
+                              nsims = 500,
+                              bin_width = bin_width)
+  saveRDS(i_hal_3cd, f)
+}else{ i_hal_3cd <- readRDS(f) }
 
-# i_hal_3cd <- i_hal_3cd %>% filter(area > 10000)
+f <- paste0("report-data/ye-", ye_model, "-depth_bins_in_3cd_", bin_width, "_", grid_scale, ".rds")
+if(!file.exists(f)) {
+  i_ye_3cd <- depth_bin_pred(m_ye_fixed, m_ye_stan, nonCDA_grid,
+                             nsims = 500,
+                             bin_width = bin_width)
+  saveRDS(i_ye_3cd, f)
+}else{ i_ye_3cd <- readRDS(f) }
+
+
+i_hal_3cd <- i_hal_3cd %>% filter(area > 10000)
 i_hal_x <- i_hal_x %>% filter(area > 10000)
 i_hal_cda <- i_hal_cda %>% filter(area > 10000)
 
-# i_ye_3cd <- i_ye_3cd %>% filter(area > 10000)
+i_ye_3cd <- i_ye_3cd %>% filter(area > 10000)
 i_ye_x <- i_ye_x %>% filter(area > 10000)
 i_ye_cda <- i_ye_cda %>% filter(area > 10000)
 
 
 i_hal_all <- bind_rows(
-  #i_hal_3cd,
+  i_hal_3cd,
   i_hal_x, i_hal_cda)
 i_ye_all <- bind_rows(
-  # i_ye_3cd,
+  i_ye_3cd,
   i_ye_x, i_ye_cda)
 
 
@@ -209,9 +216,12 @@ i_ye_all %>% filter(year == 2020) %>%
   scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
 
 
-
-i_ye_2020 <- i_ye_all %>% filter(year == 2020)
-i_hal_2020 <- i_hal_all %>% filter(year == 2020)
+i_ye_2020 <- i_ye_all %>%
+  filter(region != "non-CDA 3CD") %>%
+  filter(year == 2020)
+i_hal_2020 <- i_hal_all %>%
+  filter(region != "non-CDA 3CD") %>%
+  filter(year == 2020)
 i_ye_2020 %>%
   ggplot( aes(min_depth, density, group = region)) +
   geom_line(colour = "orange") +
@@ -249,12 +259,140 @@ ggsave(paste0("figs/ratio-by-", bin_width, "m-bin-depth-", grid_scale, "-region.
 
 
 # to get CI for above
+r <- paste0("data-generated/ratios-by-depth-", hal_model,".rds")
 
-# get_index_sims()
-#
-# i_hal$CDA[[4]]
-# i_hal$CDA[[3]]$depth
+if (!file.exists(r)) {
 
+f <- paste0("data-generated/halibut-", hal_model, "_", grid_scale, "-index-all-stan.rds")
+if (!file.exists(f)) {
+  i_hal <- get_all_sims(m_hal_fixed, newdata = full_s_grid, tmbstan_model = m_hal_stan)
+  i_hal <- setNames(i_hal, c("all", paste(unique(full_s_grid$region))))
+  saveRDS(i_hal, f)
+} else{
+  i_hal <- readRDS(f)
+}
+
+f <- paste0("data-generated/yelloweye-", ye_model, "_", grid_scale, "-index-all-stan.rds")
+if (!file.exists(f)) {
+  i_ye <- get_all_sims(m_ye_fixed, newdata = full_s_grid, tmbstan_model = m_ye_stan)
+  i_ye <- setNames(i_ye, c("all", paste(unique(full_s_grid$region))))
+  saveRDS(i_ye, f)
+} else{
+  i_ye <- readRDS(f)
+}
+
+
+
+depth_bin_ratios <- function(pred_species1 = p_hal, pred_species2 = p_ye, grid = grid, bin_width = 50) {
+
+  bins <- tibble(
+    min_depth = seq(0, 600 - bin_width, by = bin_width),
+    max_depth = seq(bin_width, 600, by = bin_width)
+  )
+
+  p1 <- pred_species1
+  p2 <- pred_species2
+
+  r <- purrr::pmap_dfr(bins, function(min_depth, max_depth) {
+    .grid <- grid[grid$depth > min_depth & grid$depth <= max_depth, ]
+
+    if(nrow(.grid)>50){
+      # browser()
+      .p1 <- p1[grid$depth > min_depth & grid$depth <= max_depth, ]
+      .p2 <- p2[grid$depth > min_depth & grid$depth <= max_depth, ]
+
+      attributes(.p1)["time"] <- attributes(p1)["time"]
+      attributes(.p1)["link"] <- "response"
+      # attributes(.p1)["link"] <- attributes(p1)["link"]
+
+      attributes(.p2)["time"] <- attributes(p2)["time"]
+      attributes(.p2)["link"] <- "response"
+      # attributes(.p2)["link"] <- attributes(p2)["link"]
+
+      .i1 <- get_index_sims(.p1, return_sims = T, area = .grid$area / 10000,
+                            area_function = function(x, area) x * area,
+                            agg_function = function(x) sum((x))) %>%
+        rename(species1 = .value)
+
+      .i2 <- get_index_sims(.p2, return_sims = T, area = .grid$area / 10000,
+                            area_function = function(x, area) x * area,
+                            agg_function = function(x) sum((x))) %>%
+        rename(species2 = .value)
+
+      .i <- left_join(.i1, .i2) %>% mutate(
+        sp1_per_sp2 = species1 / species2,
+        sp2_per_sp1 = species2 / species1
+      ) %>%
+        # filter(.iteration <= 500) %>%
+        group_by(year) %>%
+        summarise(
+          lwr12 = quantile(sp1_per_sp2, 0.025),
+          upr12 = quantile(sp1_per_sp2, 0.975),
+          # has to be after as this overwrites the iteration values
+          sp1_per_sp2 = mean(sp1_per_sp2),
+          lwr21 = quantile(sp2_per_sp1, 0.025),
+          upr21 = quantile(sp2_per_sp1, 0.975),
+          sp2_per_sp1 = mean(sp2_per_sp1)
+        )
+
+      .i$region = unique(.grid$region)
+      .i$min_depth = min_depth
+      .i$max_depth = max_depth
+      .i$depth_range = as.factor(paste0(min_depth, "-", max_depth))
+      .i
+    }
+  })
+  return(r)
+}
+
+
+
+list_regions <- c("CDA", "CDA adjacent", "non-CDA 3CD")
+
+ratios <-list()
+
+for (i in list_regions) {
+  # browser()
+p_hal <- i_hal[[i]]$sim.predictions
+p_ye <- i_ye[[i]]$sim.predictions
+grid <- i_ye$all$grid[i_ye$all$grid$region == i, ]
+
+ratios[[i]] <- depth_bin_ratios(grid = grid, bin_width = bin_width)
+}
+
+ratios_df <- do.call("rbind", ratios)
+
+saveRDS(ratios_df, paste0("data-generated/ratios-by-depth-", hal_model,".rds"))
+}
+
+ratios_df <- readRDS(paste0("data-generated/ratios-by-depth-", hal_model,".rds"))
+
+
+ratios_df %>% filter(year == 2020) %>%
+  # filter(min_depth > 50) %>%
+  ggplot(aes(min_depth, sp1_per_sp2, fill = region)) +
+  geom_line(aes(colour = region)) +
+  geom_ribbon(aes(min_depth, ymin = lwr12, ymax = upr12), alpha = 0.1) +
+  scale_y_log10() +
+  geom_vline(xintercept = 175, lty = "dashed") +
+  scale_fill_manual(values = cols) +
+  scale_colour_manual(values = cols) +
+  ylab("Ratio of halibut to YE")
+
+ggsave(paste0("figs/ratio-hal-to-YE-by-", bin_width, "m-bin-depth-", hal_model, "-region.png"), width = 7, height = 3, dpi = 400)
+
+ratios_df %>% filter(year == 2020) %>%
+  # filter(min_depth > 50) %>%
+  ggplot(aes(min_depth, sp2_per_sp1, fill = region)) +
+  geom_line(aes(colour = region)) +
+  geom_ribbon(aes(min_depth, ymin = lwr21, ymax = upr21), alpha = 0.1) +
+  scale_y_log10() +
+  geom_vline(xintercept = 175, lty = "dashed") +
+  scale_fill_manual(values = cols) +
+  scale_colour_manual(values = cols) +
+  ylab("Ratio of YE to halibut")
+
+ggsave(paste0("figs/ratio-YE-to-hal-by-", bin_width, "m-bin-depth-", hal_model, "-region.png"), width = 7, height = 3, dpi = 400)
 
 
 
