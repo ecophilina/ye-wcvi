@@ -8,9 +8,12 @@ library(ggsidekick) # for fourth_root_power_trans and theme_sleek
 theme_set(ggsidekick::theme_sleek())
 
 # hal_model <- "w-effort-500kn-delta-AR1-aniso"
-hal_model <- "w-good-depths-500kn-delta-AR1-aniso"
+# hal_model <- "w-good-depths-500kn-delta-AR1-aniso"
+
+hal_model <- "w-deeper-500kn-delta-AR1-aniso"
 # ye_model <- "w-effort-500kn-delta-spatial-aniso"
-ye_model <- "w-good-depths-500kn-delta-iid-aniso"
+# ye_model <- "w-good-depths-500kn-delta-iid-aniso"
+ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
 
 grid_scale <- 1000
 
@@ -43,7 +46,7 @@ g2_2020 <- filter(g2, year == 2020)
 g3_2020 <- filter(g3, year == 2020)
 # g4_2020 <- filter(g4, year == 2020)
 
-.file <- paste0(ye_model, "-100.rds")
+.file <- paste0(hal_model, "-100.rds")
 
 if (!file.exists(paste0("data-generated/ye_sims_for_ratios_by_area", .file))) {
 
@@ -363,7 +366,7 @@ p3 <- ggplot(data.frame(l = "lab", x = 1, y = 1)) +
 p1$labels$x <- p2$labels$x <- " "
 (p2 | p1)/p3 + patchwork::plot_layout(heights = c(15,0.25))
 
-ggsave(paste0("figs/expected_ye_to_hal", ye_model, "_both_scenarios_regions2.png"), width = 7, height = 4)
+ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions2.png"), width = 7, height = 4)
 
 # JUST AVOIDING
 (p4 <- ggplot(avoiding_ye_sum %>%
@@ -440,7 +443,7 @@ p5 <- p5 + labs(tag="B.") + theme(
 # p4$theme$axis.text.x <- p1$theme$axis.text.y
 (p4/p5) + patchwork::plot_layout()
 
-ggsave(paste0("figs/expected_ye_to_hal", ye_model, "_both_ratios_regions2.png"), width = 5, height = 7)
+ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_ratios_regions2.png"), width = 5, height = 7)
 
 
 (p6 <- ggplot(avoiding_ye_sum %>%
@@ -459,7 +462,7 @@ ggsave(paste0("figs/expected_ye_to_hal", ye_model, "_both_ratios_regions2.png"),
     # scale_y_log10(
     #   breaks = c(0.1, 1, 10, 100, 1000), labels = c(0.1, 1, 10, 100, "1000")
     #   ) +
-    coord_cartesian(expand = F, ylim = c(0, 100)) +
+    coord_cartesian(expand = F, ylim = c(0, 110)) +
     labs(tag="C.")+
     scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
     ylab("Cumulative halibut") +
@@ -529,7 +532,7 @@ p7 <- p7 + labs(tag="A.") + theme(
 
 (p7/p6/p4/p5) + patchwork::plot_layout()
 
-ggsave(paste0("figs/expected_ye_to_hal", ye_model, "_w_cumulative_totals_500hooks.png"), width = 5.5, height = 10)
+ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_w_cumulative_totals_500hooks.png"), width = 5.5, height = 10)
 
 # 2158204.29 kg is total tac in 20
 # 0.9106 % of TAC in 2021?

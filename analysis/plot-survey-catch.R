@@ -74,58 +74,60 @@ surv_dat %>%
   ggplot(., aes(depth, log10(density_ye + 1),
     colour = region, fill = region
   )) +
-  geom_point(alpha = 0.4) +
+  geom_point(alpha = 0.2) +
   geom_smooth() +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
-  coord_cartesian(expand = F, ylim = c(0, 0.6)) +
+  coord_cartesian(expand = F, ylim = c(0, 2.6)) +
   ggsidekick::theme_sleek() #+ theme(legend.position = "none")
 
-ggsave("figs/surv-YE-by-depth.png", width = 6, height = 3)
+ggsave("figs/surv-hal-by-depth.png", width = 6, height = 3)
 
 surv_dat %>%
   filter(depth < 550) %>%
   ggplot(., aes(depth, log10(density_hal + 1),
     colour = region, fill = region
   )) +
-  geom_point(alpha = 0.4) +
+  geom_point(alpha = 0.2) +
   geom_smooth() +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
-  coord_cartesian(expand = F, ylim = c(0, 0.6)) +
+  coord_cartesian(
+    ylim = c(0, 2.6),
+    expand = F) +
   ggsidekick::theme_sleek() #+ theme(legend.position = "none")
 
-ggsave("figs/surv-hal-by-depth.png", width = 6, height =3)
+ggsave("figs/surv-hal-by-depth.png", width = 6, height = 3)
 
 hist(surv_dat$density_hal, breaks = 30)
 
 surv_dat %>%
-  filter(depth < 400) %>%
+  # filter(depth < 400) %>%
   # filter(year_true > 2006) %>%
   # filter(density_hal > 0) %>%
   # filter(region != "non-CDA 3CD") %>%
   mutate(
-    density_ye2 = ifelse(density_ye < 0.01, 0.01, density_ye),
-    density_hal2 = ifelse(density_hal < 0.01, 0.01, density_hal),
+    density_ye2 = ifelse(density_ye < 0.1, 0.1, density_ye),
+    density_hal2 = ifelse(density_hal < 0.1, 0.1, density_hal),
     density_ye3 = ifelse(density_ye < 0.001, 0.001, density_ye),
     density_hal3 = ifelse(density_hal < 0.001, 0.001, density_hal)
   )%>%
   ggplot(., aes(depth,
                 # log10(density_ye/density_hal),
-                log10(density_ye3/density_hal3),
+                log10(density_ye2/density_hal2),
     colour = region, fill = region, shape = survey, group = region
   )) +
   geom_point(alpha = 0.6) +
-  geom_hline(yintercept = 0) +
-  geom_vline(xintercept = 170) +
+  geom_hline(yintercept = 0, lty = "dashed") +
+  geom_vline(xintercept = 175, lty = "dashed") +
   geom_smooth() +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
   coord_cartesian(expand = F,
-                  xlim = c(0, 400),
+                  xlim = c(0, 500),
                   # ylim = c(-3.4, 3.4)) +
-                  ylim = c(-4.4, 4.4)) +
-  ylab("log10(YE/halibut) truncated at 0.001") +
+                  ylim = c(-3.5, 3.5)) +
+  ylab("log10(YE/halibut) truncated at 0.1") +
   ggtitle(paste0("Survey data from 2004 to 2020")) +
   ggsidekick::theme_sleek() #+ theme(legend.position = "none")
 
