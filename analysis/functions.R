@@ -125,7 +125,8 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
     for (i in seq_along(unique(newdata$region))){
 
         pred <- p[newdata$region == unique(newdata$region)[i], ]
-        attr(pred, "time") <- "year"
+        attr(pred, "time") <- attr(p, "time")
+        attr(pred, "link") <- attr(p, "link")
 
         ind2 <- get_index_sims(pred, return_sims = F, level = level,
                                area = newdata[newdata$region == unique(newdata$region)[i], ]$area,

@@ -43,9 +43,12 @@ full_s_grid <- readRDS(paste0("report-data/full_filled_grid_w_ext_", grid_scale,
 
 # # load models if 03 not just run
 # hal_model <- "w-effort-500kn-delta-AR1-aniso"
-hal_model <- "w-good-depths-500kn-delta-AR1-aniso"
+# hal_model <- "w-good-depths-500kn-delta-AR1-aniso"
+hal_model <- "w-deeper-500kn-delta-AR1-aniso"
+
 # ye_model <- "w-effort-500kn-delta-spatial-aniso"
-ye_model <- "w-good-depths-500kn-delta-iid-aniso"
+# ye_model <- "w-good-depths-500kn-delta-iid-aniso"
+ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
 #
 # # hal_model <- "rocky-muddy-300kn-delta-IID-aniso"
 # # hal_model <- "w-cc2-rocky-muddy-400kn-delta-IID-aniso"
@@ -205,6 +208,7 @@ ggsave(paste0("figs/halibut-", hal_model, "_", grid_scale, "-map-2020-closeup.pn
 #   filter(latitude < max_map_lat)
 
 p_hal_mean <- p_hal %>%
+  filter(year > 2015) %>%
   filter(latitude < max_map_lat) %>%
   group_by(x,y,X,Y,longitude,latitude) %>%
   summarise(est = mean(est))
@@ -252,7 +256,7 @@ g <- map_predictions(
   size_lab = "Observed kg/ha",
   size_aes = density
 ) + theme(legend.spacing.y = unit(0.1, "cm"))
-# g
+g
 
 ggsave(paste0("figs/yelloweye-", ye_model, "_", grid_scale, "-map-2020.png"),
        width = 6, height = 5,
@@ -360,7 +364,7 @@ ratio_df_2020 %>% filter(depth > 20) %>%
 #   geom_smooth() +
 #   scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
 
-ggsave("figs/model-raw-ratio-by-depth-2020.png", width = 6, height = 4)
+ggsave("figs/model-raw-ratio-by-depth-2020.png", width = 6, height = 3)
 
 
 ratio_df_2020 %>%
@@ -389,13 +393,13 @@ g1 <- map_predictions(
   pred_data = ratio_df_2020,
   pred_min = 0,
   # pred_min = min(ratio_df_2020$ye_per_hal),
-  pred_max = quantile(ratio_df_2020$ye_per_hal, 0.99),
+  pred_max = quantile(ratio_df_2020$ye_per_hal, 0.975),
   fill_aes = ye_per_hal,
   fill_lab = "Yelloweye to Halibut\nbiomass ratio"
 )
 g1
 
-ggsave(paste0("figs/ye-to-halibut-", ye_model, "-2020.png"), width = 6, height = 5, dpi = 400)
+ggsave(paste0("figs/ye-to-halibut-", hal_model, "-2020.png"), width = 6, height = 5, dpi = 400)
 #        width = 5.5, height = 4.5, dpi = 400
 #        # width = 6, height = 5, dpi = 200
 
@@ -405,13 +409,13 @@ g1 <- map_predictions(
   pred_data = ratio_df_2020,
   pred_min = 0,
   # pred_min = min(ratio_df_2020$ye_per_hal),
-  pred_max = quantile(ratio_df_2020$hal_per_ye, 0.99),
+  pred_max = quantile(ratio_df_2020$hal_per_ye, 0.975),
   fill_aes = hal_per_ye,
   fill_lab = "Halibut to Yelloweye\nbiomass ratio"
 )
 g1
 
-ggsave(paste0("figs/halibut-to-ye-truncated-", ye_model, "-2020.png"), width = 6, height = 5, dpi = 400)
+ggsave(paste0("figs/halibut-to-ye-truncated-", hal_model, "-2020.png"), width = 6, height = 5, dpi = 400)
 
 g1 <- map_predictions(
   map_lat_limits = c(48.4, max_map_lat),
@@ -423,9 +427,9 @@ g1 <- map_predictions(
   fill_aes = hal_per_ye2,
   fill_lab = "Halibut to Yelloweye\nbiomass ratio"
 )
-g1
+# g1
 
-ggsave(paste0("figs/halibut-to-ye-truncated2-", ye_model, "-2020.png"), width = 6, height = 5, dpi = 400)
+ggsave(paste0("figs/halibut-to-ye-truncated2-", hal_model, "-2020.png"), width = 6, height = 5, dpi = 400)
 
 
 
