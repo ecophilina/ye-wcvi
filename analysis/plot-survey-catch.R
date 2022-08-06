@@ -75,7 +75,7 @@ surv_dat %>%
     colour = region, fill = region
   )) +
   geom_point(alpha = 0.2) +
-  geom_smooth() +
+  geom_smooth(method = "gam") +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
   coord_cartesian(expand = F, ylim = c(0, 2.6)) +
@@ -89,7 +89,7 @@ surv_dat %>%
     colour = region, fill = region
   )) +
   geom_point(alpha = 0.2) +
-  geom_smooth() +
+  geom_smooth(method = "gam") +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
   coord_cartesian(
@@ -120,7 +120,7 @@ surv_dat %>%
   geom_point(alpha = 0.6) +
   geom_hline(yintercept = 0, lty = "dashed") +
   geom_vline(xintercept = 175, lty = "dashed") +
-  geom_smooth() +
+  geom_smooth(method = "gam") +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
   coord_cartesian(expand = F,

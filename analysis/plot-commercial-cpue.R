@@ -230,7 +230,7 @@ cc %>%
     colour = region, fill = region
   )) +
   geom_point(alpha = 0.1) +
-  geom_smooth() +
+  geom_smooth(method = "gam") +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
   coord_cartesian(
@@ -252,7 +252,7 @@ cc %>%
     colour = region, fill = region
   )) +
   geom_point(alpha = 0.1) +
-  geom_smooth() +
+  geom_smooth(method = "gam") +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
   coord_cartesian(
@@ -278,7 +278,7 @@ cc %>%
   )) +
   geom_point(alpha = 0.1) +
   geom_vline(xintercept = 175, lty = "dashed") +
-  geom_smooth() +
+  geom_smooth(method = "gam") +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
   coord_cartesian(expand = F,
@@ -308,7 +308,7 @@ cc %>%
   geom_point(alpha = 0.2) +
   geom_hline(yintercept = 0, lty = "dashed" ) +
   geom_vline(xintercept = 175, lty = "dashed") +
-  geom_smooth() +
+  geom_smooth(method = "gam") +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
   coord_cartesian(expand = F,
@@ -338,7 +338,7 @@ cc %>%
   geom_point(alpha = 0.2) +
   geom_hline(yintercept = 0, lty = "dashed") +
   geom_vline(xintercept = 175, lty = "dashed") +
-  geom_smooth() +
+  geom_smooth(method = "gam") +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
   coord_cartesian(expand = F,
