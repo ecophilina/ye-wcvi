@@ -4,20 +4,13 @@ library(tidyr)
 library(sdmTMB)
 library(ggsidekick)
 
-
-# select which scale of grid to use
-# grid_scale <- 2000
-grid_scale <- 1000
-
-
-cols <- c(
-  "red",
-  #"darkorchid4",
-  "deeppink4",
-  "deepskyblue4"
-  # "cadetblue3"
-)
-
+# cols <- c(
+#   "red",
+#   #"darkorchid4",
+#   "deeppink4",
+#   "deepskyblue4"
+#   # "cadetblue3"
+# )
 
 # # load models if 03 not just run
 hal_model <- "w-deeper-500kn-delta-AR1-aniso"
@@ -214,9 +207,9 @@ p$Species <- ordered(p$Species, levels = c("Yelloweye Rockfish", "Landable Pacif
 
 dplot <- ggplot(
   p,
-  aes(x, prediction*100,
-    ymin = lowCI*100,
-    ymax = highCI*100,
+  aes(x, prediction,
+    ymin = lowCI,
+    ymax = highCI,
     group = year
   )
 ) +
@@ -229,14 +222,14 @@ dplot <- ggplot(
     scales = "free",
     switch = "both"
   ) +
-  scale_x_continuous(n.breaks = 6) +
+  scale_x_continuous(n.breaks = 4) +
   guides(alpha = "none") +
   gfplot::theme_pbs() +
   theme(legend.position = "none",
         strip.placement = "outside")
   # theme(legend.position = c(0.7, 0.9), strip.text.x = element_blank())
 dplot
-ggsave("figs/effects-delta.png", width = 7, height = 4)
+ggsave("figs/effects-delta2.png", width = 6, height = 4)
 
 # # leftover separate component model effects
 # # rocky plots
