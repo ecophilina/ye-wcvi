@@ -14,6 +14,10 @@ min_map_lat <- 48.3
 max_map_lon <- -124.85
 min_map_lat3 <- 48.4
 
+write_tex <- function(x, macro, ...) {
+  paste0("\\newcommand{\\", macro, "}{", x, "}") %>%
+    readr::write_lines("values.tex", append = TRUE)
+}
 
 convert2utm <- function(df, coords = c("X", "Y"), out_crs = 3156) {
   x <- sf::st_as_sf(df,
