@@ -52,7 +52,7 @@ library(sp)
 cc <- readRDS("data/hal-ye-ll-cpue-all.rds") %>%
   filter(fishery_sector %in% c("halibut", "halibut and sablefish"))
 
-
+# this is checking that end values aren't completely outside the footprint of all starting values
 cc <- cc %>%
   mutate(
     end_longitude = ifelse((-end_longitude) < (max(cc$lon) + 2) & (-end_longitude) > (min(cc$lon) - 2), -end_longitude, NA),
@@ -61,6 +61,7 @@ cc <- cc %>%
 
 # cc <- sdmTMB::add_utm_columns(cc, ll_names = c("lon", "lat"), units = "m", ll_crs = 4326, utm_crs = 3156)
 
+# removes NAs and values in the wrong hemisphere
 cc <- cc %>% filter(end_latitude > 0 & end_longitude < 0 & lat > 0 & lon < 0)
 
 # cc <- sdmTMB::add_utm_columns(cc2, ll_names = c("end_longitude", "end_latitude"), utm_names = c("X_end", "Y_end"), units = "m", ll_crs = 4326, utm_crs = 3156)
