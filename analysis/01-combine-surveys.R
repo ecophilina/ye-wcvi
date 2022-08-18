@@ -179,11 +179,14 @@ saveRDS(haltrawldata, "data/halibut-surv-sets-trawl-keepers.rds")
 yesampledataSYN <- readRDS("data/yelloweye-surv-samples-all.rds") %>% filter(survey_abbrev == c("SYN WCVI", "SYN QCS"))
 yemeanweightSYN <- mean(yesampledataSYN$weight / 1000, na.rm = T)
 round(yemeanweightSYN, 2)
+write_tex(round(yemeanweightSYN, 2), "yemeanweightSYN")
+
 
 # print("Mean Yelloweye weight from HBLL")
 yesampledata <- readRDS("data/yelloweye-surv-samples-all.rds") %>% filter(survey_abbrev == c("HBLL OUT S"))
 yemeanweightHBLL <- mean(yesampledata$weight / 1000, na.rm = T)
 round(yemeanweightHBLL, 2)
+write_tex(round(yemeanweightHBLL, 2), "yemeanweightHBLL")
 
 # print("Mean Yelloweye weight in commerical data")
 # 3.2 # 7 lbs =3.18 kg
@@ -216,6 +219,8 @@ haltrawldata <- readRDS("data/halibut-surv-sets-trawl-keepers.rds")
 halhblldata <- readRDS("data/halibut-surv-sets-all.rds") %>% filter(survey_abbrev == "HBLL OUT S")
 
 halmeanweight <- 4.23 # average kg of commercially retainable halibut per fish caught based on HBLL offload_round_weights/catch_counts
+write_tex(halmeanweight, "halmeanweight")
+
 
 d_hal <- model_data_prep(haltrawldata, halhblldata, cc_hal, mean_weight = halmeanweight) %>%
   mutate(year = year_pair)
@@ -227,6 +232,7 @@ yetrawldata <- readRDS("data/yelloweye-surv-sets-all.rds") %>% filter(survey_abb
 yehblldata <- readRDS("data/yelloweye-surv-sets-all.rds") %>% filter(survey_abbrev == "HBLL OUT S")
 
 yemeanweight <- round(yemeanweightHBLL, 2)
+write_tex(yemeanweight, "yemeanweight")
 
 d_ye <- model_data_prep(yetrawldata, yehblldata, cc_ye, mean_weight = yemeanweight)%>%
   mutate(year = year_pair)
