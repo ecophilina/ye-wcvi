@@ -228,7 +228,9 @@ dplot <- ggplot(
   theme(legend.position = "none",
         strip.placement = "outside")
   # theme(legend.position = c(0.7, 0.9), strip.text.x = element_blank())
-dplot
+
+dplot <- egg::tag_facet(dplot)
+
 ggsave("figs/effects-delta-iid-ansio.png", width = 6, height = 4)
 
 # # leftover separate component model effects

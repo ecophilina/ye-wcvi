@@ -109,7 +109,7 @@ glimpse(.s_ye)
 .s_ye <- .s_ye %>% select(ye_est)
 .dat <- cbind(.s_hal, .s_ye)
 .dat <- .dat %>% mutate(
-  # so 0.0024384 * 0.009144 * 2 converts kg/km2 to kg/500 hooks but mine are not yet in km2 they are in kg/ha
+  # so 0.0024384 * 0.009144 * 2 converts kg/km2 to kg/hook but mine are not yet in km2 they are in kg/ha
   halibut = hal_est * 100 * (500 * 0.0024384 * 0.009144 * 2),
   yelloweye = ye_est * 100 * (500 * 0.0024384 * 0.009144 * 2),
   ye_per_hal = yelloweye / (halibut), # not correcting for <1
@@ -385,7 +385,7 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions2.pn
       ylim = c(0, 0.55),
       expand = F) +
     scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
-    ylab("Mean ratio of YE to halibut") +
+    ylab("Yelloweye to halibut ratio") +
     xlab(expression("Total area of cells ("~km^2~")")) +
     labs(tag="B.") +
     theme(
@@ -413,7 +413,7 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions2.pn
     # scale_y_continuous(limits = c(0, 750)) +
     coord_cartesian(expand = F) +
     scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
-    ylab("Mean ratio of halibut to YE") +
+    ylab("Halibut to yelloweye ratio") +
     xlab(expression("Total area of cells ("~km^2~")")) +
     # ggtitle("B. Minimizing YE ") +
     theme(
@@ -423,27 +423,27 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions2.pn
       legend.position = "none"
     )
 )
-
-p4 <- p4 + labs(tag="A.") + theme(
-  plot.tag.position = c(0.15, 0.9),
-  axis.title.x = element_blank(), axis.text.x = element_blank(),
-  legend.position = c(0.85, 0.75)
-  # legend.position = "none"
-)
-
-
-p5 <- p5 + labs(tag="B.") + theme(
-  plot.tag.position = c(0.15, 0.9),
-  # axis.title.x = element_blank(), axis.text.x = element_blank(),
-  # legend.position = c(0.85, 0.75)
-  legend.position = "none"
-)
-
-# p4$labels$x <- " "
-# p4$theme$axis.text.x <- p1$theme$axis.text.y
-(p4/p5) + patchwork::plot_layout()
-
-ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_ratios_regions2.png"), width = 5, height = 7)
+#
+# p4 <- p4 + labs(tag="A.") + theme(
+#   plot.tag.position = c(0.15, 0.9),
+#   axis.title.x = element_blank(), axis.text.x = element_blank(),
+#   legend.position = c(0.85, 0.75)
+#   # legend.position = "none"
+# )
+#
+#
+# p5 <- p5 + labs(tag="B.") + theme(
+#   plot.tag.position = c(0.15, 0.9),
+#   # axis.title.x = element_blank(), axis.text.x = element_blank(),
+#   # legend.position = c(0.85, 0.75)
+#   legend.position = "none"
+# )
+#
+# # p4$labels$x <- " "
+# # p4$theme$axis.text.x <- p1$theme$axis.text.y
+# (p4/p5) + patchwork::plot_layout()
+#
+# ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_ratios_regions2.png"), width = 5, height = 7)
 
 
 (p6 <- ggplot(avoiding_ye_sum %>%
@@ -493,9 +493,10 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_ratios_regions2.png")
     #   breaks = c(0.1, 1, 10, 100, 1000), labels = c(0.1, 1, 10, 100, "1000")
     #   ) +
     coord_cartesian(expand = F, ylim = c(0, 30)) +
-    labs(tag="D.")+
+    # labs(tag="D.")+
+    labs(tag="(d)")+
     scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
-    ylab("Cumulative YE") +
+    ylab("Cumulative yelloweye") +
     xlab(expression("Total area of cells ("~km^2~")")) +
     # ggtitle("B. Minimizing YE ") +
     theme(
@@ -507,32 +508,36 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_ratios_regions2.png")
 )
 
 
-p4 <- p4 + labs(tag="C.") + theme(
+# p4 <- p4 + labs(tag="C.") + theme(
+p4 <- p4 + labs(tag="(c)") + theme(
   plot.tag.position = c(0.15, 0.9),
   axis.title.x = element_blank(), axis.text.x = element_blank(),
   # legend.position = c(0.85, 0.75)
   legend.position = "none"
 )
 
-p5 <- p5 + labs(tag="D.") + theme(
+# p5 <- p5 + labs(tag="D.") + theme(
+p5 <- p5 + labs(tag="(d)") + theme(
   # axis.title.x = element_blank(), axis.text.x = element_blank()
   legend.position = c(0.85, 0.75)
   # legend.position = "none"
 )
 
-p6 <- p6 + labs(tag="B.") + theme(
+# p6 <- p6 + labs(tag="B.") + theme(
+p6 <- p6 + labs(tag="(b)") + theme(
   axis.title.x = element_blank(), axis.text.x = element_blank(),
   # legend.position = c(0.85, 0.3)
   legend.position = "none"
 )
 
-p7 <- p7 + labs(tag="A.") + theme(
+# p7 <- p7 + labs(tag="A.") + theme(
+p7 <- p7 + labs(tag="(a)") + theme(
   axis.title.x = element_blank(), axis.text.x = element_blank()
   )
 
 (p7/p6/p4/p5) + patchwork::plot_layout()
 
-ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_w_cumulative_totals_500hooks.png"), width = 5.5, height = 10)
+ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_w_cumulative_totals_500hooks_smalltags.png"), width = 5.5, height = 10)
 
 # 2158204.29 kg is total tac in 20
 # 0.9106 % of TAC in 2021?

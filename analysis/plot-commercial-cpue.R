@@ -529,7 +529,7 @@ c <- cc %>% filter (depth < 1000) %>%
 
 # hist(c$cpue)
 
-plot_cpue_spatial(c, start_year = 2007, bin_width = 5, n_minimum_vessels = 3,
+p1 <- plot_cpue_spatial(c, start_year = 2007, bin_width = 5, n_minimum_vessels = 3,
                   xlim = c(450, 800),
                   ylim = c(5370, 5640)) +
   # scale_colour_viridis_c(trans = fourth_root_power_trans(), option = "D") +
@@ -543,7 +543,8 @@ plot_cpue_spatial(c, start_year = 2007, bin_width = 5, n_minimum_vessels = 3,
                        labels = c("0" ,"0.001","0.1", "10"),
                        name = "CPUE(kg/ha)")+
   theme(legend.position = c(0.95,0.95)) +
-  ggtitle("A. Yelloweye Rockfish commercial CPUE (kg/ha)")
+  # ggtitle("A. Yelloweye Rockfish commercial CPUE (kg/ha)")
+  ggtitle("(a) Yelloweye Rockfish commercial CPUE (kg/ha)")
   # scale_colour_viridis_c(option = "D") +
   # scale_fill_viridis_c(option = "D")
 
@@ -561,7 +562,7 @@ c2 <- cc %>% filter (depth < 1000) %>%
 
 # hist(c$cpue)
 
-plot_cpue_spatial(c2, start_year = 2007, bin_width = 5, n_minimum_vessels = 3,
+p2 <- plot_cpue_spatial(c2, start_year = 2007, bin_width = 5, n_minimum_vessels = 3,
                   xlim = c(450, 800),
                   ylim = c(5370, 5640)) +
   # scale_colour_viridis_c(trans = fourth_root_power_trans(), option = "D") +
@@ -577,10 +578,15 @@ plot_cpue_spatial(c2, start_year = 2007, bin_width = 5, n_minimum_vessels = 3,
   scale_colour_viridis_c(trans = "sqrt", option = "D",name = "CPUE(kg/ha)") +
   scale_fill_viridis_c(trans = "sqrt", option = "D",name = "CPUE(kg/ha)") +
   theme(legend.position = c(0.95,0.95)) +
-  ggtitle("B. Pacific Halibut commercial CPUE (kg/ha)")
+  # ggtitle("B. Pacific Halibut commercial CPUE (kg/ha)")
+  ggtitle("(b) Pacific Halibut commercial CPUE (kg/ha)")
 #   scale_colour_viridis_c(option = "D") +
 #   scale_fill_viridis_c(option = "D")
 
 ggsave("figs/spatial-cpue-halibut.png", width = 4.5, height = 3.5)
 
+p1 + p2 + patchwork::plot_layout() & theme(axis.ticks = element_blank(),
+                                           axis.title = element_blank(),
+                                           axis.text = element_blank())
 
+ggsave("figs/spatial-cpue.png", width = 8, height = 3.5)
