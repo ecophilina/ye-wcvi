@@ -368,31 +368,39 @@ saveRDS(ratios_df, paste0("data-generated/ratios-by-depth-", hal_model,".rds"))
 ratios_df <- readRDS(paste0("data-generated/ratios-by-depth-", hal_model,".rds"))
 
 
-ratios_df %>% filter(year == 2020) %>%
+(dr1 <- ratios_df %>% filter(year == 2020) %>%
   # filter(min_depth > 50) %>%
-  ggplot(aes(min_depth, sp1_per_sp2, fill = region)) +
+  ggplot(aes(min_depth + 25/2, sp1_per_sp2, fill = region)) +
   geom_line(aes(colour = region)) +
-  geom_ribbon(aes(min_depth, ymin = lwr12, ymax = upr12), alpha = 0.1) +
+  geom_ribbon(aes(min_depth+ 25/2, ymin = lwr12, ymax = upr12), alpha = 0.1) +
   scale_y_log10() +
   geom_vline(xintercept = 175, lty = "dashed") +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
-  ylab("Ratio of halibut to YE")
+    labs(x = paste0("Depth (m) of grid cells grouped in ", bin_width, " m bins"),
+         y = "Ratios of halibut to yellow catch weights",
+         colour = "Region", fill = "Region") +
+    theme(legend.position = c(0.45,0.85))
+  )
 
-ggsave(paste0("figs/ratio-hal-to-YE-by-", bin_width, "m-bin-depth-", hal_model, "-region.png"), width = 7, height = 3, dpi = 400)
+ggsave(paste0("figs/ratio-hal-to-YE-by-", bin_width, "m-bin-depth-", hal_model, "-region.png"), width = 7, height = 4, dpi = 400)
 
-ratios_df %>% filter(year == 2020) %>%
+(dr2 <- ratios_df %>% filter(year == 2020) %>%
   # filter(min_depth > 50) %>%
-  ggplot(aes(min_depth, sp2_per_sp1, fill = region)) +
+  ggplot(aes(min_depth+ 25/2, sp2_per_sp1, fill = region)) +
   geom_line(aes(colour = region)) +
-  geom_ribbon(aes(min_depth, ymin = lwr21, ymax = upr21), alpha = 0.1) +
+  geom_ribbon(aes(min_depth+ 25/2, ymin = lwr21, ymax = upr21), alpha = 0.1) +
   scale_y_log10() +
   geom_vline(xintercept = 175, lty = "dashed") +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
-  ylab("Ratio of YE to halibut")
+  labs(x = paste0("Depth (m) of grid cells grouped in ", bin_width, " m bins"),
+       y = "Ratios of yelloweye to halibut catch weights",
+       colour = "Region", fill = "Region") +
+  theme(legend.position = c(0.45,0.25))
+  )
 
-ggsave(paste0("figs/ratio-YE-to-hal-by-", bin_width, "m-bin-depth-", hal_model, "-region.png"), width = 7, height = 3, dpi = 400)
+ggsave(paste0("figs/ratio-YE-to-hal-by-", bin_width, "m-bin-depth-", hal_model, "-region.png"), width = 7, height = 4, dpi = 400)
 
 
 

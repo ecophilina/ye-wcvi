@@ -106,7 +106,7 @@ p1 <- surv_dat %>%
   filter(depth < 600) %>%
   mutate(density = log(density_ye + 1)) %>%
   plot_catch_by_depth(.) +
-  ylab("Log (survey biomass density + 1)") +
+  ylab("Log (survey CPUE + 1)") +
   ggtitle("Yelloweye Rockfish") +
   labs(tag = "(a)") +
   theme(
@@ -144,7 +144,7 @@ p3 <- cc %>%
   filter(hal_cpue > 0) %>%
   mutate(density = log(ye_cpue + 1)) %>%
   plot_catch_by_depth(.) +
-  ylab("Log (commercial biomass density + 1)") +
+  ylab("Log (commercial CPUE + 1)") +
   # ggtitle("B. Pacific Halibut") +
   facet_grid(
     # cols=vars(region),

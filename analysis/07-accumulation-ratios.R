@@ -517,7 +517,7 @@ p4 <- p4 + labs(tag="(c)") + theme(
 )
 
 # p5 <- p5 + labs(tag="D.") + theme(
-p5 <- p5 + labs(tag="(d)") + theme(
+p5 <- p5 + labs(tag="(d)", colour = "Region", fill = "Region") + theme(
   # axis.title.x = element_blank(), axis.text.x = element_blank()
   legend.position = c(0.85, 0.75)
   # legend.position = "none"
