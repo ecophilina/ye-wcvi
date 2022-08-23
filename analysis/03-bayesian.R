@@ -160,58 +160,57 @@ year_prior_sd <- 10
 q_sd <- 5
 poly_sd <- 20
 
-if(include_cc) {
-
+if (include_cc) {
   formula1 <- density ~ 0 +
     fyear +
     survey +
     rocky +
     muddy +
-    poly(depth_scaled, 2) + (1|vessel_id)
+    poly(depth_scaled, 2) + (1 | vessel_id)
 
   priors1 <- sdmTMBpriors(
     b = normal(rep(0, 13),
-               scale = c(
-                 rep(year_prior_sd, 7),
-                 rep(q_sd, 2),
-                 rep(poly_sd, 4)
-               )
+      scale = c(
+        rep(year_prior_sd, 7),
+        rep(q_sd, 2),
+        rep(poly_sd, 4)
+      )
     )
   )
 
-  formula2 <- density ~ 0 +
-    fyear +
-    survey +
-    poly(rocky, 2) +
-    poly(muddy, 2) +
-    poly(depth_scaled, 2) + (1|vessel_id)
-
-  priors2 <- sdmTMBpriors(
-    b = normal(rep(0, 15),
-               scale = c(
-                 rep(year_prior_sd, 7),
-                 rep(q_sd, 2),
-                 rep(poly_sd, 6)
-               )
-    )
-  )
-
-  formula3 <- density ~ 0 +
-    fyear +
-    survey +
-    poly(rocky, 3) +
-    poly(muddy, 3) +
-    poly(depth_scaled, 2) + (1|vessel_id)
-
-  priors3 <- sdmTMBpriors(
-    b = normal(rep(0, 17),
-               scale = c(
-                 rep(year_prior_sd, 7),
-                 rep(q_sd, 2),
-                 rep(poly_sd, 8)
-               )
-    )
-  )
+  # formula2 <- density ~ 0 +
+  #   fyear +
+  #   survey +
+  #   poly(rocky, 2) +
+  #   poly(muddy, 2) +
+  #   poly(depth_scaled, 2) + (1|vessel_id)
+  #
+  # priors2 <- sdmTMBpriors(
+  #   b = normal(rep(0, 15),
+  #              scale = c(
+  #                rep(year_prior_sd, 7),
+  #                rep(q_sd, 2),
+  #                rep(poly_sd, 6)
+  #              )
+  #   )
+  # )
+  #
+  # formula3 <- density ~ 0 +
+  #   fyear +
+  #   survey +
+  #   poly(rocky, 3) +
+  #   poly(muddy, 3) +
+  #   poly(depth_scaled, 2) + (1|vessel_id)
+  #
+  # priors3 <- sdmTMBpriors(
+  #   b = normal(rep(0, 17),
+  #              scale = c(
+  #                rep(year_prior_sd, 7),
+  #                rep(q_sd, 2),
+  #                rep(poly_sd, 8)
+  #              )
+  #   )
+  # )
 
   hal_formula <- formula1
   ye_formula <- formula1
@@ -220,18 +219,16 @@ if(include_cc) {
   # ye_priors <- priors1
   ye_priors <- sdmTMBpriors(
     b = normal(rep(0, 14),
-               scale = c(
-                 rep(year_prior_sd, 7),
-                 rep(q_sd, 3),
-                 rep(poly_sd, 4)
-               )
+      scale = c(
+        rep(year_prior_sd, 7),
+        rep(q_sd, 3),
+        rep(poly_sd, 4)
+      )
     )
   )
 
   hal_spatiotemporal <- list("off", "ar1")
-
 } else {
-
   fixed_formula <- density ~ 0 +
     fyear +
     survey +
@@ -244,20 +241,19 @@ if(include_cc) {
 
   hal_spatiotemporal <- list("off", "iid")
 
-priors <- sdmTMBpriors(
-  b = normal(rep(0, 16),
-    scale = c(
-      rep(year_prior_sd, 7),
-      rep(q_sd, 1),
-      rep(poly_sd, 8)
+  priors <- sdmTMBpriors(
+    b = normal(rep(0, 16),
+      scale = c(
+        rep(year_prior_sd, 7),
+        rep(q_sd, 1),
+        rep(poly_sd, 8)
+      )
     )
+    # matern_s = pc_matern(range_gt = 0.1, sigma_lt = 2),
+    # matern_st = pc_matern(range_gt = 0.1, sigma_lt = 2)
   )
-  # matern_s = pc_matern(range_gt = 0.1, sigma_lt = 2),
-  # matern_st = pc_matern(range_gt = 0.1, sigma_lt = 2)
-)
-hal_priors <- priors
-ye_priors <- priors #use same for ye
-
+  hal_priors <- priors
+  ye_priors <- priors # use same for ye
 }
 
 # HAL -------------------------------------------------------
