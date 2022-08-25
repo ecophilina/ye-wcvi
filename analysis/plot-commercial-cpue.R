@@ -529,9 +529,17 @@ c <- cc %>% filter (depth < 1000) %>%
 
 # hist(c$cpue)
 
-p1 <- plot_cpue_spatial(c, start_year = 2007, bin_width = 5, n_minimum_vessels = 3,
-                  xlim = c(450, 800),
-                  ylim = c(5370, 5640)) +
+## if the location of labels needs moving...
+labels <- gfplot:::boundary_labels(9, xmin = 400)
+labels[labels$label %in% c("5A"),]$Y <- 5615
+# labels$Y <- labels$Y - 20
+
+p1 <- plot_cpue_spatial(c,
+                        show_majorbound = TRUE,
+                        major_labels = labels,
+                        start_year = 2007, bin_width = 5, n_minimum_vessels = 3,
+                        xlim = c(450, 800),
+                        ylim = c(5370, 5640)) +
   # scale_colour_viridis_c(trans = fourth_root_power_trans(), option = "D") +
   # scale_fill_viridis_c(trans = fourth_root_power_trans(), option = "D")
   scale_colour_viridis_c(trans = "log10", option = "D",
@@ -562,9 +570,12 @@ c2 <- cc %>% filter (depth < 1000) %>%
 
 # hist(c$cpue)
 
-p2 <- plot_cpue_spatial(c2, start_year = 2007, bin_width = 5, n_minimum_vessels = 3,
-                  xlim = c(450, 800),
-                  ylim = c(5370, 5640)) +
+p2 <- plot_cpue_spatial(c2,
+                        show_majorbound = TRUE,
+                        major_labels = labels,
+                        start_year = 2007, bin_width = 5, n_minimum_vessels = 3,
+                        xlim = c(450, 800),
+                        ylim = c(5370, 5640)) +
   # scale_colour_viridis_c(trans = fourth_root_power_trans(), option = "D") +
   # scale_fill_viridis_c(trans = fourth_root_power_trans(), option = "D")
   # scale_colour_viridis_c(trans = "log10", option = "D",
