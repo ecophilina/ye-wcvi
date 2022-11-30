@@ -5,6 +5,8 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(sdmTMB)
+library(patchwork)
+
 theme_set(ggsidekick::theme_sleek())
 options(sdmTMB.cores = 2L)
 
@@ -42,6 +44,18 @@ full_s_grid <- readRDS(paste0("report-data/full_filled_grid_w_ext_", grid_scale,
   # filter(latitude <= latitude_cutoff) %>%
   mutate(fyear = as.factor(year),
          vessel_id = as.factor("survey"))
+
+# depth stats for regions
+
+full_s_grid %>% filter(year == max(full_s_grid$year)) %>%
+  group_by(region) %>%
+  summarise(mean = mean(depth, na.rm = TRUE),
+            median = median(depth, na.rm = TRUE),
+            min = min(depth, na.rm = TRUE),
+            max = max(depth, na.rm = TRUE),
+            quantile_25th = quantile(depth, 0.25),
+            quantile_75th = quantile(depth, 0.75))
+
 
 # # load models if 03 not just run
 # hal_model <- "w-effort-500kn-delta-AR1-aniso"
@@ -399,8 +413,63 @@ ggsave(paste0("figs/ratio-hal-to-YE-by-", bin_width, "m-bin-depth-", hal_model, 
        colour = "Region", fill = "Region") +
   theme(legend.position = c(0.45,0.25))
   )
+ggsave(paste0("figs/ratio-YE-to-hal-by-", bin_width, "m-bin-depth-", hal_model, "-region.png"),
+       width = 7, height = 4, dpi = 400)
 
-ggsave(paste0("figs/ratio-YE-to-hal-by-", bin_width, "m-bin-depth-", hal_model, "-region.png"), width = 7, height = 4, dpi = 400)
+
+# add depth histogram inset
+p2 <- full_s_grid %>%
+  filter(region %in% c("CDA", "CDA adjacent", "non-CDA 3CD") & year == max(full_s_grid$year)) %>%
+  ggplot() + geom_histogram(aes(depth, fill = region),
+                            colour = NA,
+                            alpha = 0.7,
+                            binwidth = 25, boundary = 0) +
+  # ggplot() + geom_density(aes(depth, colour = region, fill = region), alpha = 0.25) +
+  geom_vline(xintercept = 175, lty = "dashed") +
+  scale_fill_manual(values = cols, name = "Region") +
+  scale_colour_manual(values = cols, name = "Region") +
+  ylab("Grid cells") +
+  xlab("") +
+  scale_y_continuous(n.breaks = 3) +
+  scale_x_continuous(n.breaks = 4) +
+  coord_cartesian(expand = FALSE) +
+  # scale_x_sqrt() +
+  # facet_wrap(~region, ncol = 1) +
+  ggsidekick::theme_sleek() +
+  theme(legend.position = "none",
+        text = element_text(size = 8),
+        axis.ticks.y = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.title.x = element_blank(),
+        plot.background = element_rect(fill='transparent', color=NA),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()
+        )
+
+(dr2 <- ratios_df %>% filter(year == 2020) %>%
+    # filter(min_depth > 50) %>%
+    ggplot(aes(min_depth+ 25/2, sp2_per_sp1, fill = region)) +
+    # geom_plot(data = data.tb, aes(x, y, label = plot)) +
+    geom_line(aes(colour = region)) +
+    geom_ribbon(aes(min_depth+ 25/2, ymin = lwr21, ymax = upr21), alpha = 0.1) +
+    scale_y_log10() +
+    scale_x_continuous(n.breaks = 5, expand = c(0,0)) +
+    geom_vline(xintercept = 175, lty = "dashed") +
+    scale_fill_manual(values = cols) +
+    scale_colour_manual(values = cols) +
+    labs(x = paste0("Depth (m) of grid cells grouped in ", bin_width, " m bins"),
+         y = "Ratios of yelloweye to halibut catch weights",
+         colour = "Region", fill = "Region") +
+    theme(legend.position = c(0.6,0.23))+
+    inset_element(p2,
+                  left = 0.01, bottom = 0.00001,
+                  right = 0.5, top = 0.4)
+)
+
+
+ggsave(paste0("figs/ratio-YE-to-hal-by-", bin_width, "m-bin-depth-", hal_model, "-region-w-inset.png"),
+       width = 7, height = 4, dpi = 400)
+
 
 
 
@@ -415,7 +484,6 @@ i_hal_x %>% mutate(depth_range = forcats::fct_reorder(depth_range, min_depth))%>
   ggtitle("Halibut density by depth bin in CDA adjacent waters", subtitle = "(in CDA halibut peak at 75-100m = red dashed line)")
 
 ggsave(paste0("figs/halibut-densities-by-", bin_width, "m-bin-depth-", grid_scale, "-through-time.png"), width = 7, height = 5, dpi = 400)
-
 
 
 # # no spatiotemporal random field so annual change less interesting
