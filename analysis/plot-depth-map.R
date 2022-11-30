@@ -7,7 +7,7 @@ theme_set(ggsidekick::theme_sleek())
 
 # load misc custom functions
 source("analysis/functions.R")
-
+grid_scale <- 1000
 
 # Explore depth variation across regions
 f <- paste0("figs/depth-map.png")
@@ -17,6 +17,9 @@ if (!file.exists(f)) {
   focal_area <- sf::st_read(dsn = "shape-files/taaqwiihak_areaVer2.shp",
                             layer = "taaqwiihak_areaVer2", quiet = TRUE)
   focal_area_proj <- sf::st_transform(focal_area, crs = 3156)
+
+  focal_area2 <- sf::st_read(dsn = "shape-files/ExtendCDA1/Extend_1.shp", layer = "Extend_1")
+  focal_area2_proj <- sf::st_transform(focal_area2, crs = 3156)
 
   library(PBSmapping) # needs this for some reason
   majorbound <- load_boundaries(9)
@@ -45,7 +48,9 @@ if (!file.exists(f)) {
     filter(X > 200 & X < 900 & Y < 5420) #%>%
 
 
-  full_s_grid <- readRDS("report-data/full_filled_grid_paired.rds")
+  # full_s_grid <- readRDS("report-data/full_filled_grid_paired.rds")
+  full_s_grid <- readRDS(paste0("report-data/full_filled_grid_w_ext_", grid_scale,".rds"))
+
   full_s_grid_trim <- full_s_grid %>% filter(depth <= 600)
 
   g <- ggplot(focal_area_proj) +
@@ -72,6 +77,11 @@ if (!file.exists(f)) {
       inherit.aes = F
     ) +
     geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
+    geom_sf(data = focal_area2_proj,
+            # colour = "darkorchid4",
+            colour = "deeppink4",
+            lty = "twodash",
+            fill = NA, size = 0.60) + # add focal area2 behind coast
     geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey75", col = "grey55") +
     annotate("text",
              x = convert2utm9(-129.8, 50.7)[1],
@@ -121,3 +131,35 @@ if (!file.exists(f)) {
   ggsave("figs/depth-map.png",
          width = 5.5, height = 5.5, dpi = 400)
 }
+
+#
+# cols <- c(
+#   "red",
+#   "deeppink4",
+#   # "darkorchid4", # #4DAF4A", "#984EA3",
+#   "deepskyblue4"
+# )
+#
+#
+# # depth density plot
+# p2 <- full_s_grid %>% filter( region %in% c("CDA", "CDA adjacent", "non-CDA 3CD")) %>%
+# ggplot() + geom_histogram(aes(depth, colour = region, fill = region), binwidth = 25,boundary = 0) +
+# # ggplot() + geom_density(aes(depth, colour = region, fill = region), alpha = 0.25) +
+#   geom_vline(xintercept = 175, lty = "dashed") +
+#   scale_fill_manual(values = cols, name = "Region") +
+#   scale_colour_manual(values = cols, name = "Region") +
+#   ylab("Cell count") +
+#   xlab("Depth bin (m)") +
+#   coord_cartesian(expand = FALSE) +
+#   # scale_x_sqrt() +
+#   # facet_wrap(~region, ncol = 1) +
+#   ggsidekick::theme_sleek() +
+#   theme(legend.position = "none")
+#
+# ggsave("figs/depth_hist.png", width = 3, height = 2)
+
+# library(imager)
+# p1 <- load.image("figs/ratio-YE-to-hal-by-25m-bin-depth-w-deeper-500kn-delta-AR1-aniso-region.png")
+#
+# plot(p1)
+
