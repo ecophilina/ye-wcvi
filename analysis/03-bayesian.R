@@ -13,7 +13,6 @@ include_cc <- FALSE
 # OR experiment with including non-survey catches
 include_cc <- TRUE
 
-latitude_cutoff <- 52.15507 # include all of HBLL S
 
 if (include_cc) {
   # hal_model <- "w-cc2-rocky-muddy-400kn-delta-IID-aniso"
@@ -27,6 +26,8 @@ if (include_cc) {
   latitude_cutoff <- 51 # include only west coast Vancouver Island
 
 } else {
+
+  latitude_cutoff <- 52.15507 # include all of HBLL S
   hal_model <- "rocky-muddy-400kn-delta-IID-aniso"
   ye_model <- "rocky-muddy-400kn-delta-spatial-aniso"
 }
@@ -134,6 +135,11 @@ if (include_cc) {
   plot(mesh$mesh, asp = 1, main = "")
   points(d_hal$X, d_hal$Y, pch = ".", col = "blue")
 }
+
+unique(d_hal$survey)
+filter(d_hal, survey == "NON-SURVEY") %>% nrow()
+filter(d_hal, survey != "NON-SURVEY") %>% nrow()
+
 
 # Make relatively fine-scale mesh
 # the same grid should work for both species because
