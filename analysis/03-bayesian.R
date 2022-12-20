@@ -21,8 +21,8 @@ if (include_cc) {
   # hal_model <- "w-good-depths-500kn-delta-AR1-aniso"
   # ye_model <- "w-good-depths-500kn-delta-iid-aniso"
 
-  hal_model <- "w-deeper-500kn-delta-AR1-aniso"
-  ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
+  hal_model <- "w-deeper-500kn-delta-AR1-aniso-dec22"
+  ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso-dec22"
   latitude_cutoff <- 51 # include only west coast Vancouver Island
 
 } else {
@@ -306,6 +306,7 @@ m_hal <- readRDS(paste0("models/halibut-model-", hal_model, "-tmbfit.rds"))
 
 
 print(m_hal)
+
 plot_anisotropy(m_hal)
 # plot_anisotropy(m_hal, model = 2)
 m_hal$sd_report
@@ -492,6 +493,36 @@ tidy(m_ye, conf.int = TRUE)
 tidy(m_ye, conf.int = TRUE, model = 2)
 tidy(m_ye, "ran_pars", conf.int = TRUE)
 tidy(m_ye, "ran_pars", conf.int = TRUE, model = 2)
+
+
+library(patchwork)
+library(grid)
+
+(p1 <- plot_anisotropy(m_ye) +
+    xlim(-1.48, 1.48) +
+    ylim(-1.48, 1.48) +
+    ggtitle("(a) Yelloweye Rockfish") +
+    theme_bw() +
+    theme(axis.title = element_blank(),
+          legend.position = "none")
+  )
+
+(p2 <- plot_anisotropy(m_hal) +
+    xlim(-1.48, 1.48) +
+    ylim(-1.48, 1.48) +
+    ggtitle("(b) Pacific Halibut") +
+    theme_bw() +
+    theme(axis.title = element_blank(),
+          axis.text.y = element_blank())
+  )
+
+ty <- textGrob("Latitude in 100 kms", rot=90)
+tx <- textGrob("Longitude in 100 kms", hjust = 0.75)
+
+{wrap_elements(ty) + p1 + p2 + plot_layout(widths = c(0.85,10, 10))}/tx + plot_layout(heights=c(10,1))
+
+ggsave(file.path("figs", paste0("anisotropy-", hal_model, ye_model, ".png")), width= 8, height = 4)
+
 
 # visreg_delta(m_ye, xvar = "vessel_id", scale = "response",
 #              model = 1)
