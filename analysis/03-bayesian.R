@@ -519,9 +519,9 @@ library(grid)
 ty <- textGrob("Latitude in 100 kms", rot=90)
 tx <- textGrob("Longitude in 100 kms", hjust = 0.75)
 
-{wrap_elements(ty) + p1 + p2 + plot_layout(widths = c(0.85,10, 10))}/tx + plot_layout(heights=c(10,1))
+{wrap_elements(ty) + p1 + p2 + plot_layout(widths = c(0.85,10, 10))}/tx + plot_layout(heights=c(30,1))
 
-ggsave(file.path("figs", paste0("anisotropy-", hal_model, ye_model, ".png")), width= 8, height = 4)
+ggsave(file.path("figs", paste0("anisotropy-", hal_model, ye_model, ".png")), width= 6, height = 2.85)
 
 
 # visreg_delta(m_ye, xvar = "vessel_id", scale = "response",
