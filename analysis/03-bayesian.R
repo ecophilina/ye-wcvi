@@ -504,7 +504,8 @@ library(grid)
     ggtitle("(a) Yelloweye Rockfish") +
     theme_bw() +
     theme(axis.title = element_blank(),
-          legend.position = "none")
+          legend.position = "none",
+          title = element_text(size = 10))
   )
 
 (p2 <- plot_anisotropy(m_hal) +
@@ -513,7 +514,8 @@ library(grid)
     ggtitle("(b) Pacific Halibut") +
     theme_bw() +
     theme(axis.title = element_blank(),
-          axis.text.y = element_blank())
+          axis.text.y = element_blank(),
+          title = element_text(size = 10))
   )
 
 ty <- textGrob("Latitude in 100 kms", rot=90)
