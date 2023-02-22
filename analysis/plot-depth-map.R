@@ -55,7 +55,7 @@ if (!file.exists(f)) {
 
   g <- ggplot(focal_area_proj) +
     geom_tile(data = full_s_grid_trim, aes(X * 100000, Y * 100000, fill = depth),
-              width = 2000, height = 2000) +
+              width = grid_scale, height = grid_scale) +
     geom_line( # add major management region boundaries
       data = bound3Csouth,
       aes(X * 1e3, Y * 1e3), colour = "grey20", lty = 1,
@@ -91,7 +91,8 @@ if (!file.exists(f)) {
              y = convert2utm9(-129.8, 50.3)[2],
              label = "3D") +
     annotate("text",
-             x = convert2utm9(-129.8, 48.8)[1],
+             # x = convert2utm9(-129.8, 48.8)[1],
+             x = convert2utm9(-129, 48.8)[1],
              y = convert2utm9(-129.8, 48.8)[2],
              label = "3C") +
 
@@ -103,7 +104,7 @@ if (!file.exists(f)) {
       # xlim = c(230957.7 + 205000, 1157991 - 385000),
       # ylim = c(5366427 + 25000, 6353456 - 590000)
       xlim = c(230957.7 + 205000, 1157991 - 370000),
-      ylim = c(5366427 + 2000, 6353456 - 590000)
+      ylim = c(5366427 + 2000, convert2utm9(-126.25, 51.08)[2])
     ) +
     annotate("text",
              x = convert2utm9(-126.25, 50.1)[1],
@@ -111,25 +112,33 @@ if (!file.exists(f)) {
              colour = "gray65",
              size = 3.5,
              label = "Vancouver\nIsland") +
+    # annotate("text",
+    #          x = convert2utm9(-126.1, 51.4)[1],
+    #          y = convert2utm9(-126.1, 51.4)[2],
+    #          colour = "gray65",
+    #          size = 5,
+    #          label = "British\nColumbia") +
     annotate("text",
-             x = convert2utm9(-126.1, 51.4)[1],
-             y = convert2utm9(-126.1, 51.4)[2],
+             x = convert2utm9(-125.5, 51.4)[1],
+             y = convert2utm9(-126.1, 51.1)[2],
              colour = "gray65",
              size = 5,
-             label = "British\nColumbia") +
+             label = "British Columbia") +
     ggsidekick::theme_sleek() + theme(
       panel.grid.major = element_line(colour = "grey60", size = 0.3),
       legend.key = element_rect(colour = NA, fill = "grey70"),
       axis.title = element_blank(),
       legend.box.background = element_rect(color = NA, size = 1, fill = "#ffffff90"),
-      legend.position = c(0.99, 0.99),
+      # legend.position = c(0.99, 0.99),
+      legend.position = c(0.15, 0.35),
       legend.justification = c(1, 1),
       panel.background = element_rect(color = NA, size = 1, fill = "grey70"))
 
-  g
 
-  ggsave("figs/depth-map.png",
-         width = 5.5, height = 5.5, dpi = 400)
+  # g
+
+  ggsave("figs/depth-map2.png",
+         width = 5.5, height = 4.7, dpi = 400)
 }
 
 #
