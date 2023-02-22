@@ -184,6 +184,12 @@ write_tex(round(yemeanweightSYN, 2), "yemeanweightSYN")
 
 # print("Mean Yelloweye weight from HBLL")
 yesampledata <- readRDS("data/yelloweye-surv-samples-all.rds") %>% filter(survey_abbrev == c("HBLL OUT S"))
+
+# annual_means <- yesampledata %>% group_by(year) %>% summarise(mean = round(mean(weight / 1000, na.rm = T), 2))
+# mean(annual_means$mean, na.rm = T)
+hist(yesampledata$weight / 1000)
+hist(yesampledataSYN$weight / 1000)
+
 yemeanweightHBLL <- mean(yesampledata$weight / 1000, na.rm = T)
 round(yemeanweightHBLL, 2)
 write_tex(round(yemeanweightHBLL, 2), "yemeanweightHBLL")
