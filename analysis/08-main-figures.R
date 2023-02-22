@@ -93,7 +93,7 @@ plot_catch_by_depth <- function(data) {
     scale_colour_manual(values = cols) +
     # scale_y_log10(limits = c(0.4, 400)) +
     coord_cartesian(
-      # ylim = c(0, 2.6),# log10
+      xlim = c(10, 550),
       ylim = c(0, 6.9),
       expand = F
     ) +
@@ -103,7 +103,7 @@ plot_catch_by_depth <- function(data) {
 }
 
 p1 <- surv_dat %>%
-  filter(depth < 600) %>%
+  filter(depth < 1000) %>%
   mutate(density = log(density_ye + 1)) %>%
   plot_catch_by_depth(.) +
   ylab("Log (survey CPUE + 1)") +
@@ -119,11 +119,11 @@ p1 <- surv_dat %>%
 
 
 p2 <- surv_dat %>%
-  filter(depth < 600) %>%
+  filter(depth < 1000) %>%
   mutate(density = log(density_hal + 1)) %>%
   plot_catch_by_depth(.) +
   # ylab("Log (survey biomass density + 1)") +
-  ggtitle("Pacific Halibut") +
+  ggtitle("Landable-size Pacific Halibut") +
   labs(tag = "(b)") +
   theme(
     legend.position = "none",
@@ -139,7 +139,7 @@ p2 <- surv_dat %>%
 
 
 p3 <- cc %>%
-  filter(depth < 550) %>%
+  filter(depth < 1000) %>%
   filter(region != "3CD5A N of 50º") %>%
   filter(hal_cpue > 0) %>%
   mutate(density = log(ye_cpue + 1)) %>%
@@ -157,7 +157,7 @@ p3 <- cc %>%
   )
 
 p4 <- cc %>%
-  filter(depth < 550) %>%
+  filter(depth < 1000) %>%
   filter(region != "3CD5A N of 50º") %>%
   mutate(density = log(hal_cpue + 1)) %>%
   plot_catch_by_depth(.) +
