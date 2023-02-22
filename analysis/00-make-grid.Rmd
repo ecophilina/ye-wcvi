@@ -305,7 +305,7 @@ Remove RCAs from grid
 ```{r}
 # get RCA
 rcas <- st_read(here::here("grids/RCA2019/RCA_2019.shp"))
-## plot(rcas) # takes an impossivbly long time so do not do!
+## plot(rcas) # takes an impossibly long time so do not do!
 # glimpse(rcas)
 
 rcas_utm <- st_transform(rcas, crs = 3156) # convert to utm proj used for grid
