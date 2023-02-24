@@ -103,7 +103,8 @@ if (!file.exists(f)) {
       # xlim = c(230957.7 + 205000, 1157991 - 385000),
       # ylim = c(5366427 + 25000, 6353456 - 590000)
       xlim = c(230957.7 + 205000, 1157991 - 370000),
-      ylim = c(5366427 + 2000, 6353456 - 590000)
+      # ylim = c(5366427 + 2000, 6353456 - 590000)
+      ylim = c(5366427 + 2000, convert2utm9(-126.25, 51.08)[2])
     ) +
     annotate("text",
              x = convert2utm9(-126.25, 50.1)[1],
@@ -122,14 +123,15 @@ if (!file.exists(f)) {
       legend.key = element_rect(colour = NA, fill = "grey70"),
       axis.title = element_blank(),
       legend.box.background = element_rect(color = NA, size = 1, fill = "#ffffff90"),
-      legend.position = c(0.99, 0.99),
+      # legend.position = c(0.99, 0.99),
+      legend.position = c(0.4, 0.49),
       legend.justification = c(1, 1),
       panel.background = element_rect(color = NA, size = 1, fill = "grey70"))
 
-  g
+  # g
 
   ggsave("figs/rocky-map.png",
-         width = 5.5, height = 5.5, dpi = 400)
+         width = 4.5, height = 4, dpi = 400)
 
 
 
@@ -183,7 +185,8 @@ if (!file.exists(f)) {
       # xlim = c(230957.7 + 205000, 1157991 - 385000),
       # ylim = c(5366427 + 25000, 6353456 - 590000)
       xlim = c(230957.7 + 205000, 1157991 - 370000),
-      ylim = c(5366427 + 2000, 6353456 - 590000)
+      # ylim = c(5366427 + 2000, 6353456 - 590000)
+      ylim = c(5366427 + 2000, convert2utm9(-126.25, 51.08)[2])
     ) +
     annotate("text",
              x = convert2utm9(-126.25, 50.1)[1],
@@ -202,13 +205,13 @@ if (!file.exists(f)) {
       legend.key = element_rect(colour = NA, fill = "grey70"),
       axis.title = element_blank(),
       legend.box.background = element_rect(color = NA, size = 1, fill = "#ffffff90"),
-      legend.position = c(0.99, 0.99),
+      legend.position = c(0.4, 0.49),
       legend.justification = c(1, 1),
       panel.background = element_rect(color = NA, size = 1, fill = "grey70"))
 
-  g
+  # g
 
   ggsave("figs/muddy-map.png",
-         width = 5.5, height = 5.5, dpi = 400)
+         width = 4.5, height = 4, dpi = 400)
 }
 
