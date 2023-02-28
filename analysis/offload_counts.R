@@ -30,10 +30,10 @@ ggplot(offloads, aes(year, landed_weight_per_fish_caught)) +
   # geom_point(aes(size = offload_count), colour = "red") +
   geom_hline(yintercept = mean(offloads$landed_weight_per_fish_caught, na.rm = TRUE)) +
   ylim(0,6)+
-  ylab("Weight of landable halibut per fish caught on HBLL") + xlab("Survey year") +
-  scale_size_continuous(limits = c(1500, 3000), name = "Total HBLL count") +
+  ylab("Weight of landed halibut per halibut caught") + xlab("Survey year") +
+  scale_size_continuous(limits = c(1500, 3000), name = "Total halibut count") +
   theme(legend.position = c(0.2, 0.3))
-ggsave("figs/hbll-landable-weight-by-year.png", width = 5, height = 5)
+ggsave("figs/hbll-landable-weight-by-year.png", width = 5, height = 4)
 
 # the proportion of individuals kept on the HBLL appears to be 34%
 mean(offloads$prop_kept, na.rm = T)
