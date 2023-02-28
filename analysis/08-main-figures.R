@@ -80,7 +80,56 @@ cols <- c(
   "deepskyblue4"
 )
 
+g1 <- surv_dat %>%
+  filter(depth < 1000) %>%
+  ggplot() + geom_histogram(aes(depth), fill = "darkgreen") +
+  geom_histogram(data = surv_dat %>%
+                   filter(depth < 1000, density_ye != 0), aes(depth), alpha = 0.95, fill = "yellow") +
+  xlim(0, 800) +
+  ylab("Survey samples") +
+  facet_wrap(~region) +
+  # facet_wrap(~region, scales = "free_y") +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank())
 
+g2 <- cc %>%
+  filter(year <= 2015) %>%
+  filter(depth < 1000 & dist_km_fished < 3 & dist_km_fished > 0.2) %>%
+  filter(region %in% c("CDA", "CDA adjacent", "non-CDA 3CD")) %>%
+  ggplot() + geom_histogram(aes(depth), fill = "darkgreen") +
+  geom_histogram(data = cc %>%
+                   filter(year <= 2015) %>%
+                   filter(depth < 1000 & dist_km_fished < 3 & dist_km_fished > 0.2) %>%
+                   filter(region %in% c("CDA", "CDA adjacent", "non-CDA 3CD")) %>%
+                   filter(ye_cpue != 0), aes(depth), alpha = 0.95, fill = "yellow") +
+  xlim(0, 800) +
+  ylab("Commercial longline\n(pre-2016)") +
+  xlab("Depth") +
+  facet_wrap(~region) +
+  # facet_wrap(~region, scales = "free_y") +
+  theme(strip.text.x = element_blank())
+
+g3 <- cc %>%
+  filter(year > 2015) %>%
+  filter(depth < 1000 & dist_km_fished < 3 & dist_km_fished > 0.2) %>%
+  filter(region %in% c("CDA", "CDA adjacent", "non-CDA 3CD")) %>%
+  ggplot() + geom_histogram(aes(depth), fill = "darkgreen") +
+  geom_histogram(data = cc %>%
+                   filter(year > 2015) %>%
+                   filter(depth < 1000 & dist_km_fished < 3 & dist_km_fished > 0.2) %>%
+                   filter(region %in% c("CDA", "CDA adjacent", "non-CDA 3CD")) %>%
+                   filter(ye_cpue != 0), aes(depth), alpha = 0.95, fill = "yellow") +
+  xlim(0, 800) +
+  ylab("Commercial longline\n(2016 onwards)") +
+  xlab("Depth") +
+  facet_wrap(~region) +
+  # facet_wrap(~region, scales = "free_y") +
+  theme(strip.text.x = element_blank())
+
+
+g1 + g2 + g3 + patchwork::plot_layout(nrow = 3)
+
+ggsave("figs/ye-presence-hist.png", width = 6.5, height = 7.5)
 
 
 plot_catch_by_depth <- function(data) {
@@ -140,6 +189,8 @@ p2 <- surv_dat %>%
 
 p3 <- cc %>%
   filter(depth < 1000) %>%
+  # filter(year <= 2015) %>%
+  # filter(year > 2015) %>%
   filter(region != "3CD5A N of 50º") %>%
   filter(hal_cpue > 0) %>%
   mutate(density = log(ye_cpue + 1)) %>%
@@ -158,6 +209,8 @@ p3 <- cc %>%
 
 p4 <- cc %>%
   filter(depth < 1000) %>%
+  # filter(year <= 2015) %>%
+  # filter(year > 2015) %>%
   filter(region != "3CD5A N of 50º") %>%
   mutate(density = log(hal_cpue + 1)) %>%
   plot_catch_by_depth(.) +
