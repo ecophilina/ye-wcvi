@@ -32,6 +32,16 @@ convert2utm <- function(df, coords = c("X", "Y"), out_crs = 3156) {
     df[, which(!names(df) %in% coords), drop = FALSE])
 }
 
+convert2utm9 <- function(lon, lat) {
+  temp <- data.frame(lon = lon, lat = lat)
+  temp <- sf::st_as_sf(temp, coords = c("lon", "lat"), crs = 4326)
+  temp <- sf::st_transform(temp, crs = 3156)
+  temp
+  as.numeric(temp$geometry[[1]])
+}
+
+
+
 utm2ll <- function(x, utm_zone = 9) {
   attr(x, "projection") <- "UTM"
   attr(x, "zone") <- utm_zone
@@ -564,13 +574,6 @@ map_predictions <- function(
   g
 }
 
-convert2utm9 <- function(lon, lat) {
-  temp <- data.frame(lon = lon, lat = lat)
-  temp <- sf::st_as_sf(temp, coords = c("lon", "lat"), crs = 4326)
-  temp <- sf::st_transform(temp, crs = 3156)
-  temp
-  as.numeric(temp$geometry[[1]])
-}
 
 
 ### functions for editing scales on specific faceted plots
