@@ -224,7 +224,10 @@ cc_hal <- cc %>% filter(season == "Summer") %>% mutate(cpue = hal_kg/ha_fished)
 haltrawldata <- readRDS("data/halibut-surv-sets-trawl-keepers.rds")
 halhblldata <- readRDS("data/halibut-surv-sets-all.rds") %>% filter(survey_abbrev == "HBLL OUT S")
 
-halmeanweight <- 4.23 # average kg of commercially retainable halibut per fish caught based on HBLL offload_round_weights/catch_counts
+halmeanweight <- 4.23 # average kg of commercially retainable halibut per fish caught based on HBLL annual average offload_round_weights/catch_counts
+# halmeanweight <- 3.45 # average of all pooled across years (not used in current analysis)
+
+
 write_tex(halmeanweight, "halmeanweight")
 
 
