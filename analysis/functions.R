@@ -87,7 +87,9 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
 
 # browser()
   if(!is.null(tmbstan_model)){
-    pred_obj_unscaled <- predict(fit_obj, newdata = newdata, tmbstan_model = tmbstan_model,
+
+    samps <- sdmTMBextra::extract_mcmc(tmbstan_model)
+    pred_obj_unscaled <- predict(fit_obj, newdata = newdata,  mcmc_samples = samps,
                                  # re_form_iid = NA,
                                  type = "response")
   } else {
