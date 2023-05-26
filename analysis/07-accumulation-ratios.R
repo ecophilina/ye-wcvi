@@ -7,13 +7,16 @@ library(tidyr)
 library(ggsidekick) # for fourth_root_power_trans and theme_sleek
 theme_set(ggsidekick::theme_sleek())
 
-# hal_model <- "w-effort-500kn-delta-AR1-aniso"
-# hal_model <- "w-good-depths-500kn-delta-AR1-aniso"
+# # hal_model <- "w-effort-500kn-delta-AR1-aniso"
+# # hal_model <- "w-good-depths-500kn-delta-AR1-aniso"
+# hal_model <- "w-deeper-500kn-delta-AR1-aniso"
+# # ye_model <- "w-effort-500kn-delta-spatial-aniso"
+# # ye_model <- "w-good-depths-500kn-delta-iid-aniso"
+# ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
 
-hal_model <- "w-deeper-500kn-delta-AR1-aniso"
-# ye_model <- "w-effort-500kn-delta-spatial-aniso"
-# ye_model <- "w-good-depths-500kn-delta-iid-aniso"
-ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
+ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso-may23"
+hal_model <- "w-deeper-500kn-delta-AR1-aniso-may23"
+
 
 grid_scale <- 1000
 
@@ -243,8 +246,10 @@ saveRDS(avoiding_ye_sum, paste0("report-data/avoiding_ye_regions", .file))
 areas_to_plot <- c("CDA","CDA expanded","non-CDA 3CD")
 
 # #### make plots ####
-maximize_hal_sum <- readRDS( paste0("report-data/maximize_hal_regions", .file))
-avoiding_ye_sum <- readRDS( paste0("report-data/avoiding_ye_regions", .file))
+maximize_hal_sum <- readRDS( paste0("report-data/maximize_hal_regions", .file)) %>% mutate(Scenario = Area)
+avoiding_ye_sum <- readRDS( paste0("report-data/avoiding_ye_regions", .file)) %>% mutate(Scenario = Area)
+
+# Area
 
 
 # chose which areas to plot
@@ -303,17 +308,17 @@ chosen_increments <- c(
 )
 
 (p1 <- ggplot(avoiding_ye_sum %>%
-    filter(Area %in% areas_to_plot)%>%
+    filter(Scenario %in% areas_to_plot)%>%
     filter(pair_name =="2019-2020")%>%
     filter(ordered %in% chosen_increments)) +
   geom_line(
     aes(x = ordered*grid_scale/1000,
       y = mean_ye_per_hal, #lty = "solid",
-      colour = Area), size = 1) +
+      colour = Scenario), size = 1) +
   geom_ribbon(aes(x = ordered*grid_scale/1000,
     ymin = lwr_mean_ye_hal,
     ymax = upr_mean_ye_hal,
-    fill = Area), alpha=0.2) +
+    fill = Scenario), alpha=0.2) +
   # scale_y_log10(
   #   limits = c(1e-10, 1.7),
   #   breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
@@ -331,17 +336,17 @@ chosen_increments <- c(
 )
 
 (p2 <- ggplot(maximize_hal_sum %>%
-    filter(Area %in% areas_to_plot)%>%
+    filter(Scenario %in% areas_to_plot)%>%
     filter(pair_name =="2019-2020")%>%
     filter(ordered %in% chosen_increments)) +
   geom_line(
     aes(x = ordered*grid_scale/1000,
       y = mean_ye_per_hal, #lty = "solid",
-      colour = Area), size = 1) +
+      colour = Scenario), size = 1) +
   geom_ribbon(aes(x = ordered*grid_scale/1000,
     ymin = lwr_mean_ye_hal,
     ymax = upr_mean_ye_hal,
-    fill = Area), alpha=0.2) +
+    fill = Scenario), alpha=0.2) +
   # scale_y_log10(
   #   limits = c(1e-10, 1.7),
   #   breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
@@ -370,17 +375,17 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions2.pn
 
 # JUST AVOIDING
 (p4 <- ggplot(avoiding_ye_sum %>%
-                filter(Area %in% areas_to_plot)%>%
+                filter(Scenario %in% areas_to_plot)%>%
                 filter(pair_name =="2019-2020")%>%
                 filter(ordered %in% chosen_increments)) +
     geom_line(
       aes(x = ordered*grid_scale/1000,
           y = mean_ye_per_hal, #lty = "solid",
-          colour = Area), size = 1) +
+          colour = Scenario), size = 1) +
     geom_ribbon(aes(x = ordered*grid_scale/1000,
                     ymin = lwr_mean_ye_hal,
                     ymax = upr_mean_ye_hal,
-                    fill = Area), alpha=0.2) +
+                    fill = Scenario), alpha=0.2) +
     coord_cartesian(
       ylim = c(0, 0.55),
       expand = F) +
@@ -399,17 +404,17 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions2.pn
 
 # # flipped ratio
 (p5 <- ggplot(avoiding_ye_sum %>%
-                filter(Area %in% areas_to_plot)%>%
+                filter(Scenario %in% areas_to_plot)%>%
                 filter(pair_name =="2019-2020")%>%
                 filter(ordered %in% chosen_increments)) +
     geom_line(
       aes(x = ordered*grid_scale/1000,
           y = mean_hal_per_ye, #lty = "solid",
-          colour = Area), size = 1) +
+          colour = Scenario), size = 1) +
     geom_ribbon(aes(x = ordered*grid_scale/1000,
                     ymin = lwr_mean_hal_ye,
                     ymax = upr_mean_hal_ye,
-                    fill = Area), alpha=0.2) +
+                    fill = Scenario), alpha=0.2) +
     # scale_y_continuous(limits = c(0, 750)) +
     coord_cartesian(expand = F) +
     scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
@@ -447,22 +452,22 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions2.pn
 
 
 (p6 <- ggplot(avoiding_ye_sum %>%
-                filter(Area %in% areas_to_plot)%>%
+                filter(Scenario %in% areas_to_plot)%>%
                 filter(pair_name =="2019-2020")%>%
                 filter(ordered %in% chosen_increments)) +
     geom_line(
       aes(x = ordered*grid_scale/1000,
           y = total_hal/1000, #lty = "solid", # /1000 to convert to tonnes, x10 for 1000 hooks per km^2
-          colour = Area), size = 1) +
+          colour = Scenario), size = 1) +
     geom_ribbon(aes(x = ordered*grid_scale/1000,
                     ymin = lwr_hal/1000,
                     ymax = upr_hal/1000,
-                    fill = Area), alpha=0.2) +
+                    fill = Scenario), alpha=0.2) +
     # scale_y_log10(limits = c(1e-10, )) +
     # scale_y_log10(
     #   breaks = c(0.1, 1, 10, 100, 1000), labels = c(0.1, 1, 10, 100, "1000")
     #   ) +
-    coord_cartesian(expand = F, ylim = c(0, 110)) +
+    coord_cartesian(expand = F, ylim = c(0, 300)) +
     labs(tag="C.")+
     scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
     ylab("Cumulative halibut") +
@@ -477,22 +482,22 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions2.pn
 )
 
 (p7 <- ggplot(avoiding_ye_sum %>%
-                filter(Area %in% areas_to_plot)%>%
+                filter(Scenario %in% areas_to_plot)%>%
                 filter(pair_name =="2019-2020")%>%
                 filter(ordered %in% chosen_increments)) +
     geom_line(
       aes(x = ordered*grid_scale/1000,
           y = total_ye/1000, #lty = "solid", # /1000 to convert to tonnes, x10 for 1000 hooks per km^2
-          colour = Area), size = 1) +
+          colour = Scenario), size = 1) +
     geom_ribbon(aes(x = ordered*grid_scale/1000,
                     ymin = lwr_ye/1000,
                     ymax = upr_ye/1000,
-                    fill = Area), alpha=0.2) +
+                    fill = Scenario), alpha=0.2) +
     # scale_y_log10(limits = c(1e-10, )) +
     # scale_y_log10(
     #   breaks = c(0.1, 1, 10, 100, 1000), labels = c(0.1, 1, 10, 100, "1000")
     #   ) +
-    coord_cartesian(expand = F, ylim = c(0, 30)) +
+    coord_cartesian(expand = F, ylim = c(0, 65)) +
     # labs(tag="D.")+
     labs(tag="(d)")+
     scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
@@ -517,7 +522,7 @@ p4 <- p4 + labs(tag="(c)") + theme(
 )
 
 # p5 <- p5 + labs(tag="D.") + theme(
-p5 <- p5 + labs(tag="(d)", colour = "Region", fill = "Region") + theme(
+p5 <- p5 + labs(tag="(d)", colour = "Fishing scenario", fill = "Fishing scenario") + theme(
   # axis.title.x = element_blank(), axis.text.x = element_blank()
   legend.position = c(0.85, 0.75)
   # legend.position = "none"
@@ -546,16 +551,16 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_w_cumulative_totals_500hoo
 #
 # # mean_ye_hal
 # ggplot(avoiding_ye_sum %>%
-#          filter(Area %in% areas_to_plot)%>%
+#          filter(Scenario %in% areas_to_plot)%>%
 #          filter(ordered %in% chosen_increments)) +
 #   geom_line(
 #     aes(x = ordered*grid_scale/1000,
 #         y = mean_ye_per_hal, #lty = "solid",
-#         colour = Area), size = 1) +
+#         colour = Scenario), size = 1) +
 #   geom_ribbon(aes(x = ordered*grid_scale/1000,
 #                   ymin = lwr_mean_ye_hal,
 #                   ymax = upr_mean_ye_hal,
-#                   fill = Area), alpha=0.2) +
+#                   fill = Scenario), alpha=0.2) +
 #   scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
 #   # scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
 #   # scale_x_continuous(breaks = c(0, 500, 1000)) +
@@ -571,16 +576,16 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_w_cumulative_totals_500hoo
 #
 # # flipped ratio
 # ggplot(avoiding_ye_sum %>%
-#          filter(Area %in% areas_to_plot)%>%
+#          filter(Scenario %in% areas_to_plot)%>%
 #          filter(ordered %in% chosen_increments)) +
 #   geom_line(
 #     aes(x = ordered*grid_scale/1000,
 #         y = mean_hal_per_ye, #lty = "solid",
-#         colour = Area), size = 1) +
+#         colour = Scenario), size = 1) +
 #   geom_ribbon(aes(x = ordered*grid_scale/1000,
 #                   ymin = lwr_mean_hal_ye,
 #                   ymax = upr_mean_hal_ye,
-#                   fill = Area), alpha=0.2) +
+#                   fill = Scenario), alpha=0.2) +
 #   scale_y_log10(
 #     breaks = c(0.5, 1, 10, 100, 1000, 10000, 100000), labels = c(0.5, 1, 10, 100, 1000, "10000", "100000")
 #   ) +
@@ -597,16 +602,16 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_w_cumulative_totals_500hoo
 # ggsave(paste0("figs/expected_hal_when_avoiding_YE_CI", ye_model, "_regions.png"), width = 6.5, height = 3.5)
 #
 # ggplot(maximize_hal_sum %>%
-#          filter(Area %in% areas_to_plot)%>%
+#          filter(Scenario %in% areas_to_plot)%>%
 #          filter(ordered %in% chosen_increments)) +
 #   geom_line(
 #     aes(x = ordered*grid_scale/1000,
 #         y = mean_ye_per_hal, #lty = "solid",
-#         colour = Area), size = 1) +
+#         colour = Scenario), size = 1) +
 #   geom_ribbon(aes(x = ordered*grid_scale/1000,
 #                   ymin = lwr_mean_ye_hal,
 #                   ymax = upr_mean_ye_hal,
-#                   fill = Area), alpha=0.2) +
+#                   fill = Scenario), alpha=0.2) +
 #   scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
 #   scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
 #   # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
@@ -620,16 +625,16 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_w_cumulative_totals_500hoo
 #
 # # mean_ye_hal
 # ggplot(maximize_hal_sum %>%
-#          filter(Area %in% areas_to_plot)%>%
+#          filter(Scenario %in% areas_to_plot)%>%
 #          filter(ordered %in% chosen_increments)) +
 #   geom_line(
 #     aes(x = ordered*grid_scale/1000,
 #         y = mean_hal_per_ye, #lty = "solid",
-#         colour = Area), size = 1) +
+#         colour = Scenario), size = 1) +
 #   geom_ribbon(aes(x = ordered*grid_scale/1000,
 #                   ymin = lwr_mean_hal_ye,
 #                   ymax = upr_mean_hal_ye,
-#                   fill = Area), alpha=0.2) +
+#                   fill = Scenario), alpha=0.2) +
 #   scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
 #   scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
 #   # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
