@@ -85,11 +85,15 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
   area_function = function(x, area) x * area,
   agg_function = function(x) sum((x))){ # don't need exp because type = "response"
 
-# browser()
+
   if(!is.null(tmbstan_model)){
 
-    samps <- sdmTMBextra::extract_mcmc(tmbstan_model)
-    pred_obj_unscaled <- predict(fit_obj, newdata = newdata,  mcmc_samples = samps,
+    post <- sdmTMBextra::extract_mcmc(tmbstan_model)
+    set.seed(102838)
+    downsampled <- sample(seq(1, ncol(post)), 1000)
+    post <- post[,downsampled]
+
+    pred_obj_unscaled <- predict(fit_obj, newdata = newdata,  mcmc_samples = post,
                                  # re_form_iid = NA,
                                  type = "response")
   } else {
@@ -119,7 +123,7 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
   # }
 
   if (split_by_region) {
-
+    # browser()
     by_region <- list()
 
     ind <- get_index_sims(p, return_sims = F, level = level, area = newdata$area,
@@ -139,7 +143,7 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
     setNames(by_region[1], "all")
 
     for (i in seq_along(unique(newdata$region))){
-
+      # browser()
         pred <- p[newdata$region == unique(newdata$region)[i], ]
         attr(pred, "time") <- attr(p, "time")
         attr(pred, "link") <- attr(p, "link")
@@ -309,7 +313,7 @@ get_diag <- function(m, response = "density",
 
   # g <- ggplot(predictions, aes_string(variable, "residuals", colour = colour_var)) +
   #   geom_point(alpha = 0.4, size = 1.2) +
-  #   geom_smooth(colour="grey", size = 1.2) +
+  #   geom_smooth(colour="grey", linewidth = 1.2) +
   #   scale_colour_viridis_c(option = "B", direction = -1, begin = 0, end = 0.7,
   #     limits= c(min(predictions[colour_var]), max(predictions[colour_var]))) + #, trans= sqrt
   #   # facet_wrap(~year, scales = "free_x")+
@@ -320,7 +324,7 @@ get_diag <- function(m, response = "density",
 
   g <- ggplot(predictions, aes_string(variable, "residuals", colour = colour_var)) +
     geom_point(alpha = 0.4, size = 0.7) +
-    geom_smooth(colour="grey", size = 0.7) +
+    geom_smooth(colour="grey", linewidth = 0.7) +
     scale_colour_viridis_c(option = "B", direction = -1, begin = 0, end = 0.7,
       limits= c(min(predictions[colour_var]), max(predictions[colour_var]))) + #, trans= sqrt
     facet_wrap(~year, scales = "free_x")+
@@ -339,6 +343,7 @@ map_predictions <- function(
   viridis_dir = 1,
   viridis_option = "D",
   viridis_na = "yellow",
+  set_trans = "sqrt",
   size_aes = (catch_count / hook_count) * 100,
   max_size_obs = 4,
   obs_col = c("white", "#98FB98"), # "#FFDAB9"), # peach
@@ -348,7 +353,7 @@ map_predictions <- function(
   map_lat_limits = c(48.6, 51.3),
   map_lon_limits = c(-130.1,-125.1),
   legend_position = c(0.99, 0.99),
-  legend_background = "#404788FF",#"#481567FF", #darkest "#440154FF", #"grey75",
+  legend_background = "#404788FF", #"#481567FF", #darkest "#440154FF", #"grey75",
   grey_waters = TRUE) {
   utm_zone9 <- 3156
   # download from:
@@ -409,13 +414,15 @@ map_predictions <- function(
         width = 2000, height = 2000
       ) + scale_fill_viridis_c(
         # trans = ggsidekick::fourth_root_power_trans(),
-        trans = "sqrt",
+        # trans = "sqrt",
+        trans = set_trans,
         direction = viridis_dir,
         na.value = viridis_na,
         option = viridis_option
       ) + scale_colour_viridis_c(
         # trans = ggsidekick::fourth_root_power_trans(),
-        trans = "sqrt",
+        # trans = "sqrt",
+        trans = set_trans,
         direction = viridis_dir,
         na.value = viridis_na,
         option = viridis_option
@@ -444,14 +451,16 @@ map_predictions <- function(
       width = 2000, height = 2000
     ) + scale_fill_viridis_c(
       # trans = ggsidekick::fourth_root_power_trans(),
-      trans = "sqrt",
+      # trans = "sqrt",
+      trans = set_trans,
       limits = c(pred_min, pred_max),
       direction = viridis_dir,
       na.value = viridis_na,
       option = viridis_option
     ) + scale_colour_viridis_c(
       # trans = ggsidekick::fourth_root_power_trans(),
-      trans = "sqrt",
+      # trans = "sqrt",
+      trans = set_trans,
       limits = c(pred_min, pred_max),
       direction = viridis_dir,
       na.value = viridis_na,
@@ -466,7 +475,8 @@ map_predictions <- function(
           width = 2000, height = 2000
         ) + scale_fill_viridis_c(
           # trans = ggsidekick::fourth_root_power_trans(),
-          trans = "sqrt",
+          # trans = "sqrt",
+          trans = set_trans,
           limits = c(pred_min, pred_max),
           direction = viridis_dir,
           na.value = viridis_na,
@@ -475,6 +485,7 @@ map_predictions <- function(
       }
     }
   }
+
   g <- g +
     geom_line( # add major management region boundaries
       data = bound3Csouth,
@@ -500,9 +511,9 @@ map_predictions <- function(
             # colour = "darkorchid4",
             colour = "deeppink4",
             lty = "twodash",
-            fill = NA, size = 0.60) + # add focal area2 behind focal area 1
-    geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
-    geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey75", col = "grey55") +
+            fill = NA, linewidth = 0.6) + # add focal area2 behind focal area 1
+    geom_sf(colour = "red", fill = NA, linewidth = 0.7) + # add focal area behind coast
+    geom_sf(data = coast_gshhg_proj, linewidth = 0.07, fill = "grey75", col = "grey55") +
     labs(fill = fill_lab, colour = fill_lab, size = size_lab) +
     annotate("text",
       x = convert2utm9(-129.8, 50.7)[1],
@@ -523,10 +534,10 @@ map_predictions <- function(
 
   if (grey_waters){
     g <- g +
-      geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey99", col = "grey55") +
+      geom_sf(data = coast_gshhg_proj, linewidth = 0.07, fill = "grey99", col = "grey55") +
       theme(
       legend.key = element_rect(colour = NA, fill = legend_background),
-      panel.background = element_rect(color = NA, size = 1, fill = "grey75"))
+      panel.background = element_rect(color = NA, linewidth = 1, fill = "grey75"))
 
     # if (!is.null(obs_data)) {
     #   g <- g + geom_point(
@@ -573,6 +584,7 @@ map_predictions <- function(
       legend.position = legend_position,
       legend.justification = c(1, 1)
     )
+
   g
 }
 

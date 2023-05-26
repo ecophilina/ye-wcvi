@@ -58,16 +58,19 @@ full_s_grid %>% filter(year == max(full_s_grid$year)) %>%
 
 
 # # load models if 03 not just run
-# hal_model <- "w-effort-500kn-delta-AR1-aniso"
-# ye_model <- "w-effort-500kn-delta-spatial-aniso"
-hal_model <- "w-deeper-500kn-delta-AR1-aniso"
-ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
-
 #
 # # hal_model <- "rocky-muddy-300kn-delta-IID-aniso"
 # # hal_model <- "w-cc2-rocky-muddy-400kn-delta-IID-aniso"
 # # ye_model <- "rocky-muddy-300kn-delta-spatial-aniso"
 # # ye_model <- "w-cc2-rocky-muddy-300kn-delta-spatial-aniso"
+# # hal_model <- "w-effort-500kn-delta-AR1-aniso"
+# # ye_model <- "w-effort-500kn-delta-spatial-aniso"
+# hal_model <- "w-deeper-500kn-delta-AR1-aniso"
+# ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
+
+ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso-may23"
+hal_model <- "w-deeper-500kn-delta-AR1-aniso-may23"
+
 
 
 f <- paste0("models/halibut-model-", hal_model, "-stan.rds")
@@ -104,14 +107,20 @@ bin_width <- 25
 # bin_width <- 10
 
 
-depth_bin_pred <- function(tmb_model, stan_model, grid, bin_width = 50, nsims = 1000) {
+depth_bin_pred <- function(tmb_model, tmbstan_model, grid, bin_width = 50, nsims = 1000) {
 
   bins <- tibble(
     min_depth = seq(0, 600 - bin_width, by = bin_width),
     max_depth = seq(bin_width, 600, by = bin_width)
   )
 
-  p <- predict(tmb_model, tmbstan_model = stan_model, newdata = grid, nsim = nsims)
+  post <- sdmTMBextra::extract_mcmc(tmbstan_model)
+  set.seed(102838)
+  downsampled <- sample(seq(1, ncol(post)), 1000)
+  post <- post[,downsampled]
+
+
+  p <- predict(tmb_model, mcmc_samples = post, newdata = grid, nsim = nsims)
   to_use <- sample(seq_len(nsims), nsims) # here in case we need to subsample these
 
   i <- furrr::future_pmap_dfr(bins, function(min_depth, max_depth) {
@@ -145,7 +154,7 @@ depth_bin_pred <- function(tmb_model, stan_model, grid, bin_width = 50, nsims = 
   return(i)
 }
 
-
+grid_scale <- "1000-nsims"
 
 f <- paste0("report-data/hal-", hal_model, "-depth_bins_in_ext_", bin_width, "_", grid_scale, ".rds")
 if(!file.exists(f)) {
@@ -174,7 +183,7 @@ if(!file.exists(f)) {
 f <- paste0("report-data/hal-", hal_model, "-depth_bins_in_3cd_", bin_width, "_", grid_scale, ".rds")
 if(!file.exists(f)) {
   i_hal_3cd <- depth_bin_pred(m_hal_fixed, m_hal_stan, nonCDA_grid,
-                              nsims = 500,
+                              nsims = 100,
                               bin_width = bin_width)
   saveRDS(i_hal_3cd, f)
 }else{ i_hal_3cd <- readRDS(f) }
@@ -182,7 +191,7 @@ if(!file.exists(f)) {
 f <- paste0("report-data/ye-", ye_model, "-depth_bins_in_3cd_", bin_width, "_", grid_scale, ".rds")
 if(!file.exists(f)) {
   i_ye_3cd <- depth_bin_pred(m_ye_fixed, m_ye_stan, nonCDA_grid,
-                             nsims = 500,
+                             nsims = 100,
                              bin_width = bin_width)
   saveRDS(i_ye_3cd, f)
 }else{ i_ye_3cd <- readRDS(f) }
@@ -486,16 +495,17 @@ i_hal_x %>% mutate(depth_range = forcats::fct_reorder(depth_range, min_depth))%>
 ggsave(paste0("figs/halibut-densities-by-", bin_width, "m-bin-depth-", grid_scale, "-through-time.png"), width = 7, height = 5, dpi = 400)
 
 
-# # no spatiotemporal random field so annual change less interesting
-# i_ye_x %>%  mutate(depth_range = forcats::fct_reorder(depth_range, min_depth))%>%
-#   ggplot( aes(year, density, group = depth_range)) + geom_line(aes(colour = depth_range), size = 2, alpha = 0.5) +
-#   # geom_ribbon(aes(ymin = lwr_dens, ymax = upr_dens, fill = depth_range), alpha=0.1) +
-#   geom_line(data = filter(i_ye_cda, min_depth ==125), aes(alpha = min_depth), colour = "red", lty = "dashed", size = 1) +
-#   # geom_ribbon(data = i_ye_cda, aes(ymin = lwr_dens, ymax = upr_dens), fill="red", alpha=0.1) +
-#   scale_color_viridis_d(direction = -1) +  scale_fill_viridis_d(direction = -1) +
-#   ggtitle("YE density by depth bin in CDA adjacent waters", subtitle = "(CDA = red)")
-#
-#
+# no spatiotemporal random field so annual change less interesting
+i_ye_x %>%  mutate(depth_range = forcats::fct_reorder(depth_range, min_depth))%>%
+  ggplot( aes(year, density, group = depth_range)) + geom_line(aes(colour = depth_range), size = 2, alpha = 0.5) +
+  # geom_ribbon(aes(ymin = lwr_dens, ymax = upr_dens, fill = depth_range), alpha=0.1) +
+  geom_line(data = filter(i_ye_cda, min_depth ==125), aes(alpha = min_depth), colour = "red", lty = "dashed", size = 1) +
+  # geom_ribbon(data = i_ye_cda, aes(ymin = lwr_dens, ymax = upr_dens), fill="red", alpha=0.1) +
+  scale_color_viridis_d(direction = -1) +  scale_fill_viridis_d(direction = -1) +
+  ggtitle("YE density by depth bin in CDA adjacent waters", subtitle = "(CDA = red)")
+
+ggsave(paste0("figs/yelloweye-densities-by-", bin_width, "m-bin-depth-", grid_scale, "-through-time.png"), width = 7, height = 5, dpi = 400)
+
 
 
 

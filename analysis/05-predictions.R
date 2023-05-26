@@ -1,10 +1,10 @@
 # generate predictions
-
 library(sf)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(sdmTMB)
+# library(sdmTMBextra)
 theme_set(ggsidekick::theme_sleek())
 # load misc custom functions
 # includes a set of map boundaries that could be adjusted
@@ -25,8 +25,8 @@ cols <- c(
   # "cadetblue3"
 )
 
-include_cc <- FALSE
-# OR experiment with including non-survey catches
+# include_cc <- FALSE
+# # OR experiment with including non-survey catches
 include_cc <- TRUE
 
 if (include_cc) {
@@ -41,25 +41,19 @@ full_s_grid <- readRDS(paste0("report-data/full_filled_grid_w_ext_", grid_scale,
   mutate(fyear = as.factor(year),
          vessel_id = as.factor("survey"))
 
-# # load models if 03 not just run
-# hal_model <- "w-effort-500kn-delta-AR1-aniso"
-# hal_model <- "w-good-depths-500kn-delta-AR1-aniso"
-hal_model <- "w-deeper-500kn-delta-AR1-aniso"
+# # # load models if 03 not just run
+# # hal_model <- "w-deeper-500kn-delta-AR1-aniso"
+# # ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
+ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso-may23"
+hal_model <- "w-deeper-500kn-delta-AR1-aniso-may23"
 
-# ye_model <- "w-effort-500kn-delta-spatial-aniso"
-# ye_model <- "w-good-depths-500kn-delta-iid-aniso"
-ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
-#
-# # hal_model <- "rocky-muddy-300kn-delta-IID-aniso"
-# # hal_model <- "w-cc2-rocky-muddy-400kn-delta-IID-aniso"
-# # ye_model <- "rocky-muddy-300kn-delta-spatial-aniso"
-# # ye_model <- "w-cc2-rocky-muddy-300kn-delta-spatial-aniso"
-
+# ye_model <- "w-deeper-all-yrs-450kn-true-year-RW-aniso"
+hal_model <- "w-deeper-450kn-delta-true-year-RW-aniso"
 
 f <- paste0("models/halibut-model-", hal_model, "-stan.rds")
 if (file.exists(f)) {
   m_hal_fixed <- readRDS(paste0("models/halibut-model-", hal_model, "-tmb.rds"))
-  m_hal_stan <- readRDS(f)
+  m_hal_stan0 <- readRDS(f)
   # temporary fixed for working in dev branch with models from main
   # m_hal_fixed$tmb_data$simulate_t <- rep(1L, length(unique(m_hal_fixed$data$year)))
 }
@@ -72,6 +66,27 @@ if (file.exists(f2)) {
   # m_ye_fixed$tmb_data$simulate_t <- rep(1L, length(unique(m_ye_fixed$data$year)))
 }
 
+# add true year to work with RW versions of models
+full_s_grid <- full_s_grid %>% filter(year == 2020) %>%
+  replicate_df(., time_name = "year_true", time_values = unique(m_hal_fixed$data$year_true)) %>%
+  mutate(
+    year = year_true,
+    year_pair = case_when(
+      year %in% c(2007, 2008) ~ 2008,
+      year %in% c(2009, 2010) ~ 2010,
+      year %in% c(2011, 2012) ~ 2012,
+      year %in% c(2013, 2014) ~ 2014,
+      year %in% c(2015, 2016) ~ 2016,
+      year %in% c(2017, 2018) ~ 2018,
+      year %in% c(2019, 2020) ~ 2020  # no WCVI
+    ),
+    year = year_pair,
+    fyear = as.factor(year)
+    )
+
+
+# get_index_sims(
+# grid_scale <- "1000-post"
 
 f <- paste0("data-generated/halibut-", hal_model, "_", grid_scale, "-index-all-stan.rds")
 if (!file.exists(f)) {
@@ -90,7 +105,6 @@ if (!file.exists(f)) {
 } else{
   i_ye <- readRDS(f)
 }
-
 
 i_hal_all <- i_hal$all$index
 i_ye_all <- i_ye$all$index
@@ -138,6 +152,20 @@ ggplot(i_hal_cda, aes(year, est)) + geom_line(colour = "darkgreen") +
 # p_hal <- full_s_grid
 # p_hal$est <- apply(p_hal_sims, 1, function(x) {median(x)})
 
+# final_yr_grid <- full_s_grid %>% filter(year_true == 2020)
+# samps <- sdmTMBextra::extract_mcmc(m_hal_stan)
+# p_hal <- final_yr_grid
+# p_hal_sims <- predict(m_hal_fixed,
+#                       newdata = final_yr_grid,  mcmc_samples = samps,
+#                       type = "response")
+
+# final_yr_grid <- full_s_grid %>% filter(year_true == 2020)
+# ye_samps <- sdmTMBextra::extract_mcmc(m_ye_stan)
+# p_ye <- final_yr_grid
+# p_ye_sims <- predict(m_ye_fixed,
+#                      newdata = final_yr_grid,  mcmc_samples = ye_samps,
+#                      type = "response")
+
 
 p_hal <- i_hal$all[[3]]
 p_hal_sims <- i_hal$all[[4]]
@@ -151,11 +179,19 @@ p_ye$est_sd <- apply(p_ye_sims, 1, function(x) {sd(x)})
 
 
 # halibute density maps
+# # use TMB predictions instead of stan ones
+#
+# hal_model <- "w-deeper-500kn-delta-AR1-aniso-may23"
+# m_hal <- readRDS(paste0("models/halibut-model-", hal_model, "-tmbfit.rds"))
+# final_yr_grid <- full_s_grid %>% filter(year_true == 2020)
+# p_hal <- predict(m_hal, newdata = final_yr_grid,
+#                      type = "response")
 
 d_hal_plots <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
   filter(latitude < max_map_lat) %>%
   filter(year %in% c(2018,2019,2020))
   # filter(year < 2016)
+
 p_hal2020 <- p_hal %>%
   filter(latitude < max_map_lat) %>%
   filter(year == 2020)
@@ -177,7 +213,7 @@ h_2020 <- map_predictions(
 ) + theme(legend.spacing.y = unit(0.1, "cm"))
 # h_2020
 
-ggsave(paste0("figs/halibut-", hal_model, "_", grid_scale, "-map-2020.png"),
+ggsave(paste0("figs/halibut-", hal_model, "-", grid_scale, "-map-2020.png"),
        width = 6, height = 5,
        dpi = 400)
 
@@ -233,6 +269,8 @@ ggsave(paste0("figs/halibut-", hal_model, "_", grid_scale, "-map-2020.png"),
 #        dpi = 400)
 #
 
+
+
 # yelloweye density maps
 
 d_ye_plots <- readRDS(("data-generated/yelloweye-model-data-hbll-weights.rds")) %>%
@@ -256,9 +294,9 @@ y_2020 <- map_predictions(
   size_lab = "Observed kg/ha",
   size_aes = density
 ) + theme(legend.spacing.y = unit(0.1, "cm"))
-y_2020
+# y_2020
 
-ggsave(paste0("figs/yelloweye-", ye_model, "_", grid_scale, "-map-2020.png"),
+ggsave(paste0("figs/yelloweye-", ye_model, "-", grid_scale, "-map-2020.png"),
        width = 6, height = 5,
        dpi = 400)
 
@@ -370,7 +408,7 @@ theme(legend.spacing.y = unit(0.1, "cm"),
       panel.spacing.x = unit(1, "lines"),
       legend.position = "right")
 
-ggsave(paste0("figs/halibut-", hal_model, "_", grid_scale, "-map-years.png"),
+ggsave(paste0("figs/halibut-", hal_model, "-", grid_scale, "-map-years.png"),
        width = 8, height = 10,
        dpi = 400)
 
@@ -417,7 +455,7 @@ y_all <- map_predictions(
 
 # ideally add a wider space between facets
 
-ggsave(paste0("figs/yelloweye-", ye_model, "_", grid_scale, "-map-years.png"),
+ggsave(paste0("figs/yelloweye-", ye_model, "-", grid_scale, "-map-years.png"),
        width = 8, height = 10,
        dpi = 400)
 
@@ -430,12 +468,17 @@ phd <- p_hal %>%
   rename(hal_est = est) %>%
   dplyr::select(hal_est, X, Y, year)%>% distinct()
 
+quantile(phd$hal_est, 0.025)
+# hist(pyd$ye_est)
+#quantile(c(phd$hal_est,pyd$ye_est), 0.025)
+
 ratio_df <- left_join(pyd, phd) %>% mutate(
   halibut = hal_est,
-  halibut2 = ifelse(hal_est < 0.01, 0.01, hal_est),
+  halibut2 = ifelse(hal_est < 1, 1, hal_est),
   yelloweye = ye_est,
-  yelloweye2 = ifelse(ye_est < 0.01, 0.01, ye_est), # make min for yelloweye of 1 per km2
-  ye_per_hal = (yelloweye)/(halibut),
+  # yelloweye2 = ifelse(ye_est < quantile(phd$hal_est, 0.025), quantile(phd$hal_est, 0.025), ye_est),
+  yelloweye2 = ifelse(ye_est < 1, 1, ye_est),
+  ye_per_hal = (yelloweye)/(halibut2),
   ye_per_hal2 = (yelloweye2)/(halibut2),# using halibut 2 doesn't change anything.
   ye_per_hal3 = (yelloweye +0.01)/(halibut+0.01),# using halibut 2 doesn't change anything.
   hal_per_ye = (halibut)/(yelloweye2),
@@ -499,10 +542,13 @@ y2h <- map_predictions(
   map_lat_limits = c(48.4, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
   pred_data = ratio_df_2020,
-  pred_min = 0,
-  # pred_min = min(ratio_df_2020$ye_per_hal),
-  pred_max = quantile(ratio_df_2020$ye_per_hal, 0.975),
+  # pred_min = 0,
+  pred_min = min(ratio_df_2020$ye_per_hal),
+  # pred_max = max(ratio_df_2020$ye_per_hal),
+  pred_max = quantile(ratio_df_2020$ye_per_hal, 0.995),
   fill_aes = ye_per_hal,
+  # set_trans = ggsidekick::fourth_root_power_trans(),
+  # set_trans = "log10",
   fill_lab = "Ratio"
 )
 # y2h
@@ -510,14 +556,18 @@ y2h <- map_predictions(
 #        width = 5.5, height = 4.5, dpi = 400
 #        # width = 6, height = 5, dpi = 200
 
+options(scipen=999)
 h2y <- map_predictions(
   map_lat_limits = c(48.4, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon),
   pred_data = ratio_df_2020,
-  pred_min = 0,
-  # pred_min = min(ratio_df_2020$ye_per_hal),
-  pred_max = quantile(ratio_df_2020$hal_per_ye, 0.975),
+  # pred_min = 0,
+  pred_min = min(ratio_df_2020$hal_per_ye),
+  # pred_max = max(ratio_df_2020$hal_per_ye),
+  pred_max = quantile(ratio_df_2020$hal_per_ye, 0.995),
   fill_aes = hal_per_ye,
+  # set_trans = "log10",
+  # set_trans = ggsidekick::fourth_root_power_trans(),
   fill_lab = "Ratio"
 )
 # h2y
@@ -542,7 +592,13 @@ y <- y2h + ggtitle("(a) Yelloweye to halibut weight ratios") +
         axis.ticks.x = element_blank())
 h <- h2y + ggtitle("(b) Halibut to yelloweye weight ratios")
 
-y + h + patchwork::plot_layout(nrow = 2)
+r <- y + h + patchwork::plot_layout(nrow = 2)
+
+# r
+# ggsave(paste0("figs/ratios-truncated-to-lower-quantile-for-hal-", grid_scale, "-2020.png"), width = 6, height = 8, dpi = 400)
+# r
+ggsave(paste0("figs/ratios-truncated-to-1-for-both-", grid_scale, "-post-2020.png"), width = 6, height = 8, dpi = 400)
+
 
 ggsave(paste0("figs/ratios-ye-", ye_model, "_hal-", hal_model, "-", grid_scale, "-2020.png"), width = 6, height = 8, dpi = 400)
 
@@ -570,13 +626,14 @@ g <- map_predictions(
   fill_aes = cv,
   fill_lab = "CV",
   pred_min = min(cv_hal2020$cv,cv_ye2020$cv),
-  pred_max = quantile(c(cv_hal2020$cv,cv_ye2020$cv), 0.99),
+  # pred_max = max(cv_hal2020$cv,cv_ye2020$cv),
+  pred_max = quantile(c(cv_hal2020$cv,cv_ye2020$cv), 0.995),
   map_lat_limits = c(min_map_lat3, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon)
 )+theme(legend.spacing.y = unit(0.1, "cm"))
 g
 
-ggsave(paste0("figs/halibut-", hal_model, "_", grid_scale, "-CV.png"), width = 6, height = 5, dpi = 400)
+ggsave(paste0("figs/halibut-", hal_model, "-", grid_scale, "-CV.png"), width = 6, height = 5, dpi = 400)
 
 
 g <- map_predictions(
@@ -584,11 +641,12 @@ g <- map_predictions(
   fill_aes = cv,
   fill_lab = "CV",
   pred_min = min(cv_hal2020$cv,cv_ye2020$cv),
-  pred_max = quantile(c(cv_hal2020$cv,cv_ye2020$cv), 0.99),
+  # pred_max = max(cv_hal2020$cv,cv_ye2020$cv),
+  pred_max = quantile(c(cv_hal2020$cv,cv_ye2020$cv), 0.995),
   map_lat_limits = c(min_map_lat3, max_map_lat),
   map_lon_limits = c(min_map_lon, max_map_lon)
 )+theme(legend.spacing.y = unit(0.1, "cm"))
 g
 
-ggsave(paste0("figs/ye-", ye_model, "_", grid_scale, "-CV.png"), width = 6, height = 5, dpi = 400)
+ggsave(paste0("figs/ye-", ye_model, "-", grid_scale, "-CV.png"), width = 6, height = 5, dpi = 400)
 

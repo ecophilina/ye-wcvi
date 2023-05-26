@@ -13,15 +13,18 @@ library(ggsidekick)
 # )
 
 # # load models if 03 not just run
-hal_model <- "w-deeper-500kn-delta-AR1-aniso"
-ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
-# ye_model <- "w-effort-500kn-delta-spatial-aniso"
-#
+
+
 # # hal_model <- "rocky-muddy-300kn-delta-IID-aniso"
 # # hal_model <- "w-cc2-rocky-muddy-400kn-delta-IID-aniso"
 # # ye_model <- "rocky-muddy-300kn-delta-spatial-aniso"
 # # ye_model <- "w-cc2-rocky-muddy-300kn-delta-spatial-aniso"
+# # ye_model <- "w-effort-500kn-delta-spatial-aniso"
 
+# hal_model <- "w-deeper-500kn-delta-AR1-aniso"
+# ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
+ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso-may23"
+hal_model <- "w-deeper-500kn-delta-AR1-aniso-may23"
 
 f <- paste0("models/halibut-model-", hal_model, "-stan.rds")
 if (file.exists(f)) {
@@ -48,7 +51,13 @@ get_effects <- function(m,
                         type = "response") {
 
   if (!is.null(sims)|!is.null(tmbstan_model)) {
-    p <- predict(m, tmbstan_model = tmbstan_model, newdata = newdata,
+
+    post <- sdmTMBextra::extract_mcmc(tmbstan_model)
+    set.seed(102838)
+    downsampled <- sample(seq(1, ncol(post)), 1000)
+    post <- post[,downsampled]
+
+    p <- predict(m,  mcmc_samples = post, newdata = newdata,
                  se_fit = F, re_form = NA, type = type, nsims = 10000)
 
     out <- apply(p, 1, function(x) {
@@ -98,6 +107,8 @@ p <- p %>% mutate(
 )
   p
 }
+
+m <- m1
 
 # depth predictions
 pd <- expand.grid(
@@ -214,7 +225,7 @@ dplot <- ggplot(
   )
 ) +
   geom_ribbon(alpha = 0.1, colour = NA) +
-  geom_line(aes(alpha = year), size = 0.75) +
+  geom_line(aes(alpha = year), linewidth = 0.75) +
   # ylab("Biomass (kg/km2)") +
   ylab("") +
   xlab("") +
@@ -231,7 +242,7 @@ dplot <- ggplot(
 
 dplot <- egg::tag_facet(dplot)
 
-ggsave("figs/effects-delta-iid-ansio.png", width = 6, height = 4)
+ggsave("figs/effects-delta-iid-ar1-ansio.png", width = 6, height = 4)
 
 # # leftover separate component model effects
 # # rocky plots
