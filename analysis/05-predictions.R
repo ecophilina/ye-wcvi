@@ -35,11 +35,6 @@ obs_cols <- c("white", "#98FB98", "#FFDAB9")
 obs_cols <- c("white", "#98FB98")
 }
 
-# load grid and add in fyear and dummy vessel id
-full_s_grid <- readRDS(paste0("report-data/full_filled_grid_w_ext_", grid_scale,".rds")) %>%
-  filter(latitude <= latitude_cutoff) %>%
-  mutate(fyear = as.factor(year),
-         vessel_id = as.factor("survey"))
 
 # # # load models if 03 not just run
 # # hal_model <- "w-deeper-500kn-delta-AR1-aniso"
@@ -48,12 +43,12 @@ ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso-may23"
 hal_model <- "w-deeper-500kn-delta-AR1-aniso-may23"
 
 # ye_model <- "w-deeper-all-yrs-450kn-true-year-RW-aniso"
-hal_model <- "w-deeper-450kn-delta-true-year-RW-aniso"
+# hal_model <- "w-deeper-450kn-delta-true-year-RW-aniso"
 
 f <- paste0("models/halibut-model-", hal_model, "-stan.rds")
 if (file.exists(f)) {
   m_hal_fixed <- readRDS(paste0("models/halibut-model-", hal_model, "-tmb.rds"))
-  m_hal_stan0 <- readRDS(f)
+  m_hal_stan <- readRDS(f)
   # temporary fixed for working in dev branch with models from main
   # m_hal_fixed$tmb_data$simulate_t <- rep(1L, length(unique(m_hal_fixed$data$year)))
 }
@@ -66,8 +61,16 @@ if (file.exists(f2)) {
   # m_ye_fixed$tmb_data$simulate_t <- rep(1L, length(unique(m_ye_fixed$data$year)))
 }
 
+
+
+# load grid and add in fyear and dummy vessel id
+full_s_grid <- readRDS(paste0("report-data/full_filled_grid_w_ext_", grid_scale,".rds")) %>%
+  filter(latitude <= latitude_cutoff) %>%
+  mutate(fyear = as.factor(year),
+         vessel_id = as.factor("survey"))
+
 # add true year to work with RW versions of models
-full_s_grid <- full_s_grid %>% filter(year == 2020) %>%
+full_s_grid2 <- full_s_grid %>% filter(year == 2020) %>%
   replicate_df(., time_name = "year_true", time_values = unique(m_hal_fixed$data$year_true)) %>%
   mutate(
     year = year_true,
@@ -80,18 +83,21 @@ full_s_grid <- full_s_grid %>% filter(year == 2020) %>%
       year %in% c(2017, 2018) ~ 2018,
       year %in% c(2019, 2020) ~ 2020  # no WCVI
     ),
-    year = year_pair,
-    fyear = as.factor(year)
-    )
+    # year = year_pair,
+    fyear = as.factor(year_pair)
+  )
 
-
-# get_index_sims(
 # grid_scale <- "1000-post"
 
 f <- paste0("data-generated/halibut-", hal_model, "_", grid_scale, "-index-all-stan.rds")
 if (!file.exists(f)) {
-  i_hal <- get_all_sims(m_hal_fixed, newdata = full_s_grid, tmbstan_model = m_hal_stan)
-  i_hal <- setNames(i_hal, c("all", paste(unique(full_s_grid$region))))
+  if(m_hal_fixed$time == "year_true"){
+    grid <- full_s_grid2
+    }else{
+    grid <- full_s_grid
+    }
+  i_hal <- get_all_sims(m_hal_fixed, newdata = grid, tmbstan_model = m_hal_stan)
+  i_hal <- setNames(i_hal, c("all", paste(unique(grid$region))))
   saveRDS(i_hal, f)
 } else{
   i_hal <- readRDS(f)
@@ -99,8 +105,13 @@ if (!file.exists(f)) {
 
 f <- paste0("data-generated/yelloweye-", ye_model, "_", grid_scale, "-index-all-stan.rds")
 if (!file.exists(f)) {
-  i_ye <- get_all_sims(m_ye_fixed, newdata = full_s_grid, tmbstan_model = m_ye_stan)
-  i_ye <- setNames(i_ye, c("all", paste(unique(full_s_grid$region))))
+  if(m_hal_fixed$time == "year_true"){
+    grid <- full_s_grid2
+  }else{
+    grid <- full_s_grid
+  }
+  i_ye <- get_all_sims(m_ye_fixed, newdata = grid, tmbstan_model = m_ye_stan)
+  i_ye <- setNames(i_ye, c("all", paste(unique(grid$region))))
   saveRDS(i_ye, f)
 } else{
   i_ye <- readRDS(f)
@@ -108,6 +119,8 @@ if (!file.exists(f)) {
 
 i_hal_all <- i_hal$all$index
 i_ye_all <- i_ye$all$index
+
+
 
 ggplot(i_hal_all, aes(year, est)) + geom_line(colour = "darkgreen") +
   geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "darkgreen", alpha = 0.2) +

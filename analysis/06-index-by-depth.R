@@ -41,13 +41,25 @@ if (include_cc) {
 
 # load grid and add in fyear and dummy vessel id
 full_s_grid <- readRDS(paste0("report-data/full_filled_grid_w_ext_", grid_scale,".rds")) %>%
-  # filter(latitude <= latitude_cutoff) %>%
-  mutate(fyear = as.factor(year),
-         vessel_id = as.factor("survey"))
+  replicate_df(., time_name = "year_true", time_values = unique(m_hal_fixed$data$year_true)) %>%
+  mutate(
+    year = year_true,
+    year_pair = case_when(
+      year %in% c(2007, 2008) ~ 2008,
+      year %in% c(2009, 2010) ~ 2010,
+      year %in% c(2011, 2012) ~ 2012,
+      year %in% c(2013, 2014) ~ 2014,
+      year %in% c(2015, 2016) ~ 2016,
+      year %in% c(2017, 2018) ~ 2018,
+      year %in% c(2019, 2020) ~ 2020  # no WCVI
+    ),
+    year = year_pair,
+    fyear = as.factor(year),
+    vessel_id = as.factor("survey"))
 
 # depth stats for regions
 
-full_s_grid %>% filter(year == max(full_s_grid$year)) %>%
+full_s_grid %>% filter(year == max(full_s_grid$year_true)) %>%
   group_by(region) %>%
   summarise(mean = mean(depth, na.rm = TRUE),
             median = median(depth, na.rm = TRUE),

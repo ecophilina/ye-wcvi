@@ -34,9 +34,9 @@ i_hal <- readRDS(paste0("data-generated/halibut-", hal_model, "_", grid_scale, "
 i_ye <- readRDS(paste0("data-generated/yelloweye-", ye_model, "_", grid_scale, "-index-all-stan.rds"))
 
 
-g_1 <- i_hal$CDA[[3]] %>% filter(region %in% c("CDA")) %>% select(X, Y, year, area)
-g_2 <- i_hal$`CDA adjacent`[[3]] %>% filter(region %in% c("CDA adjacent")) %>% select(X, Y, year, area)
-g_3 <- i_hal$`non-CDA 3CD`[[3]] %>% filter(region %in% c("non-CDA 3CD")) %>% select(X, Y, year, area)
+g_1 <- i_hal$CDA[[3]] %>% filter(region %in% c("CDA")) %>% select(X, Y, year_true, area) %>% rename(year = year_true)
+g_2 <- i_hal$`CDA adjacent`[[3]] %>% filter(region %in% c("CDA adjacent")) %>% select(X, Y, year_true, area) %>% rename(year = year_true)
+g_3 <- i_hal$`non-CDA 3CD`[[3]] %>% filter(region %in% c("non-CDA 3CD")) %>% select(X, Y, year_true, area) %>% rename(year = year_true)
 
 # area in these grids is in hectares
 g1 <- g_1 %>% filter(area == grid_scale/10) %>% select(-area)
@@ -467,7 +467,7 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions2.pn
     # scale_y_log10(
     #   breaks = c(0.1, 1, 10, 100, 1000), labels = c(0.1, 1, 10, 100, "1000")
     #   ) +
-    coord_cartesian(expand = F, ylim = c(0, 300)) +
+    coord_cartesian(expand = F, ylim = c(0, 120)) +
     labs(tag="C.")+
     scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
     ylab("Cumulative halibut") +
@@ -497,7 +497,7 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_scenarios_regions2.pn
     # scale_y_log10(
     #   breaks = c(0.1, 1, 10, 100, 1000), labels = c(0.1, 1, 10, 100, "1000")
     #   ) +
-    coord_cartesian(expand = F, ylim = c(0, 65)) +
+    coord_cartesian(expand = F, ylim = c(0, 30)) +
     # labs(tag="D.")+
     labs(tag="(d)")+
     scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
