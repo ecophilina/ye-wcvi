@@ -64,7 +64,7 @@ if (file.exists(f2)) {
 
 
 # load grid and add in fyear and dummy vessel id
-full_s_grid <- readRDS(paste0("report-data/full_filled_grid_w_ext_", grid_scale,".rds")) %>%
+full_s_grid <- readRDS(paste0("data-generated/full_filled_grid_w_ext_", grid_scale,".rds")) %>%
   filter(latitude <= latitude_cutoff) %>%
   mutate(fyear = as.factor(year),
          vessel_id = as.factor("survey"))

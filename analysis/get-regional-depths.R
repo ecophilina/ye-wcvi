@@ -175,7 +175,7 @@ write_tex(round(mean_mixed3, 2)*100, "restmeanmixed")
 write_tex(round(mean_muddy3, 2)*100, "restmeanmuddy")
 write_tex(round(mean_rocky3, 2)*100, "restmeanrocky")
 
-grid <- readRDS(file = paste0("report-data/full_filled_grid_w_ext_", grid_scale, ".rds"))
+grid <- readRDS(file = paste0("data-generated/full_filled_grid_w_ext_", grid_scale, ".rds"))
 
 filter(grid, year == 2008) %>% group_by(region, year) %>% summarise(total_area = sum(cell_area/1e+6))
 

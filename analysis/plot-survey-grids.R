@@ -109,7 +109,7 @@ if (!file.exists(f)) {
   # full_sf_grid <- full_sf_grid[unlist(keep)]
   # full_sf_grid2 <- st_as_sf(full_sf_grid)
 
-  full_s_grid <- readRDS(file = "report-data/full_filled_grid_w_ext.rds")
+  full_s_grid <- readRDS(file = "data-generated/full_filled_grid_w_ext_1000.rds")
   full_s_grid_trim <- full_s_grid %>% filter(depth <= 600)
 
   g <- ggplot(focal_area_proj) +
@@ -163,9 +163,9 @@ if (!file.exists(f)) {
             # colour = "darkorchid4",
             colour = "deeppink4",
             lty = "twodash",
-            fill = NA, size = 0.60) + # add focal area2 behind coast
-    geom_sf(colour = "red", fill = NA, size = 0.70) + # add focal area behind coast
-    geom_sf(data = coast_gshhg_proj, size = 0.07, fill = "grey99", col = "grey55") +
+            fill = NA, linewidth = 0.70) + # add focal area2 behind coast
+    geom_sf(colour = "red", fill = NA, linewidth = 0.70) + # add focal area behind coast
+    geom_sf(data = coast_gshhg_proj, linewidth = 0.07, fill = "grey99", col = "grey55") +
     coord_sf(
       # xlim = c(230957.7 + 205000, 1157991 - 385000),
       # ylim = c(5366427 + 25000, 6353456 - 590000)
@@ -193,6 +193,6 @@ if (!file.exists(f)) {
       legend.justification = c(1, 1),
       panel.background = element_rect(color = NA, size = 1, fill = "grey70"))
   g
-  ggsave("figs/map-stitched-grid-overlap-expanded-dashed.png", width = 5.5, height = 5.5, dpi = 400)
+  ggsave("figs/map-stitched-grid-overlap-expanded-dashed2.png", width = 5.5, height = 5.5, dpi = 400)
 }
 

@@ -40,7 +40,7 @@ if (include_cc) {
 }
 
 # load grid and add in fyear and dummy vessel id
-full_s_grid <- readRDS(paste0("report-data/full_filled_grid_w_ext_", grid_scale,".rds")) %>%
+full_s_grid <- readRDS(paste0("data-generated/full_filled_grid_w_ext_", grid_scale,".rds")) %>%
   replicate_df(., time_name = "year_true", time_values = unique(m_hal_fixed$data$year_true)) %>%
   mutate(
     year = year_true,
@@ -168,31 +168,31 @@ depth_bin_pred <- function(tmb_model, tmbstan_model, grid, bin_width = 50, nsims
 
 grid_scale <- "1000-nsims"
 
-f <- paste0("report-data/hal-", hal_model, "-depth_bins_in_ext_", bin_width, "_", grid_scale, ".rds")
+f <- paste0("data-generated/hal-", hal_model, "-depth_bins_in_ext_", bin_width, "_", grid_scale, ".rds")
 if(!file.exists(f)) {
   i_hal_x <- depth_bin_pred(m_hal_fixed, m_hal_stan, ext_grid, bin_width = bin_width)
   saveRDS(i_hal_x, f)
 }else{ i_hal_x <- readRDS(f)}
 
-f <- paste0("report-data/ye-", ye_model, "-depth_bins_in_ext_", bin_width, "_", grid_scale, ".rds")
+f <- paste0("data-generated/ye-", ye_model, "-depth_bins_in_ext_", bin_width, "_", grid_scale, ".rds")
 if(!file.exists(f)) {
   i_ye_x <- depth_bin_pred(m_ye_fixed, m_ye_stan, ext_grid, bin_width = bin_width)
   saveRDS(i_ye_x, f)
 }else{ i_ye_x <- readRDS(f)}
 
-f <- paste0("report-data/hal-", hal_model, "-depth_bins_in_cda_", bin_width, "_", grid_scale, ".rds")
+f <- paste0("data-generated/hal-", hal_model, "-depth_bins_in_cda_", bin_width, "_", grid_scale, ".rds")
 if(!file.exists(f)) {
   i_hal_cda <- depth_bin_pred(m_hal_fixed, m_hal_stan, cda_grid, bin_width = bin_width)
   saveRDS(i_hal_cda, f)
 }else{ i_hal_cda <- readRDS(f) }
 
-f <- paste0("report-data/ye-", ye_model, "-depth_bins_in_cda_", bin_width, "_", grid_scale, ".rds")
+f <- paste0("data-generated/ye-", ye_model, "-depth_bins_in_cda_", bin_width, "_", grid_scale, ".rds")
 if(!file.exists(f)) {
   i_ye_cda <- depth_bin_pred(m_ye_fixed, m_ye_stan, cda_grid, bin_width = bin_width)
   saveRDS(i_ye_cda, f)
 }else{ i_ye_cda <- readRDS(f) }
 
-f <- paste0("report-data/hal-", hal_model, "-depth_bins_in_3cd_", bin_width, "_", grid_scale, ".rds")
+f <- paste0("data-generated/hal-", hal_model, "-depth_bins_in_3cd_", bin_width, "_", grid_scale, ".rds")
 if(!file.exists(f)) {
   i_hal_3cd <- depth_bin_pred(m_hal_fixed, m_hal_stan, nonCDA_grid,
                               nsims = 100,
@@ -200,7 +200,7 @@ if(!file.exists(f)) {
   saveRDS(i_hal_3cd, f)
 }else{ i_hal_3cd <- readRDS(f) }
 
-f <- paste0("report-data/ye-", ye_model, "-depth_bins_in_3cd_", bin_width, "_", grid_scale, ".rds")
+f <- paste0("data-generated/ye-", ye_model, "-depth_bins_in_3cd_", bin_width, "_", grid_scale, ".rds")
 if(!file.exists(f)) {
   i_ye_3cd <- depth_bin_pred(m_ye_fixed, m_ye_stan, nonCDA_grid,
                              nsims = 100,
@@ -520,8 +520,6 @@ ggsave(paste0("figs/yelloweye-densities-by-", bin_width, "m-bin-depth-", grid_sc
 
 
 
-
-
 # For just southern outside HBLL
 #
 # # Just the HBLL S grid
@@ -541,57 +539,4 @@ ggsave(paste0("figs/yelloweye-densities-by-", bin_width, "m-bin-depth-", grid_sc
 #   i_ye_S2b <- get_all_sims(m_ye, newdata = hbll_s_grid, split_by_region = F)
 #   saveRDS(i_ye_S2b, ss)
 # }
-
-#
-# # # Save the simulated indices for report
-# #
-# s1 <- "data-generated/filled-keepable-halibut-delta-est-rock-mud-index-all-S-stan.rds"
-# if (!file.exists(s1)) {
-#   i_hal_combined <- get_all_sims(fit_obj = m_hal_fixed, tmbstan_model = m_hal_stan,  newdata = full_s_grid)
-#   i_hal_combined <- setNames(i_hal_combined, c("all", paste(unique(full_s_grid$region))))
-#   saveRDS(i_hal_combined, s1)
-# }
-#
-# s2 <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-all-S-stan.rds"
-# if (!file.exists(s2)) {
-#   i_ye_combined <- get_all_sims(fit_obj = m_ye_fixed, tmbstan_model = m_ye_stan,
-#                                 # area_divisor = 1000000,  # default is hectares, use this to get km2
-#                                 newdata = full_s_grid)
-#   i_ye_combined <- setNames(i_ye_combined, c("all", paste(unique(full_s_grid$region))))
-#   saveRDS(i_ye_combined, s2)
-# }
-# #
-# i_hal_cda <- mutate(i_hal_combined[["CDA"]]$index, area = sum(cda_grid$area/10000),
-# density = est/area, lwr_dens = lwr/area, upr_dens = upr/area, depth_range = "0-150")
-#
-# i_ye_cda <- mutate(i_ye_combined[["CDA"]]$index, area = sum(cda_grid$area/10000),
-#                    density = est/area, lwr_dens = lwr/area, upr_dens = upr/area, depth_range = "0-150")
-
-# i_ye <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-all-S-stan.rds"))[["all"]][[1]]
-#
-#
-# i_ye <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-all-S-stan.rds"))[[1]]
-# saveRDS(i_ye, here("report-data/filled-keepable-yelloweye-est-rock-mud-index-all-S-stan.rds"))
-# i_ye_cda <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-cda-sim-500.rds"))[[1]]
-# saveRDS(i_ye_cda, here("report-data/filled-keepable-yelloweye-est-rock-mud-index-cda-sim-500.rds"))
-# i_ye_noncda <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"))[[1]]
-# saveRDS(i_ye_noncda, here("report-data/filled-keepable-yelloweye-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"))
-# i_ye_noncdaN <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))[[1]]
-# saveRDS(i_ye_noncdaN, here("report-data/filled-keepable-yelloweye-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))
-# i_ye_noncdaS <- readRDS(here("data-generated/filled-keepable-yelloweye-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))[[1]]
-# saveRDS(i_ye_noncdaS, here("report-data/filled-keepable-yelloweye-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))
-#
-#
-# i_hal <- readRDS(here("data-generated/filled-keepable-halibut-delta-est-rock-mud-index-all-S-stan.rds"))[[1]]
-# saveRDS(i_hal, here("report-data/filled-keepable-halibut-delta-est-rock-mud-index-all-S-stan.rds"))
-# i_hal_cda <- readRDS(here("data-generated/filled-keepable-halibut-delta-est-rock-mud-index-cda-sim-500.rds"))[[1]]
-# saveRDS(i_hal_cda, here("report-data/filled-keepable-halibut-delta-est-rock-mud-index-cda-sim-500.rds"))
-# i_hal_noncda <- readRDS(here("data-generated/filled-keepable-halibut-delta-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"))[[1]]
-# saveRDS(i_hal_noncda, here("report-data/filled-keepable-halibut-delta-est-rock-mud-index-5A3CD-outside-cda-sim-500.rds"))
-# i_hal_noncdaN <- readRDS(here("data-generated/filled-keepable-halibut-delta-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))[[1]]
-# saveRDS(i_hal_noncdaN, here("report-data/filled-keepable-halibut-delta-est-rock-mud-index-5A3CDN-outside-cda-sim-500.rds"))
-# i_hal_noncdaS <- readRDS(here("data-generated/filled-keepable-halibut-delta-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))[[1]]
-# saveRDS(i_hal_noncdaS, here("report-data/filled-keepable-halibut-delta-est-rock-mud-index-5A3CDS-outside-cda-sim-500.rds"))
-#
-#
 
