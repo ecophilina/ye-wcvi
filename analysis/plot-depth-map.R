@@ -48,8 +48,8 @@ if (!file.exists(f)) {
     filter(X > 200 & X < 900 & Y < 5420) #%>%
 
 
-  # full_s_grid <- readRDS("report-data/full_filled_grid_paired.rds")
-  full_s_grid <- readRDS(paste0("report-data/full_filled_grid_w_ext_", grid_scale,".rds"))
+  # full_s_grid <- readRDS("data-generated/full_filled_grid_paired.rds")
+  full_s_grid <- readRDS(paste0("data-generated/full_filled_grid_w_ext_", grid_scale,".rds"))
 
   full_s_grid_trim <- full_s_grid %>% filter(depth <= 600)
 

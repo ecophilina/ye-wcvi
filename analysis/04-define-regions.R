@@ -100,7 +100,7 @@ poly3C_grid_sf <- full_s_grid_sf[which(lengths(intersected3C) > 0), ]
 poly3C_grid <- sfc_as_cols(poly3C_grid_sf, c("longitude", "latitude"))
 st_geometry(poly3C_grid) <- NULL
 poly3C_grid$region <- "3C"
-saveRDS(poly3C_grid, file = paste0("report-data/filled_3D_grid_paired_", grid_scale, ".rds"))
+saveRDS(poly3C_grid, file = paste0("data-generated/filled_3D_grid_paired_", grid_scale, ".rds"))
 
 poly3D <- PolySet2SpatialPolygons(bound3D, close_polys=TRUE)
 poly3D_sf <-  st_as_sf(poly3D)
@@ -113,7 +113,7 @@ poly3D_grid_sf <- full_s_grid_sf[which(lengths(intersected3D) > 0), ]
 poly3D_grid <- sfc_as_cols(poly3D_grid_sf, c("longitude", "latitude"))
 st_geometry(poly3D_grid) <- NULL
 poly3D_grid$region <- "3D"
-saveRDS(poly3D_grid, file = paste0("report-data/filled_3D_grid_paired_", grid_scale, ".rds"))
+saveRDS(poly3D_grid, file = paste0("data-generated/filled_3D_grid_paired_", grid_scale, ".rds"))
 
 poly5A <- PolySet2SpatialPolygons(bound5A, close_polys=TRUE)
 poly5A_sf <-  st_as_sf(poly5A)
@@ -127,7 +127,7 @@ poly5A_grid <- sfc_as_cols(poly5A_grid_sf, c("longitude", "latitude"))
 st_geometry(poly5A_grid) <- NULL
 poly5A_grid$region <- "5A"
 # replace old one with one based on actual boundary
-saveRDS(poly5A_grid, file = paste0("report-data/filled_5A_grid_paired_", grid_scale, ".rds"))
+saveRDS(poly5A_grid, file = paste0("data-generated/filled_5A_grid_paired_", grid_scale, ".rds"))
 
 poly5B <- PolySet2SpatialPolygons(bound5B, close_polys=TRUE)
 poly5B_sf <-  st_as_sf(poly5B)
@@ -140,7 +140,7 @@ poly5B_grid_sf <- full_s_grid_sf[which(lengths(intersected5B) > 0), ]
 poly5B_grid <- sfc_as_cols(poly5B_grid_sf, c("longitude", "latitude"))
 st_geometry(poly5B_grid) <- NULL
 poly5B_grid$region <- "5B"
-saveRDS(poly5B_grid, file = paste0("report-data/filled_5B_grid_paired_", grid_scale, ".rds"))
+saveRDS(poly5B_grid, file = paste0("data-generated/filled_5B_grid_paired_", grid_scale, ".rds"))
 
 
 ggplot() + geom_sf(data = poly3C_sf, colour = "blue", lty = 2, fill = NA) +
@@ -166,7 +166,7 @@ ggplot() + geom_sf(data = poly3C_sf, colour = "blue", lty = 2, fill = NA) +
 poly5A_grid <- poly5A_grid %>% filter(!(latitude < 50.85 & latitude > 50.75 & longitude > -128.94 & longitude < -128.6))
 regions_grid <- bind_rows(poly3C_grid, poly3D_grid, poly5A_grid, poly5B_grid)
 
-saveRDS(regions_grid, file = paste0("report-data/filled_regions_grid_", grid_scale, ".rds"))
+saveRDS(regions_grid, file = paste0("data-generated/filled_regions_grid_", grid_scale, ".rds"))
 
 # add in CDA boundaries
 
@@ -189,7 +189,7 @@ poly3CD_grid_sf <- full_s_grid_sf[which(lengths(intersected3CD) > 0), ]
 poly3CD_grid <- sfc_as_cols(poly3CD_grid_sf, c("longitude", "latitude"))
 st_geometry(poly3CD_grid) <- NULL
 poly3CD_grid$region <- "3CD"
-saveRDS(poly3CD_grid, file = paste0("report-data/filled_3CD_grid_paired_", grid_scale, ".rds"))
+saveRDS(poly3CD_grid, file = paste0("data-generated/filled_3CD_grid_paired_", grid_scale, ".rds"))
 
 
 sf_use_s2(FALSE)
@@ -214,14 +214,14 @@ st_geometry(noncda_3CD_grid) <- NULL
 cda_grid$region <- "CDA"
 ext_grid$region <- "CDA adjacent"
 noncda_3CD_grid$region <- "non-CDA 3CD"
-# saveRDS(cda_grid, file = "report-data/filled_cda_grid_paired.rds")
-# saveRDS(ext_grid, file = "report-data/filled_cda_adj_grid_paired.rds")
-# saveRDS(noncda_3CD_grid, file = "report-data/filled_noncda_3CD_grid_paired.rds")
+# saveRDS(cda_grid, file = "data-generated/filled_cda_grid_paired.rds")
+# saveRDS(ext_grid, file = "data-generated/filled_cda_adj_grid_paired.rds")
+# saveRDS(noncda_3CD_grid, file = "data-generated/filled_noncda_3CD_grid_paired.rds")
 
 # Area 3CD5A outside CDA
 # noncda_grid <- bind_rows(noncda_3CD_grid, poly5A_grid)
 # noncda_grid$region <- "non-CDA 3CD5A"
-# saveRDS(noncda_grid, file = "report-data/filled_noncda_grid_paired.rds")
+# saveRDS(noncda_grid, file = "data-generated/filled_noncda_grid_paired.rds")
 
 
 # make one grid with named sub regions
@@ -258,12 +258,12 @@ full_s_grid <- left_join(full_s_grid1, region_names)
 full_s_grid <- full_s_grid %>% filter(!(latitude < 50.85 & latitude > 50.75 & longitude > -128.94 & longitude < -128.6))
 
 full_s_grid[is.na(full_s_grid$region), ]$region <- "other"
-saveRDS(full_s_grid, file = paste0("report-data/full_filled_grid_w_ext_", grid_scale, ".rds"))
+saveRDS(full_s_grid, file = paste0("data-generated/full_filled_grid_w_ext_", grid_scale, ".rds"))
 
 
 f <- paste0("figs/region-colour-map-3x3-expanded-",grid_scale,".png")
 if (!file.exists(f)) {
-  full_s_grid2 <- readRDS(file = paste0("report-data/full_filled_grid_w_ext_", grid_scale, ".rds")) %>%
+  full_s_grid2 <- readRDS(file = paste0("data-generated/full_filled_grid_w_ext_", grid_scale, ".rds")) %>%
     filter(region != "other")
   unique(full_s_grid2$region)
   # full_s_grid2$region <- ordered(full_s_grid2$region,

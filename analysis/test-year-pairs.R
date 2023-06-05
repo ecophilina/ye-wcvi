@@ -123,7 +123,7 @@ AIC(m1, m2)
 # REML criterion at convergence: 2119.289
 
 
-grid <- readRDS(file = "report-data/full_filled_grid_paired.rds") %>% filter(year == 2020)
+grid <- readRDS(file = "data-generated/full_filled_grid_paired.rds") %>% filter(year == 2020)
 original_time <- sort(unique(d_hal$year_true))
 nd <- do.call(
   "rbind",
