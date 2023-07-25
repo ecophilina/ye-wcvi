@@ -369,7 +369,7 @@ y <- y_2020 + ggtitle("(a) Total Yelloweye Rockfish catch weight") +
   theme(axis.title.x = element_blank(),
         axis.text.x = element_blank(),
         axis.ticks.x = element_blank())
-h <- h_2020 + ggtitle("(b) Landable Pacfic Halibut catch weight")
+h <- h_2020 + ggtitle("(b) Landable Pacific Halibut catch weight")
 
 y + h + patchwork::plot_layout(nrow = 2)
 
