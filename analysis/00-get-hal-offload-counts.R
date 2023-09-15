@@ -1,7 +1,6 @@
 library(readr)
 library(tidyverse)
-# glimpse(just_catch_counts)
-# something seems to be wrong with this data frame... possibly sets duplicated across FOS IDS?
+
 
 halhblldata <- readRDS("data/halibut-surv-sets-all.rds") %>% filter(survey_abbrev == "HBLL OUT S")
 
