@@ -71,12 +71,12 @@ full_s_grid %>% filter(year == max(full_s_grid$year_true)) %>%
 
 # # load models if 03 not just run
 #
-# # hal_model <- "rocky-muddy-300kn-delta-IID-aniso"
-# # hal_model <- "w-cc2-rocky-muddy-400kn-delta-IID-aniso"
-# # ye_model <- "rocky-muddy-300kn-delta-spatial-aniso"
-# # ye_model <- "w-cc2-rocky-muddy-300kn-delta-spatial-aniso"
-# # hal_model <- "w-effort-500kn-delta-AR1-aniso"
-# # ye_model <- "w-effort-500kn-delta-spatial-aniso"
+# hal_model <- "rocky-muddy-300kn-delta-IID-aniso"
+# hal_model <- "w-cc2-rocky-muddy-400kn-delta-IID-aniso"
+# ye_model <- "rocky-muddy-300kn-delta-spatial-aniso"
+# ye_model <- "w-cc2-rocky-muddy-300kn-delta-spatial-aniso"
+# hal_model <- "w-effort-500kn-delta-AR1-aniso"
+# ye_model <- "w-effort-500kn-delta-spatial-aniso"
 # hal_model <- "w-deeper-500kn-delta-AR1-aniso"
 # ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
 
@@ -520,23 +520,4 @@ ggsave(paste0("figs/yelloweye-densities-by-", bin_width, "m-bin-depth-", grid_sc
 
 
 
-# For just southern outside HBLL
-#
-# # Just the HBLL S grid
-# d_utm <- m_hal_fixed$data
-# hbll_s_grid <- readRDS("data-generated/grids/full_hybrid_grid_w_substrate.rds") %>%
-#   filter(survey == "HBLL")
-# hbll_s_grid <- hbll_s_grid[complete.cases(hbll_s_grid), ]
-# hbll_s_grid <- expand_prediction_grid(hbll_s_grid, years = years) %>%
-#   mutate(depth_centred = log(depth) - mean(d_utm$depth_log)) %>%
-#   mutate(depth_scaled = depth_centred / sd(d_utm$depth_centred))
-#
-#
-#
-# ss <- "data-generated/filled-keepable-yelloweye-est-rock-mud-index-hbll-S-stan.rds"
-# if (!file.exists(ss)) {
-#
-#   i_ye_S2b <- get_all_sims(m_ye, newdata = hbll_s_grid, split_by_region = F)
-#   saveRDS(i_ye_S2b, ss)
-# }
 

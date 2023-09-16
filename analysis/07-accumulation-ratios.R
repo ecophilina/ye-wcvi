@@ -544,10 +544,7 @@ p7 <- p7 + labs(tag="(a)") + theme(
 
 ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_w_cumulative_totals_500hooks_smalltags.png"), width = 5.5, height = 10)
 
-# 2158204.29 kg is total tac in 20
-# 0.9106 % of TAC in 2021?
-# could be in the order of 20000kg?
-#
+
 #
 # # mean_ye_hal
 # ggplot(avoiding_ye_sum %>%
