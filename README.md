@@ -4,7 +4,7 @@ This repository contains the code used for the analysis included in this manuscr
 
 English, P.A., Picco, C.M., Edwards, J.C., Haggarty, D.R., Forrest, R.E., and Anderson, S.C. (2023)
 Spatial restrictions hinder avoidance of choke species in an Indigenous rights-based fishery. 
-People and Nature 00. DOI: 10.1002/pan3.10554.
+People and Nature. DOI: 10.1002/pan3.10554.
 
 The data used includes survey data that is publically available through Open Data 
 (trawl:https://open.canada.ca/data/en/dataset/a278d1af-d567-4964-a109-ae1e84cbd24a; 
