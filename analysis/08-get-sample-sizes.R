@@ -1,17 +1,12 @@
 # model data stats
-
 library(tidyverse)
-library(lubridate)
 library(sf)
-library(patchwork)
 
-library(gfplot)
-library(ggsidekick)
-
-hal_model <- "w-deeper-500kn-delta-AR1-aniso-dec22"
+hal_model <- "w-deeper-500kn-delta-AR1-aniso-may23"
 m_hal <- readRDS(paste0("models/halibut-model-", hal_model, "-tmbfit.rds"))
 
-# ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso-dec22"
+# # both models give have the same locations for give identical results
+# ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso-may23"
 # m_ye <- readRDS(paste0("models/yelloweye-model-", ye_model, "-tmbfit.rds"))
 
 focal_area <- sf::st_read(
@@ -51,3 +46,4 @@ m_dat %>% group_by(region) %>% summarise(n = n())
 m_dat %>% group_by(survey) %>% summarise(n = n())
 
 m_dat %>% summarise(n = n())
+

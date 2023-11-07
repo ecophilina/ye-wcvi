@@ -1,22 +1,28 @@
 # install packages
 
-
-# will need this version to replicate report
-# remotes::install_github("pbs-assess/sdmTMB", ref = "???")
-devtools::install_github("seananderson/ggsidekick")
-# Do we need instructions for installing other dependencies like "pbsmapping"?
-
-install.packages(c("StanHeaders", "rstan", "tmbstan"),type="source")
-
+# mapping and plotting packages
 if(!require(raster))install.packages("raster")
 if(!require(sf))install.packages("sf")
 if(!require(tidyverse))install.packages("tidyverse")
 if(!require(marmap))install.packages("marmap")
-
 if(!require(patchwork))install.packages("patchwork")
 if(!require(here))install.packages("here")
+if(!require(PBSmapping))install.packages("PBSmapping")
+# devtools::install_github("pbs-software/pbs-mapping/PBSmapping")
+if(!require(ggsidekick))devtools::install_github("seananderson/ggsidekick")
 
-# # tests to confirm working
+# modeling packages
+if(!require(sdmTMB))install.packages("sdmTMB")
+# remotes::install_github("pbs-assess/sdmTMB")
+remotes::install_github("pbs-assess/sdmTMBextra")
+install.packages(c("StanHeaders", "rstan", "tmbstan"),type="source")
+
+
+# download gshhg-shp-2.3.7 shape folder from and place in data folder:
+# https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/
+# also need taaqwiihak_areaVer2.shp shape file for CDA
+
+# # tests to confirm rstan is working
 # library(rstan)
 # scode <- "
 # parameters {
@@ -49,5 +55,3 @@ if(!require(here))install.packages("here")
 #   list(u=rnorm(114), beta=rnorm(2), logsdu=runif(1,0,10), logsd0=runif(1,0,1))
 # fit <- tmbstan(obj, chains=cores, open_progress=FALSE, init=init.fn)
 #
-
-

@@ -1,18 +1,32 @@
 # set map boundaries
-# min_map_lat <- 48.3
-# max_map_lat <- 51.4
+min_map_lat <- 48.3
 max_map_lat <- 51
 min_map_lon <- -130.1
-# max_map_lon <- -124.9
+max_map_lon <- -124.85
+
 min_map_lat2 <- 48.6
 max_map_lat2 <- 50.01
 min_map_lon2 <- -127.9
 max_map_lon2 <- -125.2
 
-
-min_map_lat <- 48.3
-max_map_lon <- -124.85
 min_map_lat3 <- 48.4
+
+qres_binomial_ <- function(y, mu, n = NULL) {
+  p <- mu
+  if (is.null(n)) n <- rep(1, length(y))
+  y <- n * y
+  a <- stats::pbinom(y - 1, n, p)
+  b <- stats::pbinom(y, n, p)
+  u <- stats::runif(n = length(y), min = pmin(a, b), max = pmax(a, b))
+  stats::qnorm(u)
+}
+
+qres_gamma_ <- function(y, mu, phi) {
+  s1 <- phi
+  s2 <- mu / s1
+  u <- stats::pgamma(q = y, shape = s1, scale = s2)
+  stats::qnorm(u)
+}
 
 write_tex <- function(x, macro, ...) {
   paste0("\\newcommand{\\", macro, "}{", x, "}") %>%
@@ -69,22 +83,18 @@ expand_prediction_grid <- function(grid, years) {
 
 # sim predictions and index function
 
-# full_s_grid <- readRDS(file = "data-generated/full_filled_grid_paired.rds")
-# m_halibut <- readRDS(file = "models/halibut-hybrid-model-rocky-muddy-400kn.rds")
-# i_hal_combined <- get_all_sims(m_halibut, newdata = full_s_grid)
-
 get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
                          newdata, # if contains a column names `area` it will be scaled by this
                          fit_obj_bin = NULL, fit_obj_pos = NULL,
                          sims = 500, level = 0.95,
-  split_by_region = T,
-  area_divisor = 10000, # 10000 for grid area in m2 to biomass/hectare,
-  # could be 1000000 for m2 to km2, or 4000000 for m2 to # hooks 2x2 km grid cell
-  return_sims = TRUE, return_full_obj = TRUE,
-  est_function = stats::median,
-  area_function = function(x, area) x * area,
-  agg_function = function(x) sum((x))){ # don't need exp because type = "response"
-
+                         split_by_region = T,
+                         area_divisor = 10000, # 10000 for grid area in m2 to biomass/hectare,
+                         # could be 1000000 for m2 to km2, or 4000000 for m2 to # hooks 2x2 km grid cell
+                         return_sims = TRUE, return_full_obj = TRUE,
+                         est_function = stats::median,
+                         area_function = function(x, area) x * area,
+                         agg_function = function(x) sum((x)) # don't need exp because type = "response"
+  ){
 
   if(!is.null(tmbstan_model)){
 
@@ -116,14 +126,12 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
   if (any(names(newdata) == "area")) {
     # grid area is currently in m2 so need to convert to same units as the biomass variable
     newdata$area <- newdata$area / area_divisor
-  #   p <- apply(pred_obj_unscaled, 2, function(x) x + log(newdata$area)) # also now `area` arg in get_index_sims()
-  #   attr(p, "time") <- "year"
-  }# else {
-    p <- pred_obj_unscaled
-  # }
+  }
+
+  p <- pred_obj_unscaled
 
   if (split_by_region) {
-    # browser()
+
     by_region <- list()
 
     ind <- get_index_sims(p, return_sims = F, level = level, area = newdata$area,
@@ -143,7 +151,7 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
     setNames(by_region[1], "all")
 
     for (i in seq_along(unique(newdata$region))){
-      # browser()
+
         pred <- p[newdata$region == unique(newdata$region)[i], ]
         attr(pred, "time") <- attr(p, "time")
         attr(pred, "link") <- attr(p, "link")
@@ -156,30 +164,17 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
                                   area = newdata[newdata$region == unique(newdata$region)[i], ]$area,
           est_function = est_function, area_function = area_function, agg_function = agg_function)
 
-        # setNames(ind2, unique(newdata$region)[i])
         ind2$region <- unique(newdata$region)[i]
 
-        # setNames(i_sims2, unique(newdata$region)[i])
         i_sims2$region <- unique(newdata$region)[i]
-
-        # setNames(pred, unique(newdata$region)[i])
 
         by_region[[i+1]] <- list(index = ind2, sims = i_sims2,
                                  grid = newdata[newdata$region == unique(newdata$region)[i], ]
-          , sim.predictions = pred # this takes up a lot of space so if not using it...
+                               , sim.predictions = pred # this takes up a lot of space so if not using it...
         )
         setNames(by_region[i+1], paste(unique(newdata$region)[i]))
     }
 
-    # alternatively they could go in one df
-    # ind <- do.call(rbind, ind)
-    # i_sims <- do.call(rbind, i_sims)
-
-    # browser()
-    # return(list(index = ind, sims = i_sims, grid = newdata
-    #   , sim.predictions = pred_obj # this takes up a lot of space so if not using it...
-    #   #, fit_obj = fit_obj
-    # ))
     return(by_region)
 
   } else {
@@ -192,11 +187,9 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
       i_sims <- get_index_sims(p, return_sims = T, level = level, area = newdata$area,
         est_function = est_function, area_function = area_function, agg_function = agg_function)
 
-      # list_of_one <- list()
-
       list_of_one <- list(index = i, sims = i_sims, grid = newdata
-        , sim.predictions = p # this takes up a lot of space so if not using it...
-        #, fit_obj = fit_obj
+                        , sim.predictions = p # this takes up a lot of space so if not using it...
+                        #, fit_obj = fit_obj
       )
 
       return(list_of_one)
@@ -207,7 +200,7 @@ get_all_sims <- function(fit_obj = NULL, tmbstan_model = NULL,
   }
 }
 
-# leaves coast lines defined in lat lon unlike gfplot function
+# leaves coasts defined in lat lon unlike gfplot function
 load_coastll <- function(xlim_ll, ylim_ll, utm_zone, buffer = 0) {
   data("nepacLLhigh", package = "PBSmapping", envir = environment())
   np <- PBSmapping::clipPolys(nepacLLhigh,
@@ -221,117 +214,90 @@ load_boundaries <- function(utm_zone) {
   gfplot:::ll2utm(major, utm_zone = utm_zone)
 }
 
-# TODO: we probably want to purge many of these...
-get_diag <- function(m, response = "density",
-  variable = "depth_scaled", colour_var = "depth_m", start_year = 2007) {
-
-  # browser()
-  set.seed(100)
-
-  s <- simulate(m, nsim = 200)
-
-  dharma_residuals(s, m)
-
-  r <- dharma_residuals(s, m, plot = FALSE)
-  browser()
-  predictions <- predict(m)
-  predictions$residuals <- residuals(m)
-
-  predictions <- predictions %>% filter (year >= start_year)
-  predictions$est_exp <- exp(predictions$est)
-
-  print("R^2:")
-  r2 <- cor(r$expected, r$observed)^2
-  print(r2)
-
-  print("")
-  print("AIC:")
-  print(AIC(m))
-
-  print("")
-  print("MSE:")
-  print(mean(predictions$residuals^2))
-  # qqnorm(predictions$residuals);qqline(predictions$residuals)
-  #
-  # hbll <- filter(predictions, survey == "HBLL")
-  # qqnorm(hbll$residuals);qqline(hbll$residuals)
-
-
-  plot_map <- function(dat, column = "est") {
-    ggplot(dat, aes_string("X", "Y", colour = column)) +
-      geom_point(alpha = 1, size = 0.2) +
-      coord_fixed()+
-      theme_void()
-  }
-
-  g <- plot_map(predictions, "est") +
-    scale_colour_viridis_c() +
-    ggtitle("Prediction (fixed effects + all random effects)")
-  print(g)
-
-  # g <- plot_map(predictions, "est_non_rf") +
-  #   ggtitle("Prediction (fixed effects only)") +
-  #   scale_colour_viridis_c()
-  # print(g)
-  #
-  #   g <- plot_map(predictions, "est_rf") +
-  #     ggtitle("All random effects only") +
-  #     scale_colour_gradient2()
-  #   print(g)
-
-  g <- plot_map(predictions, "omega_s") +
-    ggtitle("Spatial random effects only", subtitle = " ") +
-    scale_colour_gradient2()
-  print(g)
-
-  g <- plot_map(predictions, "epsilon_st") +
-    ggtitle("Spatiotemporal random effects only", subtitle = " ") +
-    facet_wrap(~year) +
-    scale_colour_gradient2()
-  print(g)
-
-  g <- plot_map(predictions, "residuals") +
-    ggtitle("Residuals", subtitle = " ") +
-    facet_wrap(~year) +
-    scale_colour_gradient2()
-  print(g)
-
-  g <- ggplot(predictions, aes_string(response,"est_exp")) +
-    geom_point(alpha = 0.2) + geom_abline()+
-    facet_wrap(~year) +
-    scale_x_log10() + scale_y_log10() +
-    coord_fixed() +
-    xlab("Observed") + ylab("Predicted") +
-    gfplot::theme_pbs() + theme(axis.text = element_blank())
-  print(g)
-
-  g <- ggplot(predictions, aes(est, residuals)) +
-    geom_point(alpha = 0.2) +
-    geom_smooth()+
-    gfplot::theme_pbs()
-  print(g)
-
-  # g <- ggplot(predictions, aes_string(variable, "residuals", colour = colour_var)) +
-  #   geom_point(alpha = 0.4, size = 1.2) +
-  #   geom_smooth(colour="grey", linewidth = 1.2) +
-  #   scale_colour_viridis_c(option = "B", direction = -1, begin = 0, end = 0.7,
-  #     limits= c(min(predictions[colour_var]), max(predictions[colour_var]))) + #, trans= sqrt
-  #   # facet_wrap(~year, scales = "free_x")+
-  #   gfplot::theme_pbs() + theme(
-  #     axis.text.y = element_text(size = 14),
-  #     axis.text.x = element_blank(), axis.ticks.x = element_blank())
-  # print(g)
-
-  g <- ggplot(predictions, aes_string(variable, "residuals", colour = colour_var)) +
-    geom_point(alpha = 0.4, size = 0.7) +
-    geom_smooth(colour="grey", linewidth = 0.7) +
-    scale_colour_viridis_c(option = "B", direction = -1, begin = 0, end = 0.7,
-      limits= c(min(predictions[colour_var]), max(predictions[colour_var]))) + #, trans= sqrt
-    facet_wrap(~year, scales = "free_x")+
-    gfplot::theme_pbs() + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
-  print(g)
-
-}
+# ## Not used in final analysis; designed for tweedie, not delta model
+# get_diag <- function(m, response = "density",
+#   variable = "depth_scaled", colour_var = "depth_m", start_year = 2007) {
+#
+#   set.seed(100)
+#
+#   s <- simulate(m, nsim = 200)
+#
+#   sdmTMBextra::dharma_residuals(s, m)
+#
+#   r <- sdmTMBextra::dharma_residuals(s, m, plot = FALSE)
+#
+#   predictions <- predict(m)
+#   predictions$residuals <- residuals(m)
+#
+#   predictions <- predictions %>% filter (year >= start_year)
+#   predictions$est_exp <- exp(predictions$est)
+#
+#   print("R^2:")
+#   r2 <- cor(r$expected, r$observed)^2
+#   print(r2)
+#
+#   print("")
+#   print("AIC:")
+#   print(AIC(m))
+#
+#   print("")
+#   print("MSE:")
+#   print(mean(predictions$residuals^2))
+#
+#   plot_map <- function(dat, column = "est") {
+#     ggplot(dat, aes_string("X", "Y", colour = column)) +
+#       geom_point(alpha = 1, size = 0.2) +
+#       coord_fixed()+
+#       theme_void()
+#   }
+#
+#   g <- plot_map(predictions, "est") +
+#     scale_colour_viridis_c() +
+#     ggtitle("Prediction (fixed effects + all random effects)")
+#   print(g)
+#
+#   g <- plot_map(predictions, "omega_s") +
+#     ggtitle("Spatial random effects only", subtitle = " ") +
+#     scale_colour_gradient2()
+#   print(g)
+#
+#   g <- plot_map(predictions, "epsilon_st") +
+#     ggtitle("Spatiotemporal random effects only", subtitle = " ") +
+#     facet_wrap(~year) +
+#     scale_colour_gradient2()
+#   print(g)
+#
+#   g <- plot_map(predictions, "residuals") +
+#     ggtitle("Residuals", subtitle = " ") +
+#     facet_wrap(~year) +
+#     scale_colour_gradient2()
+#   print(g)
+#
+#   g <- ggplot(predictions, aes_string(response,"est_exp")) +
+#     geom_point(alpha = 0.2) + geom_abline()+
+#     facet_wrap(~year) +
+#     scale_x_log10() + scale_y_log10() +
+#     coord_fixed() +
+#     xlab("Observed") + ylab("Predicted") +
+#     gfplot::theme_pbs() + theme(axis.text = element_blank())
+#   print(g)
+#
+#   g <- ggplot(predictions, aes(est, residuals)) +
+#     geom_point(alpha = 0.2) +
+#     geom_smooth()+
+#     gfplot::theme_pbs()
+#   print(g)
+#
+#   g <- ggplot(predictions, aes_string(variable, "residuals", colour = colour_var)) +
+#     geom_point(alpha = 0.4, size = 0.7) +
+#     geom_smooth(colour="grey", linewidth = 0.7) +
+#     scale_colour_viridis_c(option = "B", direction = -1, begin = 0, end = 0.7,
+#       limits= c(min(predictions[colour_var]), max(predictions[colour_var]))) + #, trans= sqrt
+#     facet_wrap(~year, scales = "free_x")+
+#     gfplot::theme_pbs() + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+#   print(g)
+#
+# }
 
 map_predictions <- function(
   pred_data = NULL,
@@ -413,15 +379,11 @@ map_predictions <- function(
           fill = {{fill_aes}}), #colour = NA,
         width = 2000, height = 2000
       ) + scale_fill_viridis_c(
-        # trans = ggsidekick::fourth_root_power_trans(),
-        # trans = "sqrt",
         trans = set_trans,
         direction = viridis_dir,
         na.value = viridis_na,
         option = viridis_option
       ) + scale_colour_viridis_c(
-        # trans = ggsidekick::fourth_root_power_trans(),
-        # trans = "sqrt",
         trans = set_trans,
         direction = viridis_dir,
         na.value = viridis_na,
@@ -446,20 +408,16 @@ map_predictions <- function(
     g <- g + geom_tile(
       data = pred_data,
       aes(X * 100000, Y * 100000,
-        colour = {{fill_aes}},
-        fill = {{fill_aes}}), #colour = NA,
+        colour = {{fill_aes}}, #colour = NA,
+        fill = {{fill_aes}}),
       width = 2000, height = 2000
     ) + scale_fill_viridis_c(
-      # trans = ggsidekick::fourth_root_power_trans(),
-      # trans = "sqrt",
       trans = set_trans,
       limits = c(pred_min, pred_max),
       direction = viridis_dir,
       na.value = viridis_na,
       option = viridis_option
     ) + scale_colour_viridis_c(
-      # trans = ggsidekick::fourth_root_power_trans(),
-      # trans = "sqrt",
       trans = set_trans,
       limits = c(pred_min, pred_max),
       direction = viridis_dir,
@@ -474,8 +432,6 @@ map_predictions <- function(
             fill = {{fill_aes}}), colour = NA,
           width = 2000, height = 2000
         ) + scale_fill_viridis_c(
-          # trans = ggsidekick::fourth_root_power_trans(),
-          # trans = "sqrt",
           trans = set_trans,
           limits = c(pred_min, pred_max),
           direction = viridis_dir,

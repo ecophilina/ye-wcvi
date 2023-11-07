@@ -1,6 +1,4 @@
 # final figures
-
-
 library(tidyverse)
 library(lubridate)
 library(sf)
@@ -8,7 +6,6 @@ library(patchwork)
 
 library(gfplot)
 library(ggsidekick)
-
 
 ### Merge survey catches
 d_hal_plotsS <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%

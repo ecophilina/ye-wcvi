@@ -1,18 +1,9 @@
-# attempt at uncertainty...
+# estimate uncertainty in accumulation ratios
 library(dplyr)
 library(ggplot2)
 library(tidyr)
-# Do we need instructions for installing other dependencies like "pbsmapping"?
-# devtools::install_github("seananderson/ggsidekick")
 library(ggsidekick) # for fourth_root_power_trans and theme_sleek
 theme_set(ggsidekick::theme_sleek())
-
-# # hal_model <- "w-effort-500kn-delta-AR1-aniso"
-# # hal_model <- "w-good-depths-500kn-delta-AR1-aniso"
-# hal_model <- "w-deeper-500kn-delta-AR1-aniso"
-# # ye_model <- "w-effort-500kn-delta-spatial-aniso"
-# # ye_model <- "w-good-depths-500kn-delta-iid-aniso"
-# ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
 
 ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso-may23"
 hal_model <- "w-deeper-500kn-delta-AR1-aniso-may23"

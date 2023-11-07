@@ -1,5 +1,5 @@
 # Grids for different management regions
-library(PBSmapping) # needs this for some reason
+library(PBSmapping)
 library(maptools)
 
 # Make grids
@@ -16,7 +16,7 @@ source("analysis/functions.R")
 
 # select which scale of grid to use
 # grid_scale <- 2000
-grid_scale <- 1000
+grid_scale <- 1000 # make finer
 
 # get management region boundaries
 majorbound <- load_boundaries(9)
@@ -236,7 +236,6 @@ noncda_3CD_grid_named2 <- anti_join(noncda_3CD_grid_named, ext_grid_named, by=c(
 region_names <- bind_rows(cda_grid_named, ext_grid_named2, noncda_3CD_grid_named2, poly5A_grid_named) %>% distinct()
 full_s_grid <- left_join(full_s_grid1, region_names)
 
-
 # # # determine how to exclude partial cells within Scott Island RCA
 # full_s_grid2 <- filter(full_s_grid, area < 4000000)
 # full_s_grid3 <- filter(full_s_grid,
@@ -251,11 +250,10 @@ full_s_grid <- left_join(full_s_grid1, region_names)
 #   geom_point(data = filter(full_s_grid,
 #                            latitude < 50.85 & latitude > 50.75 & longitude > -128.94 & longitude < -128.6
 #   ), aes(longitude, latitude, size = area))
-#
-#
 
 # remove two partial cells within the Scott Islands RCA
-full_s_grid <- full_s_grid %>% filter(!(latitude < 50.85 & latitude > 50.75 & longitude > -128.94 & longitude < -128.6))
+full_s_grid <- full_s_grid %>%
+  filter(!(latitude < 50.85 & latitude > 50.75 & longitude > -128.94 & longitude < -128.6))
 
 full_s_grid[is.na(full_s_grid$region), ]$region <- "other"
 saveRDS(full_s_grid, file = paste0("data-generated/full_filled_grid_w_ext_", grid_scale, ".rds"))

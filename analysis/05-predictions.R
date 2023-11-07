@@ -4,7 +4,7 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(sdmTMB)
-# library(sdmTMBextra)
+library(sdmTMBextra)
 theme_set(ggsidekick::theme_sleek())
 # load misc custom functions
 # includes a set of map boundaries that could be adjusted
@@ -26,8 +26,7 @@ cols <- c(
 )
 
 # include_cc <- FALSE
-# # OR experiment with including non-survey catches
-include_cc <- TRUE
+include_cc <- TRUE # including non-survey catches
 
 if (include_cc) {
 obs_cols <- c("white", "#98FB98", "#FFDAB9")
@@ -35,33 +34,23 @@ obs_cols <- c("white", "#98FB98", "#FFDAB9")
 obs_cols <- c("white", "#98FB98")
 }
 
-
 # # # load models if 03 not just run
-# # hal_model <- "w-deeper-500kn-delta-AR1-aniso"
-# # ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
-ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso-may23"
-hal_model <- "w-deeper-500kn-delta-AR1-aniso-may23"
-
 # ye_model <- "w-deeper-all-yrs-450kn-true-year-RW-aniso"
 # hal_model <- "w-deeper-450kn-delta-true-year-RW-aniso"
+ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso-may23"
+hal_model <- "w-deeper-500kn-delta-AR1-aniso-may23"
 
 f <- paste0("models/halibut-model-", hal_model, "-stan.rds")
 if (file.exists(f)) {
   m_hal_fixed <- readRDS(paste0("models/halibut-model-", hal_model, "-tmb.rds"))
   m_hal_stan <- readRDS(f)
-  # temporary fixed for working in dev branch with models from main
-  # m_hal_fixed$tmb_data$simulate_t <- rep(1L, length(unique(m_hal_fixed$data$year)))
 }
 
 f2 <- paste0("models/yelloweye-model-", ye_model, "-stan.rds")
 if (file.exists(f2)) {
   m_ye_fixed <- readRDS(paste0("models/yelloweye-model-", ye_model, "-tmb.rds"))
   m_ye_stan <- readRDS(f2)
-  # temporary fixed for working in dev branch with models from main
-  # m_ye_fixed$tmb_data$simulate_t <- rep(1L, length(unique(m_ye_fixed$data$year)))
 }
-
-
 
 # load grid and add in fyear and dummy vessel id
 full_s_grid <- readRDS(paste0("data-generated/full_filled_grid_w_ext_", grid_scale,".rds")) %>%
@@ -83,7 +72,6 @@ full_s_grid2 <- full_s_grid %>% filter(year == 2020) %>%
       year %in% c(2017, 2018) ~ 2018,
       year %in% c(2019, 2020) ~ 2020  # no WCVI
     ),
-    # year = year_pair,
     fyear = as.factor(year_pair)
   )
 
@@ -143,43 +131,6 @@ ggplot(i_hal_cda, aes(year, est)) + geom_line(colour = "darkgreen") +
   geom_ribbon(data = i_ye_ext, aes(ymin = lwr, ymax = upr), fill = "orange", alpha = 0.2)
 
 
-
-
-# spatial predictions for whole grid
-# can calculate individually to check get_all_sims results were up to date.
-# f <- paste0("data-generated/halibut-", hal_model, "_", grid_scale, "-predictions-all-S.rds")
-# if (!file.exists(f)) {
-#   p_hal_sims <- predict(m_hal_fixed, newdata = full_s_grid, tmbstan_model = m_hal_stan)
-#   saveRDS(p_hal_sims, f)
-# } else{
-#   p_hal_sims <- readRDS(f)
-# }
-# f <- paste0("data-generated/yelloweye-", ye_model, "_", grid_scale, "-predictions-all-S.rds")
-# if (!file.exists(f)) {
-#   p_ye_sims <- predict(m_ye_fixed, newdata = full_s_grid, tmbstan_model = m_ye_stan)
-#   saveRDS(p_ye_sims, f)
-# } else{
-#   p_ye_sims <- readRDS(f)
-# }
-#
-# p_hal <- full_s_grid
-# p_hal$est <- apply(p_hal_sims, 1, function(x) {median(x)})
-
-# final_yr_grid <- full_s_grid %>% filter(year_true == 2020)
-# samps <- sdmTMBextra::extract_mcmc(m_hal_stan)
-# p_hal <- final_yr_grid
-# p_hal_sims <- predict(m_hal_fixed,
-#                       newdata = final_yr_grid,  mcmc_samples = samps,
-#                       type = "response")
-
-# final_yr_grid <- full_s_grid %>% filter(year_true == 2020)
-# ye_samps <- sdmTMBextra::extract_mcmc(m_ye_stan)
-# p_ye <- final_yr_grid
-# p_ye_sims <- predict(m_ye_fixed,
-#                      newdata = final_yr_grid,  mcmc_samples = ye_samps,
-#                      type = "response")
-
-
 p_hal <- i_hal$all[[3]]
 p_hal_sims <- i_hal$all[[4]]
 p_hal$est <- apply(p_hal_sims, 1, function(x) {median(x)})
@@ -192,7 +143,7 @@ p_ye$est_sd <- apply(p_ye_sims, 1, function(x) {sd(x)})
 
 
 # halibute density maps
-# # use TMB predictions instead of stan ones
+# # use TMB predictions instead of stan ones for comparison purposes
 #
 # hal_model <- "w-deeper-500kn-delta-AR1-aniso-may23"
 # m_hal <- readRDS(paste0("models/halibut-model-", hal_model, "-tmbfit.rds"))
@@ -203,12 +154,10 @@ p_ye$est_sd <- apply(p_ye_sims, 1, function(x) {sd(x)})
 d_hal_plots <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
   filter(latitude < max_map_lat) %>%
   filter(year %in% c(2018,2019,2020))
-  # filter(year < 2016)
 
 p_hal2020 <- p_hal %>%
   filter(latitude < max_map_lat) %>%
   filter(year == 2020)
-# filter(year == 2016)
 
 h_2020 <- map_predictions(
   pred_data = p_hal2020,
@@ -489,11 +438,8 @@ ratio_df <- left_join(pyd, phd) %>% mutate(
   halibut = hal_est,
   halibut2 = ifelse(hal_est < 1, 1, hal_est),
   yelloweye = ye_est,
-  # yelloweye2 = ifelse(ye_est < quantile(phd$hal_est, 0.025), quantile(phd$hal_est, 0.025), ye_est),
   yelloweye2 = ifelse(ye_est < 1, 1, ye_est),
   ye_per_hal = (yelloweye)/(halibut2),
-  ye_per_hal2 = (yelloweye2)/(halibut2),# using halibut 2 doesn't change anything.
-  ye_per_hal3 = (yelloweye +0.01)/(halibut+0.01),# using halibut 2 doesn't change anything.
   hal_per_ye = (halibut)/(yelloweye2),
   hal_per_ye2 = (halibut2)/(yelloweye2)
 )
@@ -511,22 +457,6 @@ ratio_df_2020 %>% filter(depth > 20) %>%
   geom_smooth() +
   scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
 
-# ratio_df_2020 %>%
-#   filter(region %in% c("CDA", "CDA adjacent"#, "non-CDA 3CD"
-#   )) %>%
-#   ggplot(aes(depth,log10(ye_per_hal2), colour = region)) +
-#   geom_point( alpha = 0.2)+
-#   geom_smooth() +
-#   scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
-#
-# ratio_df_2020 %>%
-#   filter(region %in% c("CDA", "CDA adjacent"
-#                        , "non-CDA 3CD"
-#   )) %>%
-#   ggplot(aes(depth,log10(ye_per_hal3), colour = region, fill = region)) +
-#   geom_point( alpha = 0.05)+
-#   geom_smooth() +
-#   scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
 
 ggsave("figs/model-raw-ratio-by-depth-2020.png", width = 6, height = 3)
 
@@ -540,15 +470,6 @@ ratio_df_2020 %>%
   scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
 
 ggsave("figs/model-ratio-hal-to-ye-by-depth-2020.png", width = 6, height = 4)
-
-ratio_df_2020 %>%
-  filter(region %in% c("CDA", "CDA adjacent"#, "non-CDA 3CD"
-  )) %>%
-  ggplot(aes(depth,log10(hal_per_ye2), colour = region)) +
-  geom_point( alpha = 0.2)+
-  geom_smooth() +
-  scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
-
 
 
 y2h <- map_predictions(
@@ -585,19 +506,6 @@ h2y <- map_predictions(
 )
 # h2y
 # ggsave(paste0("figs/halibut-to-ye-truncated-", hal_model, "-2020.png"), width = 6, height = 5, dpi = 400)
-#
-# g1 <- map_predictions(
-#   map_lat_limits = c(48.4, max_map_lat),
-#   map_lon_limits = c(min_map_lon, max_map_lon),
-#   pred_data = ratio_df_2020,
-#   pred_min = 0,
-#   # pred_min = min(ratio_df_2020$ye_per_hal),
-#   pred_max = quantile(ratio_df_2020$hal_per_ye2, 0.99),
-#   fill_aes = hal_per_ye2,
-#   fill_lab = "Halibut to Yelloweye\nbiomass ratio"
-# )
-# # g1
-# ggsave(paste0("figs/halibut-to-ye-truncated2-", hal_model, "-2020.png"), width = 6, height = 5, dpi = 400)
 
 y <- y2h + ggtitle("(a) Yelloweye to halibut weight ratios") +
   theme(axis.title.x = element_blank(),

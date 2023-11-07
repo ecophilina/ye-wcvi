@@ -30,8 +30,7 @@ cols <- c(
 )
 
 include_cc <- FALSE
-# # OR experiment with including non-survey catches
-include_cc <- TRUE
+include_cc <- TRUE # including non-survey catches
 
 if (include_cc) {
   obs_cols <- c("white", "#98FB98", "#FFDAB9")
@@ -57,7 +56,8 @@ full_s_grid <- readRDS(paste0("data-generated/full_filled_grid_w_ext_", grid_sca
     fyear = as.factor(year),
     vessel_id = as.factor("survey"))
 
-# depth stats for regions
+
+# get depth stats for regions
 
 full_s_grid %>% filter(year == max(full_s_grid$year_true)) %>%
   group_by(region) %>%
@@ -70,35 +70,20 @@ full_s_grid %>% filter(year == max(full_s_grid$year_true)) %>%
 
 
 # # load models if 03 not just run
-#
-# hal_model <- "rocky-muddy-300kn-delta-IID-aniso"
-# hal_model <- "w-cc2-rocky-muddy-400kn-delta-IID-aniso"
-# ye_model <- "rocky-muddy-300kn-delta-spatial-aniso"
-# ye_model <- "w-cc2-rocky-muddy-300kn-delta-spatial-aniso"
-# hal_model <- "w-effort-500kn-delta-AR1-aniso"
-# ye_model <- "w-effort-500kn-delta-spatial-aniso"
-# hal_model <- "w-deeper-500kn-delta-AR1-aniso"
-# ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
-
 ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso-may23"
 hal_model <- "w-deeper-500kn-delta-AR1-aniso-may23"
-
 
 
 f <- paste0("models/halibut-model-", hal_model, "-stan.rds")
 if (file.exists(f)) {
   m_hal_fixed <- readRDS(paste0("models/halibut-model-", hal_model, "-tmb.rds"))
   m_hal_stan <- readRDS(f)
-  # temporary fixed for working in dev branch with models from main
-  # m_hal_fixed$tmb_data$simulate_t <- rep(1L, length(unique(m_hal_fixed$data$year)))
 }
 
 f2 <- paste0("models/yelloweye-model-", ye_model, "-stan.rds")
 if (file.exists(f2)) {
   m_ye_fixed <- readRDS(paste0("models/yelloweye-model-", ye_model, "-tmb.rds"))
   m_ye_stan <- readRDS(f2)
-  # temporary fixed for working in dev branch with models from main
-  # m_ye_fixed$tmb_data$simulate_t <- rep(1L, length(unique(m_ye_fixed$data$year)))
 }
 
 
@@ -136,14 +121,13 @@ depth_bin_pred <- function(tmb_model, tmbstan_model, grid, bin_width = 50, nsims
   to_use <- sample(seq_len(nsims), nsims) # here in case we need to subsample these
 
   i <- furrr::future_pmap_dfr(bins, function(min_depth, max_depth) {
-    # i <- purrr::pmap_dfr(bins, function(min_depth, max_depth) {
+    # i <- purrr::pmap_dfr(bins, function(min_depth, max_depth) { # purr version
     # .grid <- filter(grid, depth > min_depth & depth <= max_depth)
 
     .p <- p[grid$depth > min_depth & grid$depth <= max_depth, to_use]
     .grid <- grid[grid$depth > min_depth & grid$depth <= max_depth, ]
 
     if(nrow(.grid)>50){
-      # browser()
       attributes(.p)["time"] <- attributes(p)["time"]
       attributes(.p)["link"] <- attributes(p)["link"]
       # .p <- predict(tmb_model, tmbstan_model = stan_model,
@@ -235,7 +219,6 @@ i_ye_cda %>% filter(year == 2020) %>%
   geom_ribbon(data = filter(i_hal_cda, year == 2020), aes(ymin = lwr_dens, ymax = upr_dens),
               fill= "blue", alpha=0.1, lty = "dashed") +
   scale_colour_manual(values = cols) + scale_fill_manual(values = cols)
-
 
 
 # density by depth for both species
@@ -445,7 +428,6 @@ p2 <- full_s_grid %>%
                             colour = NA,
                             alpha = 0.7,
                             binwidth = 25, boundary = 0) +
-  # ggplot() + geom_density(aes(depth, colour = region, fill = region), alpha = 0.25) +
   geom_vline(xintercept = 175, lty = "dashed") +
   scale_fill_manual(values = cols, name = "Region") +
   scale_colour_manual(values = cols, name = "Region") +
@@ -454,8 +436,6 @@ p2 <- full_s_grid %>%
   scale_y_continuous(n.breaks = 3) +
   scale_x_continuous(n.breaks = 4) +
   coord_cartesian(expand = FALSE) +
-  # scale_x_sqrt() +
-  # facet_wrap(~region, ncol = 1) +
   ggsidekick::theme_sleek() +
   theme(legend.position = "none",
         text = element_text(size = 8),
@@ -470,7 +450,6 @@ p2 <- full_s_grid %>%
 (dr2 <- ratios_df %>% filter(year == 2020) %>%
     # filter(min_depth > 50) %>%
     ggplot(aes(min_depth+ 25/2, sp2_per_sp1, fill = region)) +
-    # geom_plot(data = data.tb, aes(x, y, label = plot)) +
     geom_line(aes(colour = region)) +
     geom_ribbon(aes(min_depth+ 25/2, ymin = lwr21, ymax = upr21), alpha = 0.1) +
     scale_y_log10() +
@@ -487,11 +466,8 @@ p2 <- full_s_grid %>%
                   right = 0.5, top = 0.4)
 )
 
-
 ggsave(paste0("figs/ratio-YE-to-hal-by-", bin_width, "m-bin-depth-", hal_model, "-region-w-inset.png"),
        width = 7, height = 4, dpi = 400)
-
-
 
 
 # depth through time in CDA adjacent area
@@ -507,7 +483,6 @@ i_hal_x %>% mutate(depth_range = forcats::fct_reorder(depth_range, min_depth))%>
 ggsave(paste0("figs/halibut-densities-by-", bin_width, "m-bin-depth-", grid_scale, "-through-time.png"), width = 7, height = 5, dpi = 400)
 
 
-# no spatiotemporal random field so annual change less interesting
 i_ye_x %>%  mutate(depth_range = forcats::fct_reorder(depth_range, min_depth))%>%
   ggplot( aes(year, density, group = depth_range)) + geom_line(aes(colour = depth_range), size = 2, alpha = 0.5) +
   # geom_ribbon(aes(ymin = lwr_dens, ymax = upr_dens, fill = depth_range), alpha=0.1) +
