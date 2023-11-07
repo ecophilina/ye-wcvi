@@ -1,5 +1,7 @@
-
 # Retrieve all survey data using gfdata
+# requires being on dfo servers
+
+if(!require(gfdata))devtools::install_github("pbs-assess/gfdata")
 
 dir.create("data", showWarnings = FALSE)
 
@@ -16,6 +18,3 @@ saveRDS(yesampledata, "data/yelloweye-surv-samples-all.rds")
 halsampledata <- gfdata::get_survey_samples("Pacific Halibut")
 saveRDS(halsampledata, "data/halibut-surv-samples-all.rds")
 
-# I also copied ####_grid.rda from gfplot into "data" folder
-# and will need a folder called "shape-files" containing "taaqwiihak_areaVer2.shp"
-# download gshhg-shp-2.3.7 from https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/ add place in data folder

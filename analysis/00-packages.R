@@ -1,6 +1,5 @@
 # install packages
 
-
 # data wrangling, mapping and plotting packages
 if(!require(tidyverse))install.packages("tidyverse")
 if(!require(here))install.packages("here")
@@ -20,10 +19,6 @@ if(!require(sdmTMB))install.packages("sdmTMB")
 remotes::install_github("pbs-assess/sdmTMBextra")
 install.packages(c("StanHeaders", "rstan", "tmbstan"),type="source")
 
-
-# download gshhg-shp-2.3.7 shape folder from and place in data folder:
-# https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhg/latest/
-# also need taaqwiihak_areaVer2.shp shape file for CDA
 
 # # tests to confirm rstan is working
 # library(rstan)
