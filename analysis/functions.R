@@ -54,8 +54,6 @@ convert2utm9 <- function(lon, lat) {
   as.numeric(temp$geometry[[1]])
 }
 
-
-
 utm2ll <- function(x, utm_zone = 9) {
   attr(x, "projection") <- "UTM"
   attr(x, "zone") <- utm_zone
@@ -80,6 +78,7 @@ expand_prediction_grid <- function(grid, years) {
   nd[["year"]] <- rep(years, each = nrow(grid))
   nd
 }
+
 
 # sim predictions and index function
 
@@ -213,91 +212,6 @@ load_boundaries <- function(utm_zone) {
   data("major", package = "PBSdata", envir = environment())
   gfplot:::ll2utm(major, utm_zone = utm_zone)
 }
-
-# ## Not used in final analysis; designed for tweedie, not delta model
-# get_diag <- function(m, response = "density",
-#   variable = "depth_scaled", colour_var = "depth_m", start_year = 2007) {
-#
-#   set.seed(100)
-#
-#   s <- simulate(m, nsim = 200)
-#
-#   sdmTMBextra::dharma_residuals(s, m)
-#
-#   r <- sdmTMBextra::dharma_residuals(s, m, plot = FALSE)
-#
-#   predictions <- predict(m)
-#   predictions$residuals <- residuals(m)
-#
-#   predictions <- predictions %>% filter (year >= start_year)
-#   predictions$est_exp <- exp(predictions$est)
-#
-#   print("R^2:")
-#   r2 <- cor(r$expected, r$observed)^2
-#   print(r2)
-#
-#   print("")
-#   print("AIC:")
-#   print(AIC(m))
-#
-#   print("")
-#   print("MSE:")
-#   print(mean(predictions$residuals^2))
-#
-#   plot_map <- function(dat, column = "est") {
-#     ggplot(dat, aes_string("X", "Y", colour = column)) +
-#       geom_point(alpha = 1, size = 0.2) +
-#       coord_fixed()+
-#       theme_void()
-#   }
-#
-#   g <- plot_map(predictions, "est") +
-#     scale_colour_viridis_c() +
-#     ggtitle("Prediction (fixed effects + all random effects)")
-#   print(g)
-#
-#   g <- plot_map(predictions, "omega_s") +
-#     ggtitle("Spatial random effects only", subtitle = " ") +
-#     scale_colour_gradient2()
-#   print(g)
-#
-#   g <- plot_map(predictions, "epsilon_st") +
-#     ggtitle("Spatiotemporal random effects only", subtitle = " ") +
-#     facet_wrap(~year) +
-#     scale_colour_gradient2()
-#   print(g)
-#
-#   g <- plot_map(predictions, "residuals") +
-#     ggtitle("Residuals", subtitle = " ") +
-#     facet_wrap(~year) +
-#     scale_colour_gradient2()
-#   print(g)
-#
-#   g <- ggplot(predictions, aes_string(response,"est_exp")) +
-#     geom_point(alpha = 0.2) + geom_abline()+
-#     facet_wrap(~year) +
-#     scale_x_log10() + scale_y_log10() +
-#     coord_fixed() +
-#     xlab("Observed") + ylab("Predicted") +
-#     gfplot::theme_pbs() + theme(axis.text = element_blank())
-#   print(g)
-#
-#   g <- ggplot(predictions, aes(est, residuals)) +
-#     geom_point(alpha = 0.2) +
-#     geom_smooth()+
-#     gfplot::theme_pbs()
-#   print(g)
-#
-#   g <- ggplot(predictions, aes_string(variable, "residuals", colour = colour_var)) +
-#     geom_point(alpha = 0.4, size = 0.7) +
-#     geom_smooth(colour="grey", linewidth = 0.7) +
-#     scale_colour_viridis_c(option = "B", direction = -1, begin = 0, end = 0.7,
-#       limits= c(min(predictions[colour_var]), max(predictions[colour_var]))) + #, trans= sqrt
-#     facet_wrap(~year, scales = "free_x")+
-#     gfplot::theme_pbs() + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
-#   print(g)
-#
-# }
 
 map_predictions <- function(
   pred_data = NULL,
@@ -543,79 +457,5 @@ map_predictions <- function(
 
   g
 }
-
-
-
-### functions for editing scales on specific faceted plots
-### lifted from: https://fishandwhistle.net/post/2018/modifying-facet-scales-in-ggplot2/
-scale_override <- function(which, scale) {
-  if(!is.numeric(which) || (length(which) != 1) || (which %% 1 != 0)) {
-    stop("which must be an integer of length 1")
-  }
-
-  if(is.null(scale$aesthetics) || !any(c("x", "y") %in% scale$aesthetics)) {
-    stop("scale must be an x or y position scale")
-  }
-
-  structure(list(which = which, scale = scale), class = "scale_override")
-}
-
-CustomFacetWrap <- ggproto(
-  "CustomFacetWrap", FacetWrap,
-  init_scales = function(self, layout, x_scale = NULL, y_scale = NULL, params) {
-    # make the initial x, y scales list
-    scales <- ggproto_parent(FacetWrap, self)$init_scales(layout, x_scale, y_scale, params)
-
-    if(is.null(params$scale_overrides)) return(scales)
-
-    max_scale_x <- length(scales$x)
-    max_scale_y <- length(scales$y)
-
-    # ... do some modification of the scales$x and scales$y here based on params$scale_overrides
-    for(scale_override in params$scale_overrides) {
-      which <- scale_override$which
-      scale <- scale_override$scale
-
-      if("x" %in% scale$aesthetics) {
-        if(!is.null(scales$x)) {
-          if(which < 0 || which > max_scale_x) stop("Invalid index of x scale: ", which)
-          scales$x[[which]] <- scale$clone()
-        }
-      } else if("y" %in% scale$aesthetics) {
-        if(!is.null(scales$y)) {
-          if(which < 0 || which > max_scale_y) stop("Invalid index of y scale: ", which)
-          scales$y[[which]] <- scale$clone()
-        }
-      } else {
-        stop("Invalid scale")
-      }
-    }
-
-    # return scales
-    scales
-  }
-)
-
-facet_wrap_custom <- function(..., scale_overrides = NULL) {
-  # take advantage of the sanitizing that happens in facet_wrap
-  facet_super <- facet_wrap(...)
-
-  # sanitize scale overrides
-  if(inherits(scale_overrides, "scale_override")) {
-    scale_overrides <- list(scale_overrides)
-  } else if(!is.list(scale_overrides) ||
-      !all(vapply(scale_overrides, inherits, "scale_override", FUN.VALUE = logical(1)))) {
-    stop("scale_overrides must be a scale_override object or a list of scale_override objects")
-  }
-
-  facet_super$params$scale_overrides <- scale_overrides
-
-  ggproto(NULL, CustomFacetWrap,
-    shrink = facet_super$shrink,
-    params = facet_super$params
-  )
-}
-
-
 
 
