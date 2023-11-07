@@ -38,14 +38,13 @@ if (!file.exists(f)) {
   # 3CD
   bound3Cnorth <- fortify(majorbound) %>%
     filter(PID %in% c(3)) %>%
-    filter(X > 200 & X < 725 & Y > 5400) #%>%
-  # gfplot:::utm2ll(utm_zone = 9)
+    filter(X > 200 & X < 725 & Y > 5400)
   bound3Dnorth <- fortify(majorbound) %>%
     filter(PID %in% c(4)) %>%
     filter(X > 200 & X < 600 & Y > 5550)
   bound3Csouth <- fortify(majorbound) %>%
     filter(PID %in% c(3)) %>%
-    filter(X > 200 & X < 900 & Y < 5420) #%>%
+    filter(X > 200 & X < 900 & Y < 5420)
 
   full_s_grid <- readRDS(paste0("data-generated/full_filled_grid_w_ext_", grid_scale,".rds"))
 

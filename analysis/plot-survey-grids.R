@@ -1,8 +1,6 @@
 ### Make map of survey grids
 # make map of grid areas and their overlap
-# library(maptools)
 
-# Make grids
 library(sf)
 library(dplyr)
 library(ggplot2)
@@ -44,18 +42,17 @@ if (!file.exists(f)) {
   # 3CD
   bound3Cnorth <- fortify(majorbound) %>%
     filter(PID %in% c(3)) %>%
-    filter(X > 200 & X < 725 & Y > 5400) #%>%
-  # gfplot:::utm2ll(utm_zone = 9)
+    filter(X > 200 & X < 725 & Y > 5400)
   bound3Dnorth <- fortify(majorbound) %>%
     filter(PID %in% c(4)) %>%
     filter(X > 200 & X < 600 & Y > 5550)
   bound3Csouth <- fortify(majorbound) %>%
     filter(PID %in% c(3)) %>%
-    filter(X > 200 & X < 900 & Y < 5420) #%>%
+    filter(X > 200 & X < 900 & Y < 5420)
 
 
   hbll_s_grid <- readRDS(here::here("grids/hbll_s_grid.rds"))
-  hbll_s_grid <- hbll_s_grid$grid #%>% filter(latitude < 51.24999)
+  hbll_s_grid <- hbll_s_grid$grid
 
   hbll_sf <- st_as_sf(hbll_s_grid, coords = c("longitude", "latitude"), crs = 4326)
   hbll_sf <- st_transform(hbll_sf, crs = 3156)
@@ -97,28 +94,13 @@ if (!file.exists(f)) {
   trawl_sf2 <- st_as_sf(trawl_sf_grid)
   trawl_sf2$source_data <- "TRAWL"
 
-  # full_s_grid_utm <- grid_utm
-  # full_s_grid_sf <- st_as_sf(full_s_grid_utm, coords = c("longitude", "latitude"))
-  # st_crs(full_s_grid_sf) <- 4326 # set the coordinate reference system
-  #
-  # full_s_grid_sf2 <- st_transform(full_s_grid_sf, crs = 3156)
-  # full_sf_grid <- sf::st_make_grid(x = full_s_grid_sf2,
-  #   offset = st_bbox(hbll_sf)[c("xmin", "ymin")]+ c(-1000, -1000),
-  #   cellsize=c(2000, 2000))
-  # keep <- st_intersects(full_s_grid_sf2, full_sf_grid)
-  # full_sf_grid <- full_sf_grid[unlist(keep)]
-  # full_sf_grid2 <- st_as_sf(full_sf_grid)
-
   full_s_grid <- readRDS(file = "data-generated/full_filled_grid_w_ext_1000.rds")
   full_s_grid_trim <- full_s_grid %>% filter(depth <= 600)
 
   g <- ggplot(focal_area_proj) +
-    # geom_sf(data=full_sf_grid2, fill = "white", colour = NA, alpha = 0.9) +
     geom_tile(data = full_s_grid_trim, aes(X * 100000, Y * 100000),
-              # colour = "white", fill = "white", #colour = NA,
-              colour = "grey85", fill = "grey85", #colour = NA,
+              colour = "grey85", fill = "grey85",
               width = 2000, height = 2000) +
-    # geom_sf(data=full_sf_grid2, fill = "grey90", colour = NA, alpha = 0.9) +
     geom_sf(data=trawl_sf2,  aes(fill = source_data), colour = NA,
             alpha = 0.7) +
     geom_sf(data=hbll_sf2,  aes(fill = source_data), colour = NA,
@@ -154,7 +136,6 @@ if (!file.exists(f)) {
              x = convert2utm9(-129.8, 48.8)[1],
              y = convert2utm9(-129.8, 48.8)[2],
              label = "3C") +
-    # scale_fill_viridis_d(name = "Survey", begin = 0.2, end = 0.5, direction = -1) +
     scale_fill_manual(name = "Survey",
                       # values = c("aquamarine3","deepskyblue4")
                       values = c("aquamarine3","deepskyblue4")

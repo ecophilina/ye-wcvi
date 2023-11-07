@@ -167,8 +167,4 @@ if (!file.exists(f)) {
 #
 # ggsave("figs/depth_hist.png", width = 3, height = 2)
 
-# library(imager)
-# p1 <- load.image("figs/ratio-YE-to-hal-by-25m-bin-depth-w-deeper-500kn-delta-AR1-aniso-region.png")
-#
-# plot(p1)
 

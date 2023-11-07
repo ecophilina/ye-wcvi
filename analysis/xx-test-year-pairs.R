@@ -1,4 +1,6 @@
 # see how well the use of year pair improves upon a RW with a spatial field
+library(tidyverse)
+library(sdmTMB)
 
 # if models not run yet
 substrate <- readRDS(file = "data-generated/events_w_substrate_1km_buffer.rds") %>%
@@ -13,11 +15,11 @@ d_ye <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %>%
 years <- sort(unique(d_ye$year))
 
 d_hal <- d_hal %>% filter(year %in% years)
-d_hal$present <- ifelse(d_hal$density > 0, 1, 0)
+# d_hal$present <- ifelse(d_hal$density > 0, 1, 0)
 d_hal$year_f <- as.factor(d_hal$year)
 
 d_ye <- d_ye %>% filter(year %in% years)
-d_ye$present <- ifelse(d_ye$density > 0, 1, 0)
+# d_ye$present <- ifelse(d_ye$density > 0, 1, 0)
 d_ye$year_f <- as.factor(d_ye$year)
 
 # Make relatively coarse mesh to allow years with fewer data points
@@ -29,16 +31,16 @@ if (!file.exists(f)) {
   m1 <- sdmTMB(
     formula = density ~
       as.factor(survey) +
-      rocky + I(rocky^2) +
-      muddy + I(muddy^2) +
-      depth_scaled + I(depth_scaled^2),
+      rocky +
+      muddy +
+      poly(depth_scaled, 2),
     data = d_hal,
     mesh = mesh300kn,
     spatial = "on",
     spatiotemporal = "RW",
     time = "year_true",
     silent = FALSE,
-    reml = T, # F is simpler to explain.
+    reml = T,
     family = tweedie(link = "log")
   )
   saveRDS(m1, file = f)
@@ -49,16 +51,16 @@ if (!file.exists(f)) {
   m2 <- sdmTMB(
     formula = density ~
       as.factor(survey) +
-      rocky + I(rocky^2) +
-      muddy + I(muddy^2) +
-      depth_scaled + I(depth_scaled^2),
+      rocky +
+      muddy +
+      poly(depth_scaled, 2),
     data = d_hal,
     mesh = mesh300kn,
     spatial = "on",
     spatiotemporal = "RW",
     time = "year",
     silent = FALSE,
-    reml = T, # F is simpler to explain.
+    reml = T,
     family = tweedie(link = "log")
   )
   saveRDS(m2, file = f)
@@ -73,54 +75,6 @@ AIC(m1, m2)
 #   df      AIC
 # m1  5 4246.570
 # m2  5 4248.577
-
-# > m1
-# Spatiotemporal model fit by REML ['sdmTMB']
-# Formula: density ~ 1 + as.factor(survey) + rocky + I(rocky^2) + muddy +
-#   Formula:     I(muddy^2) + depth_scaled + I(depth_scaled^2)
-# Mesh: mesh300kn
-# Data: d_hal
-# Family: tweedie(link = 'log')
-#
-# coef.est coef.se
-# (Intercept)               -1.36    0.18
-# as.factor(survey)TRAWL    -0.70    0.09
-# rocky                     -0.84    0.55
-# I(rocky^2)                -0.14    0.65
-# muddy                      0.68    0.59
-# I(muddy^2)                -1.30    0.67
-# depth_scaled              -0.77    0.09
-# I(depth_scaled^2)         -0.22    0.04
-#
-# Dispersion parameter: 0.75
-# Matern range: 0.39
-# Spatial SD: 0.64
-# Spatiotemporal SD: 0.47
-# REML criterion at convergence: 2118.285
-
-# > m2
-# Spatiotemporal model fit by REML ['sdmTMB']
-# Formula: density ~ 1 + as.factor(survey) + rocky + I(rocky^2) + muddy +
-#   Formula:     I(muddy^2) + depth_scaled + I(depth_scaled^2)
-# Mesh: mesh300kn
-# Data: d_hal
-# Family: tweedie(link = 'log')
-#
-# coef.est coef.se
-# (Intercept)               -1.32    0.18
-# as.factor(survey)TRAWL    -0.71    0.09
-# rocky                     -0.86    0.56
-# I(rocky^2)                -0.11    0.65
-# muddy                      0.65    0.59
-# I(muddy^2)                -1.26    0.67
-# depth_scaled              -0.75    0.09
-# I(depth_scaled^2)         -0.22    0.04
-#
-# Dispersion parameter: 0.75
-# Matern range: 0.36
-# Spatial SD: 0.54
-# Spatiotemporal SD: 0.65
-# REML criterion at convergence: 2119.289
 
 
 grid <- readRDS(file = "data-generated/full_filled_grid_paired.rds") %>% filter(year == 2020)
@@ -141,7 +95,6 @@ nd2 <- do.call(
 nd2[["year"]] <- rep(original_time2, each = nrow(grid))
 nd2[["survey"]] <- "HBLL"
 nd2
-
 
 
 p1 <- predict(m1, newdata = nd, return_tmb_object = T)

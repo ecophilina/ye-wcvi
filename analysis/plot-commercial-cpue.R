@@ -2,42 +2,15 @@
 library(tidyverse)
 library(lubridate)
 library(sf)
-
-### Check commercial catch ratios
-
-# # only works on network
-# cpue <- get_cpue_index_hl()
-# # saveRDS(cpue, "all-hl-cpue.rds")
-# # cpue <- readRDS( "all-hl-cpue.rds")
-# fe <- cpue %>% select(year, month, fishing_event_id, best_depth) %>%
-#   mutate(fishing_event_id = as.integer(fishing_event_id)) %>%
-#   distinct()
-#
-# cye <- get_cpue_spatial_ll("yelloweye rockfish")
-# chal <- get_cpue_spatial_ll("pacific halibut")
-#
-# cye2 <- cye %>% rename(ye_cpue = cpue,
-#                        ye_kg = landed_round_kg,
-#                        ye_realeased = total_released_pcs) %>%
-#   select(-species_code, -species_common_name, -species_scientific_name)
-#
-# chal2 <- chal %>% rename(hal_cpue = cpue,
-#                          hal_kg = landed_round_kg,
-#                          hal_realeased = total_released_pcs) %>%
-#   select(-species_code, -species_common_name, -species_scientific_name)
-#
-# both <- full_join(chal2, cye2)
-# both2 <- left_join(both, fe)
-# cc <- both2 %>% select( -vessel_registration_number, - trip_id, -fishing_event_id)
-# saveRDS(cc, "hal-ye-ll-cpue-anon.rds")
-
+library(gfplot)
+library(ggsidekick)
 
 f <- "data-generated/commercialcpue.rds"
 
 if (!file.exists(f)) {
   cc <- readRDS("data/hal-ye-ll-cpue-w-effort.rds")
-  # add utms
 
+  # add utms
   cc <- sdmTMB::add_utm_columns(cc,
     ll_names = c("lon", "lat"),
     ll_crs = 4326,
@@ -48,15 +21,6 @@ if (!file.exists(f)) {
 
   ggplot(cc, aes(x, y, colour = -log(best_depth))) +
     geom_point()
-
-
-  # library(sp)
-  # library(raster)
-  # library(gfplot)
-  # library(PBSmapping)
-  # data("bctopo", package = "PBSdata", envir = environment())
-  # ggplot(filter(bctopo, z > 0), aes(x, y, colour = z)) + geom_point()
-  # bath <- rename(bctopo, lon = x, lat = y, depth = z)
 
   ## this bath option only has 1km resolution
   ## make depth raster
@@ -192,7 +156,7 @@ ggplot(cc, aes(bath_depth, depth)) + geom_point(aes(colour = discrepency)) +
 
 
 ggplot(cc, aes(X, Y, colour = depth)) +
-  geom_point() #+ scale_color_continuous(trans = "log10")
+  geom_point()
 
 cc %>% filter (depth < 800 & ye_cpue > 0) %>%
   ggplot(aes(X, Y, colour =  discrepency)) +
@@ -210,9 +174,6 @@ map_predictions(obs_data = cc %>% mutate(X = X/100, Y = Y/100) %>% filter (depth
                 size_aes = ye_cpue,
                 obs_col = c("blue","red"),
                 col_aes = fishery_sector)
-
-
-
 
 
 cols <- c(
@@ -240,14 +201,15 @@ cc %>%
     # cols=vars(region),
     rows = vars(season)
   ) +
-  ggsidekick::theme_sleek() #+ theme(legend.position = "none")
+  ggsidekick::theme_sleek()
 
 # ggsave("figs/comm-cpue-YE-by-depth.pdf", width = 6, height = 6)
 ggsave("figs/comm-cpue-YE-by-depth.png", width = 6, height = 4)
 
 cc %>%
   filter(depth < 600) %>%
-  filter(region != "3CD5A N of 50º") %>% # filter(hal_cpue > 0) %>%
+  filter(region != "3CD5A N of 50º") %>%
+  # filter(hal_cpue > 0) %>%
   ggplot(., aes(depth, log10(hal_cpue + 1),
     colour = region, fill = region
   )) +
@@ -262,7 +224,7 @@ cc %>%
     # cols=vars(region),
     rows = vars(season)
   ) +
-  ggsidekick::theme_sleek() #+ theme(legend.position = "none")
+  ggsidekick::theme_sleek()
 
 # ggsave("figs/comm-cpue-hal-by-depth.pdf", width = 6, height = 6)
 ggsave("figs/comm-cpue-hal-by-depth.png", width = 6, height = 4)
@@ -272,7 +234,6 @@ cc %>%
   filter(depth < 600) %>%
   filter(region != "3CD5A N of 50º") %>%
   filter(hal_cpue > 0) %>%
-  # ggplot(., aes(depth, log10(ye_cpue / hal_cpue),
   ggplot(., aes(depth, log10(ye_cpue / hal_cpue),
     colour = region, fill = region
   )) +
@@ -287,12 +248,11 @@ cc %>%
     # cols=vars(region),
     rows = vars(season)
   ) +
-  ggsidekick::theme_sleek() #+ theme(legend.position = "none")
+  ggsidekick::theme_sleek()
 
 ggsave("figs/comm-true-cpue-ratio-by-depth.png", width = 6, height = 6)
 
 cc %>%
-  # filter(depth < 400) %>%
   filter(region != "3CD5A N of 50º") %>%
   # filter(hal_cpue > 0) %>%
   filter(season == "Summer" ) %>%
@@ -300,9 +260,6 @@ cc %>%
   ggplot(., aes(depth,
                 # log10(ye_cpue / hal_cpue),
                 log10(ye_cpue2 / hal_cpue2),
-                # log10(ye_cpue3 / hal_cpue3),
-                # log10((ye_cpue +0.1)/ (hal_cpue+0.1)),
-                # log10((ye_cpue +0.1)/ (hal_cpue+0.1)),
     colour = region, fill = region
   )) +
   geom_point(alpha = 0.2) +
@@ -322,7 +279,6 @@ cc %>%
 ggsave("figs/comm-true-cpue-ratio-by-depth-summer-w-zeros-pre2016.png", width = 7, height = 4)
 
 cc %>%
-  # filter(depth < 400) %>%
   filter(region != "3CD5A N of 50º") %>%
   # filter(hal_cpue > 0) %>%
   filter(season == "Summer" ) %>%
@@ -330,9 +286,6 @@ cc %>%
   ggplot(., aes(depth,
                 # log10(ye_cpue / hal_cpue),
                 log10(ye_cpue2 / hal_cpue2),
-                # log10(ye_cpue3 / hal_cpue3),
-                # log10((ye_cpue +0.1)/ ((hal_cpue)+0.1)),
-                # log10((ye_cpue +0.1)/ (hal_cpue+0.1)),
                 colour = region, fill = region
   )) +
   geom_point(alpha = 0.2) +
@@ -344,31 +297,11 @@ cc %>%
   coord_cartesian(expand = F,
                   xlim = c(0, 500),
                   ylim = c(-3.4, 3.4)) +
-                  # ylim = c(-2.4, 2.4)) +
   ylab("log10(YE/halibut) truncated CPUE at 0.1") +
   ggtitle(paste0("B. Commercial data from 2016 to 2022")) +
-  ggsidekick::theme_sleek() #+ theme(legend.position = "none")
+  ggsidekick::theme_sleek()
 
 ggsave("figs/comm-true-cpue-ratio-by-depth-summer-w-zeros-post2015.png", width = 7, height = 4)
-# # distribution of depths for fishing events in different regions
-# cc %>% filter(depth < 600 & hal_cpue > 0 & region != "3CD5A N of 50º")%>%
-#   filter(year > 2015) %>%
-#   ggplot(.,
-#          aes(
-#            depth,
-#            colour= region, fill= region)
-#   ) + geom_density(alpha=0.1, lty = "dashed") +
-#   geom_density(data = filter(cc, depth < 600 & region != "3CD5A N of 50º" & ye_cpue > 0 & year > 2015), alpha=0.1) +
-#   scale_fill_manual(values = cols) +
-#   scale_colour_manual(values = cols) +
-#   coord_cartesian(expand = F) +
-#   facet_grid(
-#     # cols=vars(fishery_sector),
-#     rows=vars(season), scales = "free_y"
-#   ) + ggsidekick::theme_sleek()
-#
-# # ggsave("figs/comm-cpue-density-by-season-region-sector-post2015.png", width = 7, height = 5)
-# ggsave("figs/comm-cpue-density-by-season-region.pdf", width = 6, height = 6)
 
 # density plots?
 cc %>%
@@ -400,27 +333,18 @@ cc %>%
   filter(region != "3CD5A N of 50º") %>%
   # filter(year < 2016) %>%
   mutate(period = ifelse(year<2016, "pre-2016", "post-2015")) %>%
-  ggplot(
-    .,
+  ggplot(.,
     aes(
-      # log(hal_cpue + 1), log(ye_cpue + 1),
       log(hal_cpue + 1), log(ye_cpue + 1),
       colour = period, fill = period
     )
-    # colour= region, fill= region)
   ) +
   geom_jitter(alpha = 0.35, size = 2) +
-  geom_smooth(method = "lm"#, colour = "black", fill = "black"
-              ) +
-  # scale_fill_viridis_c(direction = -1, name = "Depth", guide = guide_colourbar(reverse = TRUE)) +
-  # scale_colour_viridis_c(direction = -1, name = "Depth", guide = guide_colourbar(reverse = TRUE)) +
-  # scale_fill_manual(values = cols) +
-  # scale_colour_manual(values = cols) +
+  geom_smooth(method = "lm") +
   xlab("Landable halibut ( log(CPUE + 1) )") +
   ylab("YE ( log(CPUE + 1) )") +
   coord_cartesian(expand = F) +
   facet_grid(
-    # rows=vars(region),cols=vars(season)
     cols = vars(region), rows = vars(season)
   ) +
   ggsidekick::theme_sleek()
@@ -435,7 +359,6 @@ cc %>%
   ggplot(
     .,
     aes(
-      # log(hal_cpue + 1), log(ye_cpue + 1),
       log(hal_cpue + 1), log(ye_cpue + 1),
       colour = region, fill = region
     )
@@ -511,23 +434,15 @@ cc %>%
 ggsave("figs/comm-true-cpue-cor-by-season-region-sector.png", width = 7, height = 6)
 
 
-library(gfplot)
-library(ggsidekick)
-# cc %>%
-#   filter(depth < 600 & hal_cpue > 0 & region != "3CD5A N of 50º") %>%
-  # filter(year > 2015) %>%
-
 c <- cc %>% filter (depth < 1000) %>%
   mutate(
     # cpue = ye_cpue,
-    cpue = ifelse(ye_cpue == 0, 0.00001, ye_cpue),
-    # cpue = ifelse(ye_cpue>15, 15, ye_cpue),
     # cpue = log10(ye_cpue),
+    cpue = ifelse(ye_cpue == 0, 0.00001, ye_cpue),
     lon = longitude,
     lat = latitude) %>%
   select(-X, -Y)
 
-# hist(c$cpue)
 
 ## if the location of labels needs moving...
 labels <- gfplot:::boundary_labels(9, xmin = 400)
@@ -540,8 +455,6 @@ p1 <- plot_cpue_spatial(c,
                         start_year = 2007, bin_width = 5, n_minimum_vessels = 3,
                         xlim = c(450, 800),
                         ylim = c(5370, 5640)) +
-  # scale_colour_viridis_c(trans = fourth_root_power_trans(), option = "D") +
-  # scale_fill_viridis_c(trans = fourth_root_power_trans(), option = "D")
   scale_colour_viridis_c(trans = "log10", option = "D",
                          breaks = c(0, 0.001, 0.1, 10),
                          labels = c("0" ,"0.001","0.1", "10"),
@@ -551,24 +464,19 @@ p1 <- plot_cpue_spatial(c,
                        labels = c("0" ,"0.001","0.1", "10"),
                        name = "CPUE(kg/ha)")+
   theme(legend.position = c(0.95,0.95)) +
-  # ggtitle("A. Yelloweye Rockfish commercial CPUE (kg/ha)")
   ggtitle("(a) Yelloweye Rockfish commercial CPUE (kg/ha)")
-  # scale_colour_viridis_c(option = "D") +
-  # scale_fill_viridis_c(option = "D")
 
 ggsave("figs/spatial-cpue-yelloweye.png", width = 4.5, height = 3.5)
 
 c2 <- cc %>% filter (depth < 1000) %>%
   mutate(
     # cpue = ye_cpue,
-    cpue = ifelse(hal_cpue == 0, 0.00001, hal_cpue),
-    # cpue = ifelse(ye_cpue>15, 15, ye_cpue),
     # cpue = log10(ye_cpue),
+    cpue = ifelse(hal_cpue == 0, 0.00001, hal_cpue),
     lon = longitude,
     lat = latitude) %>%
   select(-X, -Y)
 
-# hist(c$cpue)
 
 p2 <- plot_cpue_spatial(c2,
                         show_majorbound = TRUE,
@@ -576,23 +484,10 @@ p2 <- plot_cpue_spatial(c2,
                         start_year = 2007, bin_width = 5, n_minimum_vessels = 3,
                         xlim = c(450, 800),
                         ylim = c(5370, 5640)) +
-  # scale_colour_viridis_c(trans = fourth_root_power_trans(), option = "D") +
-  # scale_fill_viridis_c(trans = fourth_root_power_trans(), option = "D")
-  # scale_colour_viridis_c(trans = "log10", option = "D",
-  #                        breaks = c(0, 0.001, 0.1, 10),
-  #                        labels = c("0" ,"0.001","0.1", "10"),
-  #                        name = "CPUE(kg/ha)") +
-  # scale_fill_viridis_c(trans = "log10", option = "D",
-  #                      breaks = c(0, 0.001, 0.1, 10),
-  #                      labels = c("0" ,"0.001","0.1", "10"),
-  #                      name = "CPUE(kg/ha)")
   scale_colour_viridis_c(trans = "sqrt", option = "D",name = "CPUE(kg/ha)") +
   scale_fill_viridis_c(trans = "sqrt", option = "D",name = "CPUE(kg/ha)") +
   theme(legend.position = c(0.95,0.95)) +
-  # ggtitle("B. Pacific Halibut commercial CPUE (kg/ha)")
   ggtitle("(b) Pacific Halibut commercial CPUE (kg/ha)")
-#   scale_colour_viridis_c(option = "D") +
-#   scale_fill_viridis_c(option = "D")
 
 ggsave("figs/spatial-cpue-halibut.png", width = 4.5, height = 3.5)
 

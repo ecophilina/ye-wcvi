@@ -1,15 +1,18 @@
 # install packages
 
-# mapping and plotting packages
+
+# data wrangling, mapping and plotting packages
+if(!require(tidyverse))install.packages("tidyverse")
+if(!require(here))install.packages("here")
+if(!require(lubridate))install.packages("lubridate")
 if(!require(raster))install.packages("raster")
 if(!require(sf))install.packages("sf")
-if(!require(tidyverse))install.packages("tidyverse")
 if(!require(marmap))install.packages("marmap")
 if(!require(patchwork))install.packages("patchwork")
-if(!require(here))install.packages("here")
 if(!require(PBSmapping))install.packages("PBSmapping")
 # devtools::install_github("pbs-software/pbs-mapping/PBSmapping")
 if(!require(ggsidekick))devtools::install_github("seananderson/ggsidekick")
+if(!require(gfplot))devtools::install_github("pbs-assess/gfplot")
 
 # modeling packages
 if(!require(sdmTMB))install.packages("sdmTMB")

@@ -10,17 +10,15 @@ d_ye_plotsS <- readRDS("data-generated/yelloweye-model-data-hbll-weights.rds") %
   filter(latitude < 50.5) %>% filter(survey != "NON-SURVEY")
 
 ye_obs <- d_ye_plotsS %>%
-  # mutate(catch_count_ye = (catch_count/hook_count)*100, catch_equiv_ye = catch_equiv) %>%
   select(X, Y,
-    depth = depth_m, year_pair, year_true, survey, # catch_count_ye, catch_equiv_ye,
+    depth = depth_m, year_pair, year_true, survey,
     density_ye = density, fishing_event_id
   )
 hal_obs <- d_hal_plotsS %>%
-  # mutate(catch_count_hal = (catch_count/hook_count)*100, catch_equiv_hal = catch_equiv) %>%
-  select(fishing_event_id, # catch_count_hal, catch_equiv_hal,
+  select(fishing_event_id,
     density_hal = density
   )
-surv_dat <- left_join(ye_obs, hal_obs) # %>% filter(depth < 200)
+surv_dat <- left_join(ye_obs, hal_obs)
 
 
 focal_area <- sf::st_read(
@@ -59,14 +57,10 @@ cols <- c(
 ggplot(surv_dat, aes(log(density_hal + 1), log(density_ye + 1), fill = region, colour = region)) +
   geom_smooth(method = "lm") +
   geom_jitter(alpha = 0.5) +
-  # coord_cartesian(expand = F, xlim = c(0, log(max(catch_compN$catch_count_hal, na.rm = T)+1))) +
   xlim(0, log(max(surv_dat$density_hal, na.rm = T) + 1)) +
-  # ylab("log( YE catch count + 1)") +
-  # xlab("log( Halibut catch count + 1)") +
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
   coord_cartesian() +
-  # ggtitle("A. HBLL survey north of 50º latitude")+
   ggsidekick::theme_sleek()
 
 surv_dat %>%
@@ -79,7 +73,7 @@ surv_dat %>%
   scale_fill_manual(values = cols) +
   scale_colour_manual(values = cols) +
   coord_cartesian(expand = F, ylim = c(0, 2.6)) +
-  ggsidekick::theme_sleek() #+ theme(legend.position = "none")
+  ggsidekick::theme_sleek()
 
 ggsave("figs/surv-hal-by-depth.png", width = 6, height = 3)
 
@@ -95,22 +89,16 @@ surv_dat %>%
   coord_cartesian(
     ylim = c(0, 2.6),
     expand = F) +
-  ggsidekick::theme_sleek() #+ theme(legend.position = "none")
+  ggsidekick::theme_sleek()
 
 ggsave("figs/surv-hal-by-depth.png", width = 6, height = 3)
 
 hist(surv_dat$density_hal, breaks = 30)
 
 surv_dat %>%
-  # filter(depth < 400) %>%
-  # filter(year_true > 2006) %>%
-  # filter(density_hal > 0) %>%
-  # filter(region != "non-CDA 3CD") %>%
   mutate(
     density_ye2 = ifelse(density_ye < 0.1, 0.1, density_ye),
-    density_hal2 = ifelse(density_hal < 0.1, 0.1, density_hal),
-    density_ye3 = ifelse(density_ye < 0.001, 0.001, density_ye),
-    density_hal3 = ifelse(density_hal < 0.001, 0.001, density_hal)
+    density_hal2 = ifelse(density_hal < 0.1, 0.1, density_hal)
   )%>%
   ggplot(., aes(depth,
                 # log10(density_ye/density_hal),
@@ -125,11 +113,10 @@ surv_dat %>%
   scale_colour_manual(values = cols) +
   coord_cartesian(expand = F,
                   xlim = c(0, 500),
-                  # ylim = c(-3.4, 3.4)) +
                   ylim = c(-3.5, 3.5)) +
   ylab("log10(YE/halibut) truncated at 0.1") +
   ggtitle(paste0("Survey data from 2004 to 2020")) +
-  ggsidekick::theme_sleek() #+ theme(legend.position = "none")
+  ggsidekick::theme_sleek()
 
 ggsave("figs/surv-ratio-by-depth-w-zeros.png", width = 6, height = 4)
 

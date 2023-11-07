@@ -13,16 +13,6 @@ library(ggsidekick)
 # )
 
 # # load models if 03 not just run
-
-
-# # hal_model <- "rocky-muddy-300kn-delta-IID-aniso"
-# # hal_model <- "w-cc2-rocky-muddy-400kn-delta-IID-aniso"
-# # ye_model <- "rocky-muddy-300kn-delta-spatial-aniso"
-# # ye_model <- "w-cc2-rocky-muddy-300kn-delta-spatial-aniso"
-# # ye_model <- "w-effort-500kn-delta-spatial-aniso"
-
-# hal_model <- "w-deeper-500kn-delta-AR1-aniso"
-# ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso"
 ye_model <- "w-deeper-all-yrs-500kn-delta-iid-aniso-may23"
 hal_model <- "w-deeper-500kn-delta-AR1-aniso-may23"
 
@@ -30,16 +20,12 @@ f <- paste0("models/halibut-model-", hal_model, "-stan.rds")
 if (file.exists(f)) {
   m1 <- readRDS(paste0("models/halibut-model-", hal_model, "-tmb.rds"))
   m_hal_stan <- readRDS(f)
-  # temporary fixed for working in dev branch with models from main
-  # m_hal_fixed$tmb_data$simulate_t <- rep(1L, length(unique(m_hal_fixed$data$year)))
 }
 
 f2 <- paste0("models/yelloweye-model-", ye_model, "-stan.rds")
 if (file.exists(f2)) {
   m2 <- readRDS(paste0("models/yelloweye-model-", ye_model, "-tmb.rds"))
   m_ye_stan <- readRDS(f2)
-  # temporary fixed for working in dev branch with models from main
-  # m_ye_fixed$tmb_data$simulate_t <- rep(1L, length(unique(m_ye_fixed$data$year)))
 }
 
 
@@ -75,26 +61,11 @@ get_effects <- function(m,
 
     if (type != "response") {
       stop("this needs updating to work with stan and type not response")
-    # if (logit) {
-    #   p <- p %>% mutate(
-    #     Depth = exp(depth_scaled * m$data$depth_sd[1] + m$data$depth_mean[1]),
-    #     prediction = plogis(est),
-    #     lowCI = plogis(lwr),
-    #     highCI = plogis(upr)
-    #   )
-    # } else {
-    #   p <- p %>% mutate(
-    #     Depth = exp(depth_scaled * m$data$depth_sd[1] + m$data$depth_mean[1]),
-    #     prediction = exp(est),
-    #     lowCI = exp(lwr),
-    #     highCI = exp(upr)
-    #   )
-    # }
   }
   } else {
     # this is non-stan and non-sim version...
     if (type != "response") {
-    stop("this needs updating to work with non-stan and type not response")
+    stop("This needs updating to work with non-stan and type not response")
     } else{
     p <- predict(m, newdata = newdata, type = type, se_fit = TRUE, re_form = NA)
   }
@@ -140,7 +111,6 @@ pd <- expand.grid(
     max(m$data$rocky),
     length.out = 20
   ),
-  # year = unique(m$data$year)
   fyear = as.factor(max(unique(m$data$year)))
 )
 pd$depth_scaled <- -1
@@ -161,8 +131,6 @@ pd <- expand.grid(
     max(m$data$muddy),
     length.out = 20
   ),
-  # survey = unique(m$data$survey)
-  # year = unique(m$data$year)
   fyear = as.factor(max(unique(m$data$year)))
 )
 pd$survey <- as.factor("HBLL")
@@ -185,8 +153,7 @@ p1 <- readRDS(here::here(paste0("data-generated/ye-depth.rds")))
 p2 <- readRDS(here::here(paste0("data-generated/hal-depth.rds")))
 p1$Species <- "Yelloweye Rockfish"
 p2$Species <- "Landable Pacific Halibut"
-p <- bind_rows(p2, p1) #%>% bind_rows(p3)
-# p$Model <- ordered(p$Species, levels = c("YE", "Halibut"), labels = c("Tweedie", "Binomial", "Gamma"))
+p <- bind_rows(p2, p1)
 p$Species <- ordered(p$Species, levels = c("Yelloweye Rockfish", "Landable Pacific Halibut"))
 p$var <- "Depth (m)"
 p$x <- p$Depth
@@ -211,7 +178,7 @@ p5$var <- "Proportion rocky"
 p6$var <- "Proportion rocky"
 p5$x <- p5$rocky
 p6$x <- p6$rocky
-p <- bind_rows(p, p5, p6) #%>% bind_rows(p3)
+p <- bind_rows(p, p5, p6)
 
 p$Species <- ordered(p$Species, levels = c("Yelloweye Rockfish", "Landable Pacific Halibut"))
 
@@ -238,127 +205,7 @@ dplot <- ggplot(
   gfplot::theme_pbs() +
   theme(legend.position = "none",
         strip.placement = "outside")
-  # theme(legend.position = c(0.7, 0.9), strip.text.x = element_blank())
 
 dplot <- egg::tag_facet(dplot)
 
 ggsave("figs/effects-delta-iid-ar1-ansio.png", width = 6, height = 4)
-
-# # leftover separate component model effects
-# # rocky plots
-# p1 <- readRDS(here::here(paste0("data-generated/ye-tv-rocky.rds")))
-# p2 <- readRDS(here::here(paste0("data-generated/halibut-rocky-bin.rds")))
-# p3 <- readRDS(here::here(paste0("data-generated/halibut-rocky-pos.rds")))
-#
-# p1$Species <- "YE"
-# p2$Species <- "Halibut present"
-# p3$Species <- "Halibut biomass"
-# p <- bind_rows(p2, p1) %>% bind_rows(p3)
-# p$Model <- ordered(p$Species,
-#   levels = c("YE", "Halibut present", "Halibut biomass"),
-#   labels = c("Tweedie", "Binomial", "Gamma")
-# )
-# p$Species <- ordered(p$Species,
-#   levels = c("YE", "Halibut present", "Halibut biomass"),
-#   labels = c("YE", "Landable Halibut presence", "Landable Halibut biomass (if present)")
-# )
-#
-# rplot <- ggplot(
-#   p,
-#   aes(rocky, prediction,
-#     ymin = lowCI,
-#     ymax = highCI,
-#     group = year,
-#     fill = Species, colour = Species
-#   )
-# ) +
-#   geom_ribbon(alpha = 0.1, colour = NA) +
-#   geom_line(aes(alpha = year), size = 0.75) +
-#   scale_fill_viridis_d(name = "Model", option = "C", end = 0.7, direction = -1) +
-#   scale_colour_viridis_d(name = "Model", option = "C", end = 0.7, direction = -1) +
-#   facet_wrap(~Species,
-#     # scales = "free_y",
-#     nrow = 3
-#   ) +
-#   guides(alpha = "none") +
-#   # ylab("Biomass (kg/ha)                     Probability                       Biomass (kg/ha) ") +
-#   xlab("Proportion rocky") +
-#   gfplot::theme_pbs() +
-#   # theme(legend.position = c(0.7, 0.9))
-#   theme(
-#     legend.position = "none",
-#     axis.title.y = element_blank(),
-#     axis.text.y = element_blank(), axis.ticks.y = element_blank(),
-#     strip.text.x = element_blank()
-#   )
-#
-# # muddy plots
-# p1 <- readRDS(here::here(paste0("data-generated/ye-tv-muddy.rds")))
-# p2 <- readRDS(here::here(paste0("data-generated/halibut-muddy-bin.rds")))
-# p3 <- readRDS(here::here(paste0("data-generated/halibut-muddy-pos.rds")))
-#
-# p1$Species <- "YE"
-# p2$Species <- "Halibut present"
-# p3$Species <- "Halibut biomass"
-# p <- bind_rows(p2, p1) %>% bind_rows(p3)
-# p$Model <- ordered(p$Species,
-#   levels = c("YE", "Halibut present", "Halibut biomass"),
-#   labels = c("Tweedie", "Binomial", "Gamma")
-# )
-# p$Species <- ordered(p$Species,
-#   levels = c("YE", "Halibut present", "Halibut biomass"),
-#   labels = c("YE", "Landable Halibut presence", "Landable Halibut biomass (if present)")
-# )
-#
-# mplot <- ggplot(
-#   p,
-#   aes(muddy, prediction,
-#     ymin = lowCI,
-#     ymax = highCI,
-#     group = year,
-#     fill = Species, colour = Species
-#   )
-# ) +
-#   geom_ribbon(alpha = 0.1, colour = NA) +
-#   geom_line(aes(alpha = year), size = 0.75) +
-#   scale_fill_viridis_d(name = "Model", option = "C", end = 0.7, direction = -1) +
-#   scale_colour_viridis_d(name = "Model", option = "C", end = 0.7, direction = -1) +
-#   facet_wrap(~Species,
-#     # scales = "free_y",
-#     nrow = 3
-#   ) +
-#   guides(alpha = "none") +
-#   # ylab("Biomass (kg/ha)                     Probability                       Biomass (kg/ha) ") +
-#   xlab("Proportion muddy") +
-#   gfplot::theme_pbs() +
-#   # theme(legend.position = c(0.7, 0.9))
-#   theme(
-#     legend.position = "none",
-#     axis.title.y = element_blank(),
-#     axis.text.y = element_blank(), axis.ticks.y = element_blank(),
-#     strip.text.x = element_blank()
-#   )
-#
-#
-# dplot + rplot + mplot + patchwork::plot_layout(ncol = 3)
-#
-# # ggsave("figs/effects-delta-free.png", width = 8, height = 7)
-# ggsave("figs/effects-delta-allfixed.png", width = 8, height = 7)
-#
-# # # mixed predictions...
-# # m <- readRDS(file = "models/yelloweye-hybrid-RW-w-rocky-mixed-400kn.rds")
-# #
-# # pd <- expand.grid(
-# #   mixed = seq(min(m$data$mixed),
-# #     max(m$data$mixed), length.out = 20),
-# #   survey = unique(m$data$survey)
-# #   # year = unique(m$data$year)
-# # )
-# # # pd$survey <- "HBLL"
-# # pd$year <- 2008
-# #
-# # pd$depth_scaled <- min(m$data$depth_scaled)
-# # pd$depth_scaled2 <- pd$depth_scaled^2
-# # pd$muddy <- 0
-# # pd$rocky <- 0
-# # # pd$mixed <- mean(m$data$mixed)
