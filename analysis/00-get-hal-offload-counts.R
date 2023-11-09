@@ -1,3 +1,7 @@
+# calculation of average kg of commercially retainable halibut per fish caught in HBLL
+# this script requires just_offloads.csv and just_catch_counts.csv files to be in the data folder
+# these data are privacy protected and were retrieved from the databases for us by the Groundfish Data Unit
+
 library(readr)
 library(tidyverse)
 
