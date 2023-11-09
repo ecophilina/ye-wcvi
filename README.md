@@ -6,7 +6,7 @@ This repository contains code used for the analysis in
 > Spatial restrictions hinder avoidance of choke species in an Indigenous rights-based fishery. 
 > People and Nature. DOI: https://doi.org/10.1002/pan3.10554
 
-The data used includes survey data that are publicly available through Open Data 
+The data used include survey data that are publicly available through Canada's Open Data 
 (trawl:https://open.canada.ca/data/en/dataset/a278d1af-d567-4964-a109-ae1e84cbd24a; 
 HBLL: https://open.canada.ca/data/en/dataset/3cdc1ad5-70e5-4fac-865d-e583e54d15df) and 
 spatially explicit commercial data, which are not publicly available due to Canada's privacy laws. 
