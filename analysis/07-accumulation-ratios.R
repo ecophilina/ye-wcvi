@@ -589,48 +589,289 @@ ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_w_cumulative_totals_500hoo
 #
 # ggsave(paste0("figs/expected_hal_when_avoiding_YE_CI", ye_model, "_regions.png"), width = 6.5, height = 3.5)
 #
-# ggplot(maximize_hal_sum %>%
-#          filter(Scenario %in% areas_to_plot)%>%
-#          filter(ordered %in% chosen_increments)) +
-#   geom_line(
-#     aes(x = ordered*grid_scale/1000,
-#         y = mean_ye_per_hal, #lty = "solid",
-#         colour = Scenario), size = 1) +
-#   geom_ribbon(aes(x = ordered*grid_scale/1000,
-#                   ymin = lwr_mean_ye_hal,
-#                   ymax = upr_mean_ye_hal,
-#                   fill = Scenario), alpha=0.2) +
-#   scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
-#   scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
-#   # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
-#   scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
-#   ylab("Mean ratio of YE to halibut") +
-#   xlab("Total area of cells selected to maximize halibut (km2)") +
-#   facet_wrap(~pair_name, ncol = 4)+
-#   theme(legend.position = c(0.85, 0.2))
-#
+ggplot(maximize_hal_sum %>%
+         filter(Scenario %in% areas_to_plot)%>%
+         filter(ordered %in% chosen_increments)) +
+  geom_line(
+    aes(x = ordered*grid_scale/1000,
+        y = mean_ye_per_hal, #lty = "solid",
+        colour = Scenario), size = 1) +
+  geom_ribbon(aes(x = ordered*grid_scale/1000,
+                  ymin = lwr_mean_ye_hal,
+                  ymax = upr_mean_ye_hal,
+                  fill = Scenario), alpha=0.2) +
+  scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
+  scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
+  # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
+  scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+  ylab("Mean ratio of YE to halibut") +
+  xlab("Total area of cells selected to maximize halibut (km2)") +
+  facet_wrap(~pair_name, ncol = 4)+
+  theme(legend.position = c(0.85, 0.2))
+
 # ggsave(paste0("figs/expected_YE_when_maximize_hal_CI", ye_model, "_regions.png"), width = 6.5, height = 3.5)
 #
-# # mean_ye_hal
-# ggplot(maximize_hal_sum %>%
-#          filter(Scenario %in% areas_to_plot)%>%
-#          filter(ordered %in% chosen_increments)) +
-#   geom_line(
-#     aes(x = ordered*grid_scale/1000,
-#         y = mean_hal_per_ye, #lty = "solid",
-#         colour = Scenario), size = 1) +
-#   geom_ribbon(aes(x = ordered*grid_scale/1000,
-#                   ymin = lwr_mean_hal_ye,
-#                   ymax = upr_mean_hal_ye,
-#                   fill = Scenario), alpha=0.2) +
-#   scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
-#   scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
-#   # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
-#   scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
-#   ylab("Mean ratio of halibut to YE") +
-#   xlab("Total area of cells selected to maximize halibut (km2)") +
-#   facet_wrap(~pair_name, ncol = 4)+
-#   theme(legend.position = c(0.85, 0.2))
+# mean_hal_ye
+ggplot(maximize_hal_sum %>%
+         filter(Scenario %in% areas_to_plot)%>%
+         filter(ordered %in% chosen_increments)) +
+  geom_line(
+    aes(x = ordered*grid_scale/1000,
+        y = mean_hal_per_ye, #lty = "solid",
+        colour = Scenario), size = 1) +
+  geom_ribbon(aes(x = ordered*grid_scale/1000,
+                  ymin = lwr_mean_hal_ye,
+                  ymax = upr_mean_hal_ye,
+                  fill = Scenario), alpha=0.2) +
+  scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
+  scale_x_log10(breaks = c( 10, 100, 1000, 10000, 100000), labels = c( 10, 100, 1000, "10000", "100000")) +
+  # scale_fill_brewer(palette = "Set1", direction = 1) + scale_colour_brewer(palette = "Set1", direction = 1) +
+  scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+  ylab("Mean ratio of halibut to YE") +
+  xlab("Total area of cells selected to maximize halibut (km2)") +
+  facet_wrap(~pair_name, ncol = 4)+
+  theme(legend.position = c(0.85, 0.2))
 #
 # ggsave(paste0("figs/expected_hal_when_maximize_hal_CI", ye_model, "_regions.png"), width = 6.5, height = 3.5)
 #
+
+
+# # remake fig for maximizing
+# # maximize_hal_sum
+# (p4 <- ggplot(maximize_hal_sum %>%
+#                 filter(Scenario %in% areas_to_plot)%>%
+#                 filter(pair_name =="2019-2020")%>%
+#                 filter(ordered %in% chosen_increments)) +
+#     geom_line(
+#       aes(x = ordered*grid_scale/1000,
+#           y = mean_ye_per_hal, #lty = "solid",
+#           colour = Scenario), size = 1) +
+#     geom_ribbon(aes(x = ordered*grid_scale/1000,
+#                     ymin = lwr_mean_ye_hal,
+#                     ymax = upr_mean_ye_hal,
+#                     fill = Scenario), alpha=0.2) +
+#     coord_cartesian(
+#       ylim = c(0, 0.55),
+#       expand = F) +
+#     scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+#     ylab("Yelloweye to halibut ratio") +
+#     xlab(expression("Total area of cells ("~km^2~")")) +
+#     labs(tag="B.") +
+#     theme(
+#       plot.tag.position = c(0.1, 0.95),
+#       # axis.title.y = element_blank(), axis.text.y = element_blank(),
+#       # legend.position = c(0.9, 0.8)
+#       legend.position = "none"
+#     )
+# )
+#
+#
+# # # flipped ratio
+# (p5 <- ggplot(maximize_hal_sum %>%
+#                 filter(Scenario %in% areas_to_plot)%>%
+#                 filter(pair_name =="2019-2020")%>%
+#                 filter(ordered %in% chosen_increments)) +
+#     geom_line(
+#       aes(x = ordered*grid_scale/1000,
+#           y = mean_hal_per_ye, #lty = "solid",
+#           colour = Scenario), size = 1) +
+#     geom_ribbon(aes(x = ordered*grid_scale/1000,
+#                     ymin = lwr_mean_hal_ye,
+#                     ymax = upr_mean_hal_ye,
+#                     fill = Scenario), alpha=0.2) +
+#     # scale_y_continuous(limits =
+#     coord_cartesian(expand = F, ylim = c(0, 20)) +
+#     scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+#     ylab("Halibut to yelloweye ratio") +
+#     xlab(expression("Total area of cells ("~km^2~")")) +
+#     # ggtitle("B. Minimizing YE ") +
+#     theme(
+#       plot.tag.position = c(0.15, 0.9),
+#       # axis.title.y = element_blank(), axis.text.y = element_blank(),
+#       # legend.position = c(0.85, 0.75)
+#       legend.position = "none"
+#     )
+# )
+# #
+# # p4 <- p4 + labs(tag="A.") + theme(
+# #   plot.tag.position = c(0.15, 0.9),
+# #   axis.title.x = element_blank(), axis.text.x = element_blank(),
+# #   legend.position = c(0.85, 0.75)
+# #   # legend.position = "none"
+# # )
+# #
+# #
+# # p5 <- p5 + labs(tag="B.") + theme(
+# #   plot.tag.position = c(0.15, 0.9),
+# #   # axis.title.x = element_blank(), axis.text.x = element_blank(),
+# #   # legend.position = c(0.85, 0.75)
+# #   legend.position = "none"
+# # )
+# #
+# # # p4$labels$x <- " "
+# # # p4$theme$axis.text.x <- p1$theme$axis.text.y
+# # (p4/p5) + patchwork::plot_layout()
+# #
+# # ggsave(paste0("figs/expected_ye_to_hal", hal_model, "_both_ratios_regions2.png"), width = 5, height = 7)
+#
+#
+# (p6 <- ggplot(maximize_hal_sum %>%
+#                 filter(Scenario %in% areas_to_plot)%>%
+#                 filter(pair_name =="2019-2020")%>%
+#                 filter(ordered %in% chosen_increments)) +
+#     geom_line(
+#       aes(x = ordered*grid_scale/1000,
+#           y = total_hal/1000, #lty = "solid", # /1000 to convert to tonnes, x10 for 1000 hooks per km^2
+#           colour = Scenario), size = 1) +
+#     geom_ribbon(aes(x = ordered*grid_scale/1000,
+#                     ymin = lwr_hal/1000,
+#                     ymax = upr_hal/1000,
+#                     fill = Scenario), alpha=0.2) +
+#     # scale_y_log10(limits = c(1e-10, )) +
+#     # scale_y_log10(
+#     #   breaks = c(0.1, 1, 10, 100, 1000), labels = c(0.1, 1, 10, 100, "1000")
+#     #   ) +
+#     coord_cartesian(expand = F, ylim = c(0, 220)) +
+#     labs(tag="C.")+
+#     scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+#     ylab("Cumulative halibut") +
+#     xlab(expression("Total area of cells ("~km^2~")")) +
+#     # ggtitle("B. Minimizing YE ") +
+#     theme(
+#       plot.tag.position = c(0.15, 0.9),
+#       # axis.title.y = element_blank(), axis.text.y = element_blank(),
+#       legend.position = c(0.2, 0.8)
+#       # legend.position = "none"
+#     )
+# )
+#
+# (p7 <- ggplot(maximize_hal_sum %>%
+#                 filter(Scenario %in% areas_to_plot)%>%
+#                 filter(pair_name =="2019-2020")%>%
+#                 filter(ordered %in% chosen_increments)) +
+#     geom_line(
+#       aes(x = ordered*grid_scale/1000,
+#           y = total_ye/1000, #lty = "solid", # /1000 to convert to tonnes, x10 for 1000 hooks per km^2
+#           colour = Scenario), size = 1) +
+#     geom_ribbon(aes(x = ordered*grid_scale/1000,
+#                     ymin = lwr_ye/1000,
+#                     ymax = upr_ye/1000,
+#                     fill = Scenario), alpha=0.2) +
+#     # scale_y_log10(limits = c(1e-10, )) +
+#     # scale_y_log10(
+#     #   breaks = c(0.1, 1, 10, 100, 1000), labels = c(0.1, 1, 10, 100, "1000")
+#     #   ) +
+#     coord_cartesian(expand = F, ylim = c(0, 220)) +
+#     # labs(tag="D.")+
+#     labs(tag="(d)")+
+#     scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+#     ylab("Cumulative yelloweye") +
+#     xlab(expression("Total area of cells ("~km^2~")")) +
+#     # ggtitle("B. Minimizing YE ") +
+#     theme(
+#       plot.tag.position = c(0.15, 0.9),
+#       # axis.title.y = element_blank(), axis.text.y = element_blank(),
+#       # legend.position = c(0.2, 0.8)
+#       legend.position = "none"
+#     )
+# )
+#
+#
+# # p4 <- p4 + labs(tag="C.") + theme(
+# p4 <- p4 + labs(tag="(c)") + theme(
+#   plot.tag.position = c(0.15, 0.9),
+#   axis.title.x = element_blank(), axis.text.x = element_blank(),
+#   # legend.position = c(0.85, 0.75)
+#   legend.position = "none"
+# )
+#
+# # p5 <- p5 + labs(tag="D.") + theme(
+# p5 <- p5 + labs(tag="(d)", colour = "Fishing scenario", fill = "Fishing scenario") + theme(
+#   # axis.title.x = element_blank(), axis.text.x = element_blank()
+#   legend.position = c(0.85, 0.75)
+#   # legend.position = "none"
+# )
+#
+# # p6 <- p6 + labs(tag="B.") + theme(
+# p6 <- p6 + labs(tag="(b)") + theme(
+#   axis.title.x = element_blank(), axis.text.x = element_blank(),
+#   # legend.position = c(0.85, 0.3)
+#   legend.position = "none"
+# )
+#
+# # p7 <- p7 + labs(tag="A.") + theme(
+# p7 <- p7 + labs(tag="(a)") + theme(
+#   axis.title.x = element_blank(), axis.text.x = element_blank()
+# )
+#
+# (p7/p6/p4/p5) + patchwork::plot_layout()
+#
+# ggsave(paste0("figs/expected_w_no_avoidance", hal_model, "_w_cumulative_totals_500hooks_smalltags.png"), width = 5.5, height = 10)
+
+### cummulative halibut from both scenarios
+(p1 <- ggplot(avoiding_ye_sum %>%
+                filter(Scenario %in% areas_to_plot)%>%
+                filter(pair_name =="2019-2020")%>%
+                filter(ordered %in% chosen_increments)) +
+    geom_line(
+      aes(x = ordered*grid_scale/1000,
+          y = total_hal/1000, #lty = "solid", # /1000 to convert to tonnes, x10 for 1000 hooks per km^2
+          colour = Scenario), size = 1) +
+    geom_ribbon(aes(x = ordered*grid_scale/1000,
+                    ymin = lwr_hal/1000,
+                    ymax = upr_hal/1000,
+                    fill = Scenario), alpha=0.2) +
+    # scale_y_log10(
+    #   limits = c(1e-10, 1.7),
+    #   breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
+    # scale_x_log10(breaks = c(10, 100, 1000, 10000, 100000), labels = c(10, 100, 1000, "10000", "100000")) +
+    coord_cartesian(expand = F, ylim = c(0, 220)) +
+    scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+    ylab("Cumulative halibut") +
+    xlab(expression("Total area of cells ("~km^2~")")) +
+    ggtitle("B. Minimizing YE ") +
+    theme(
+      axis.title.y = element_blank(), axis.text.y = element_blank(),
+      legend.position = c(0.2, 0.85)
+      # legend.position = "none"
+    )
+)
+
+(p2 <- ggplot(maximize_hal_sum %>%
+                filter(Scenario %in% areas_to_plot)%>%
+                filter(pair_name =="2019-2020")%>%
+                filter(ordered %in% chosen_increments)) +
+    geom_line(
+      aes(x = ordered*grid_scale/1000,
+          y = total_hal/1000, #lty = "solid", # /1000 to convert to tonnes, x10 for 1000 hooks per km^2
+          colour = Scenario), size = 1) +
+    geom_ribbon(aes(x = ordered*grid_scale/1000,
+                    ymin = lwr_hal/1000,
+                    ymax = upr_hal/1000,
+                    fill = Scenario), alpha=0.2) +
+    # scale_y_log10(
+    #   limits = c(1e-10, 1.7),
+    #   breaks = c(0.0001, 0.001, 0.01, 0.1, 0.5), labels = c("0.0001", 0.001, 0.01, 0.1, 0.5)) +
+    # scale_x_log10(breaks = c(10, 100, 1000, 10000, 100000), labels = c(10, 100, 1000, "10000", "100000")) +
+    coord_cartesian(expand = F, ylim = c(0, 220)) +
+    scale_colour_manual(values = cols) + scale_fill_manual(values = cols) +
+    ylab("Cumulative halibut") +
+    xlab(expression("Total area of cells ("~km^2~")")) +
+    ggtitle("A. Maximizing halibut") +
+    theme(
+      # axis.title.y = element_blank(), axis.text.y = element_blank(),
+      # legend.position = c(0.2, 0.85)
+      legend.position = "none"
+    )
+)
+
+p3 <- ggplot(data.frame(l = "lab", x = 1, y = 1)) +
+  geom_text(aes(x, y), label = expression("Total area of cells ("~km^2~")"), colour="grey30") +
+  theme_void() +
+  coord_cartesian(clip = "off")
+
+p1$labels$x <- p2$labels$x <- " "
+(p2 | p1)/p3 + patchwork::plot_layout(heights = c(15,0.25))
+
+ggsave(paste0("figs/cumulative_hal", hal_model, "_both_scenarios_regions2.png"), width = 7, height = 4)
+
