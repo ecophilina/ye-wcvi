@@ -152,8 +152,11 @@ p_ye$est_sd <- apply(p_ye_sims, 1, function(x) {sd(x)})
 #                      type = "response")
 
 d_hal_plots <- readRDS("data-generated/halibut-model-data-keepable-weight.rds") %>%
-  filter(latitude < max_map_lat) %>%
-  filter(year %in% c(2018,2019,2020))
+  filter(survey != "NON-SURVEY") %>%
+  # filter(!(survey == "NON-SURVEY" & year > 2015)) %>%
+  # filter(year %in% c(
+  #     2016, 2017, 2018, 2019, 2020)) %>%
+  filter(latitude < max_map_lat)
 
 p_hal2020 <- p_hal %>%
   filter(latitude < max_map_lat) %>%
@@ -175,9 +178,34 @@ h_2020 <- map_predictions(
 ) + theme(legend.spacing.y = unit(0.1, "cm"))
 # h_2020
 
-ggsave(paste0("figs/halibut-", hal_model, "-", grid_scale, "-map-2020.png"),
+# ggsave(paste0("figs/halibut-", hal_model, "-", grid_scale, "-map-2020.png"),
+#        width = 6, height = 5,
+#        dpi = 400)
+
+h_2020c <- map_predictions(
+  pred_data = p_hal2020,
+  pred_min = 0, #
+  # pred_min = min(p_hal2020$est, na.rm = T),
+  pred_max = quantile(p_hal2020$est, 0.995, na.rm = T),
+  # pred_max = max(p_hal2020$est, na.rm = T),
+  obs_data = d_hal_plots,
+  obs_col = obs_cols,
+  fill_lab = "Predicted kg/ha",
+  map_lat_limits = c(48.5, 50.4),
+  map_lon_limits = c(-128.1, -125.2),
+  size_lab = "Landable kg/ha",
+  size_aes = density
+) + theme(legend.spacing.y = unit(0.1, "cm"))
+h_2020c + guides(color = "none")
+
+# ggsave(paste0("figs/halibut-", hal_model, "-", grid_scale, "-map-2020-closeup-with-all.png"),
+#        width = 6, height = 6,
+#        dpi = 400)
+
+ggsave(paste0("figs/halibut-", hal_model, "-", grid_scale, "-map-2020-closeup-with-surv.png"),
        width = 6, height = 5,
        dpi = 400)
+
 
 # p_hal2020c <- p_hal2020 %>%
 #   filter(latitude < max_map_lat2)
@@ -235,9 +263,11 @@ ggsave(paste0("figs/halibut-", hal_model, "-", grid_scale, "-map-2020.png"),
 
 # yelloweye density maps
 
-d_ye_plots <- readRDS(("data-generated/yelloweye-model-data-hbll-weights.rds")) %>%
-  filter(latitude < 52.15507)  %>% filter(year %in% c(#2017,
-    2018, 2019, 2020))
+d_ye_plots <- readRDS(("data-generated/yelloweye-model-data-hbll-weights.rds"))  %>%
+  filter(survey != "NON-SURVEY") %>%
+  # filter(year %in% c(
+  #     2016, 2017, 2018, 2019, 2020)) %>%
+  filter(latitude < 52.15507)
 
 p_ye2020 <- p_ye %>%
   filter(latitude < max_map_lat) %>%
@@ -258,9 +288,28 @@ y_2020 <- map_predictions(
 ) + theme(legend.spacing.y = unit(0.1, "cm"))
 # y_2020
 
-ggsave(paste0("figs/yelloweye-", ye_model, "-", grid_scale, "-map-2020.png"),
+# ggsave(paste0("figs/yelloweye-", ye_model, "-", grid_scale, "-map-2020.png"),
+#        width = 6, height = 5,
+#        dpi = 400)
+
+y_2020c <- map_predictions(
+  pred_data = p_ye,
+  fill_aes = est,
+  pred_min = 0,
+  pred_max = quantile(p_ye$est, 0.995, na.rm = T),
+  fill_lab = "Predicted kg/ha", #\n
+  obs_data = d_ye_plots,
+  obs_col = obs_cols,
+  map_lat_limits = c(48.5, 50.4),
+  map_lon_limits = c(-128.1, -125.2),
+  size_lab = "Observed kg/ha",
+  size_aes = density
+) + theme(legend.spacing.y = unit(0.1, "cm"))
+y_2020c + guides(color = "none")
+ggsave(paste0("figs/yelloweye-", ye_model, "-", grid_scale, "-map-2020-closeup-with-surv.png"),
        width = 6, height = 5,
        dpi = 400)
+
 
 # d_ye_plots2 <- readRDS(("data-generated/yelloweye-model-data-hbll-weights.rds")) %>%
 #   filter(latitude < 52.15507)

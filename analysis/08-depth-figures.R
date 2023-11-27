@@ -1,4 +1,4 @@
-# final figures
+# catch by depth figures
 library(tidyverse)
 library(lubridate)
 library(sf)
@@ -104,7 +104,9 @@ g2 <- cc %>%
   xlab("Depth") +
   facet_wrap(~region) +
   # facet_wrap(~region, scales = "free_y") +
-  theme(strip.text.x = element_blank())
+  theme(strip.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank())
 
 g3 <- cc %>%
   filter(year > 2015) %>%
@@ -126,7 +128,7 @@ g3 <- cc %>%
 
 g1 + g2 + g3 + patchwork::plot_layout(nrow = 3)
 
-ggsave("figs/ye-presence-hist.png", width = 6.5, height = 7.5)
+ggsave("figs/ye-presence-hist.png", width = 6.5, height = 5.5)
 
 
 plot_catch_by_depth <- function(data) {
@@ -233,3 +235,80 @@ p4b <- tag_facet(p4, tag_pool = c("d", "f"), size = 4)
 p1 + p2 + p3b + p4b + plot_layout(ncol = 2, heights = c(1, 2))
 
 ggsave("figs/all-catch-by-depth.png", width = 8, height = 9)
+
+p3 + p4 +plot_layout(ncol = 2, heights = c(1))
+
+ggsave("figs/comm-catch-by-depth.png", width = 8, height = 6)
+
+
+# for slides
+p1 <- surv_dat %>%
+  filter(depth < 1000) %>%
+  mutate(density = log(density_ye + 1)) %>%
+  plot_catch_by_depth(.) +
+  ylab("Log (survey CPUE + 1)") +
+  ggtitle("Yelloweye Rockfish") +
+  # labs(tag = "(a)") +
+  theme(
+    plot.tag.position = c(0.13, 0.87),
+    plot.tag = element_text(size = 12, face = "bold"),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank()
+  )
+
+
+p2 <- surv_dat %>%
+  filter(depth < 1000) %>%
+  mutate(density = log(density_hal + 1)) %>%
+  plot_catch_by_depth(.) +
+  # ylab("Log (survey biomass density + 1)") +
+  ggtitle("Landable-size Pacific Halibut") +
+  # labs(tag = "(b)") +
+  theme(
+    legend.position = "none",
+    plot.tag = element_text(
+      face = "bold",
+      size = 11
+    ),
+    plot.tag.position = c(0.07, 0.87),
+    axis.ticks = element_blank(),
+    axis.text = element_blank(),
+    axis.title = element_blank()
+  )
+
+
+p5 <- cc %>%
+  filter(depth < 1000) %>%
+  filter(season == "Summer") %>%
+  filter(region != "3CD5A N of 50º") %>%
+  filter(hal_cpue > 0) %>%
+  mutate(density = log(ye_cpue + 1)) %>%
+  plot_catch_by_depth(.) +
+  ylab("Log (commercial CPUE + 1)") +
+  # ggtitle("B. Pacific Halibut") +
+  theme(
+    legend.position = "none",
+    panel.spacing.y = unit(1, "lines"),
+    strip.text.y = element_blank()
+  )
+
+p6 <- cc %>%
+  filter(depth < 1000) %>%
+  filter(season == "Summer") %>%
+  filter(region != "3CD5A N of 50º") %>%
+  mutate(density = log(hal_cpue + 1)) %>%
+  plot_catch_by_depth(.) +
+  # ylab("Log (commercial biomass density + 1)") +
+  # ggtitle("B. Pacific Halibut") +
+  theme(
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.title.y = element_blank(),
+    panel.spacing.y = unit(1, "lines"),
+    legend.position = "none"
+  )
+
+p1 + p2 + p5 + p6 +plot_layout(ncol = 2, heights = c(1, 1))
+
+ggsave("figs/summer-catch-by-depth.png", width = 8, height = 6)
